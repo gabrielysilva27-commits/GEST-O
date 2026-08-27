@@ -88,6 +88,6 @@ Os testes cobrem:
 
 ## Publicação no Cloudflare
 
-Este repositório publica exclusivamente no Worker Cloudflare `lead-gestao`. A configuração está em `wrangler.jsonc` e o comando de compilação é `pnpm build`. Não use o Worker `workstation-armazem`: ele pertence a outro projeto, a Workstation Armazém.
+Este repositório publica exclusivamente no Worker Cloudflare `lead-gestao`. A configuração está em `wrangler.jsonc`. O Worker publicado serve os arquivos versionados do ramo `main` deste repositório no domínio oficial, então a edição fica centralizada no GitHub e no código local. Não use o Worker `workstation-armazem`: ele pertence a outro projeto, a Workstation Armazém.
 
 A integração GitHub–Cloudflare foi configurada em 27/08/2026. Commits no ramo `main` devem atualizar somente o endereço do LEAD.
