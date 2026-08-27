@@ -27,6 +27,34 @@ function cacheControlFor(pathname) {
   return "public, max-age=86400";
 }
 
+function contentTypeFor(pathname, upstreamResponse) {
+  if (pathname.endsWith(".html")) {
+    return "text/html; charset=utf-8";
+  }
+
+  if (pathname.endsWith(".css")) {
+    return "text/css; charset=utf-8";
+  }
+
+  if (pathname.endsWith(".js")) {
+    return "application/javascript; charset=utf-8";
+  }
+
+  if (pathname.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (pathname.endsWith(".svg")) {
+    return "image/svg+xml";
+  }
+
+  if (pathname.endsWith(".jpg") || pathname.endsWith(".jpeg")) {
+    return "image/jpeg";
+  }
+
+  return upstreamResponse.headers.get("content-type") || "application/octet-stream";
+}
+
 async function fetchFromRepository(pathname, request) {
   const upstreamUrl = new URL(`${REPO_BASE_URL}${pathname}`);
   upstreamUrl.search = new URL(request.url).search;
@@ -44,6 +72,7 @@ async function fetchFromRepository(pathname, request) {
 
 function buildResponse(upstreamResponse, pathname) {
   const headers = new Headers(upstreamResponse.headers);
+  headers.set("content-type", contentTypeFor(pathname, upstreamResponse));
   headers.set("cache-control", cacheControlFor(pathname));
   headers.set("x-lead-source", "github-main");
 
