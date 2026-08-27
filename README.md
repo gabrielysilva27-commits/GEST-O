@@ -84,3 +84,7 @@ Os testes cobrem:
 - Toda funcionalidade operacional fica disponível apenas após autenticação.
 - O frontend segue a identidade visual da marca LEAD fornecida na imagem de referência.
 - A base antiga é migrada automaticamente para o formato com `username` quando necessário.
+
+## Publicação no Cloudflare
+
+Este repositório publica exclusivamente no Worker Cloudflare `lead-gestao`. A configuração está em `wrangler.jsonc` e o comando de compilação é `pnpm build`. Não use o Worker `workstation-armazem`: ele pertence a outro projeto, a Workstation Armazém.
