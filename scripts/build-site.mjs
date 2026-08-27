@@ -4,10 +4,8 @@ import path from "node:path";
 const projectRoot = process.cwd();
 const sourceIndexPath = path.join(projectRoot, "index.html");
 const sourceAssetsPath = path.join(projectRoot, "assets");
-const sourceHostingPath = path.join(projectRoot, ".openai", "hosting.json");
 const distPath = path.join(projectRoot, "dist");
 const distServerPath = path.join(distPath, "server");
-const distHostingPath = path.join(distPath, ".openai", "hosting.json");
 
 const textExtensions = new Set([".html", ".css", ".js", ".json", ".svg", ".txt"]);
 
@@ -151,11 +149,8 @@ export default {
 
 await fs.rm(distPath, { recursive: true, force: true });
 await fs.mkdir(distServerPath, { recursive: true });
-await fs.mkdir(path.dirname(distHostingPath), { recursive: true });
 
 const assets = await buildAssetMap();
 const serverModule = renderServerModule(assets);
-const hostingFile = await fs.readFile(sourceHostingPath, "utf8");
 
 await fs.writeFile(path.join(distServerPath, "index.js"), serverModule, "utf8");
-await fs.writeFile(distHostingPath, hostingFile, "utf8");
