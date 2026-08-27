@@ -1,4 +1,4 @@
-const STORAGE_KEY = "lead-gestao-demo-db-v1";
+const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
 
 const ROLE_LABELS = {
@@ -100,21 +100,21 @@ const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a
 const INITIAL_DATABASE = {
   meta: {
     appName: "LEAD Gestao",
-    seededAt: "2026-08-26T08:00:00.000Z",
+    seededAt: "2026-08-26T00:00:00.000Z",
     lastExport: null,
-    storageVersion: 1
+    storageVersion: 2
   },
   sequence: {
-    users: 4,
-    companies: 1,
-    units: 3,
-    tasks: 3,
-    checklists: 2,
-    safetyReports: 2,
-    trainings: 2,
-    tickets: 2,
-    notifications: 5,
-    history: 8,
+    users: 1,
+    companies: 0,
+    units: 0,
+    tasks: 0,
+    checklists: 0,
+    safetyReports: 0,
+    trainings: 0,
+    tickets: 0,
+    notifications: 0,
+    history: 0,
     sessions: 0
   },
   users: [
@@ -123,400 +123,24 @@ const INITIAL_DATABASE = {
       name: "Gabriely",
       username: "Gabriely",
       role: "admin",
-      companyId: 1,
-      unitIds: [1, 2, 3],
+      companyId: 0,
+      unitIds: [],
       status: "active",
       passwordHash: PASSWORD_HASH_GABY0739,
       avatar: "GA",
       title: "Administradora da plataforma",
       createdAt: "2026-08-01T09:00:00.000Z"
-    },
-    {
-      id: 2,
-      name: "Iago",
-      username: "Iagoro",
-      role: "manager",
-      companyId: 1,
-      unitIds: [1, 2, 3],
-      status: "active",
-      passwordHash: PASSWORD_HASH_GABY0739,
-      avatar: "IA",
-      title: "Gerente de operacoes",
-      createdAt: "2026-08-10T10:30:00.000Z"
-    },
-    {
-      id: 3,
-      name: "Bruna Lima",
-      username: "bruna.lima",
-      role: "supervisor",
-      companyId: 1,
-      unitIds: [1, 2],
-      status: "active",
-      passwordHash: PASSWORD_HASH_GABY0739,
-      avatar: "BL",
-      title: "Supervisora de unidade",
-      createdAt: "2026-08-11T13:15:00.000Z"
-    },
-    {
-      id: 4,
-      name: "Caio Mendes",
-      username: "caio.mendes",
-      role: "operator",
-      companyId: 1,
-      unitIds: [1],
-      status: "active",
-      passwordHash: PASSWORD_HASH_GABY0739,
-      avatar: "CM",
-      title: "Operador lider",
-      createdAt: "2026-08-12T07:45:00.000Z"
     }
   ],
-  companies: [
-    {
-      id: 1,
-      name: "LEAD Logistica",
-      segment: "Operacoes e distribuicao",
-      headquarters: "Sao Paulo"
-    }
-  ],
-  units: [
-    {
-      id: 1,
-      name: "CD Guarulhos",
-      companyId: 1,
-      city: "Guarulhos",
-      state: "SP"
-    },
-    {
-      id: 2,
-      name: "Hub Campinas",
-      companyId: 1,
-      city: "Campinas",
-      state: "SP"
-    },
-    {
-      id: 3,
-      name: "Base Santos",
-      companyId: 1,
-      city: "Santos",
-      state: "SP"
-    }
-  ],
-  tasks: [
-    {
-      id: 1,
-      title: "Fechar inventario rotativo",
-      description: "Concluir reconciliacao do turno da manha.",
-      status: "open",
-      priority: "high",
-      dueDate: "2026-08-25",
-      companyId: 1,
-      unitId: 1,
-      assigneeId: 4,
-      createdBy: 2,
-      tags: ["inventario"],
-      createdAt: "2026-08-24T11:00:00.000Z",
-      updatedAt: "2026-08-24T11:00:00.000Z"
-    },
-    {
-      id: 2,
-      title: "Revisar checklist de docas",
-      description: "Validar o padrao do turno da tarde.",
-      status: "in_progress",
-      priority: "medium",
-      dueDate: "2026-08-27",
-      companyId: 1,
-      unitId: 2,
-      assigneeId: 3,
-      createdBy: 2,
-      tags: ["doca", "qualidade"],
-      createdAt: "2026-08-25T09:20:00.000Z",
-      updatedAt: "2026-08-25T09:20:00.000Z"
-    },
-    {
-      id: 3,
-      title: "Atualizar painel de indicadores",
-      description: "Publicar versao consolidada da semana.",
-      status: "done",
-      priority: "low",
-      dueDate: "2026-08-24",
-      companyId: 1,
-      unitId: 1,
-      assigneeId: 2,
-      createdBy: 1,
-      tags: ["kpi"],
-      createdAt: "2026-08-22T14:40:00.000Z",
-      updatedAt: "2026-08-24T17:00:00.000Z"
-    }
-  ],
-  checklists: [
-    {
-      id: 1,
-      name: "Abertura operacional",
-      category: "Operacao",
-      companyId: 1,
-      unitIds: [1, 2],
-      complianceRate: 92,
-      lastRunAt: "2026-08-25T08:10:00.000Z",
-      items: [
-        { id: 1, label: "Conferir docas", required: true, description: "Inspecao inicial" },
-        { id: 2, label: "Validar EPIs", required: true, description: "Checagem de seguranca" },
-        { id: 3, label: "Abrir painel do turno", required: true, description: "Registro diario" }
-      ],
-      createdBy: 1,
-      createdAt: "2026-08-18T10:00:00.000Z"
-    },
-    {
-      id: 2,
-      name: "Conferencia de expedição",
-      category: "Qualidade",
-      companyId: 1,
-      unitIds: [3],
-      complianceRate: 85,
-      lastRunAt: "2026-08-24T18:30:00.000Z",
-      items: [
-        { id: 1, label: "Validar romaneio", required: true, description: "Conferencia final" },
-        { id: 2, label: "Registrar fotos", required: true, description: "Evidencia visual" }
-      ],
-      createdBy: 2,
-      createdAt: "2026-08-19T16:10:00.000Z"
-    }
-  ],
-  safetyReports: [
-    {
-      id: 1,
-      title: "Palete avariado na doca 4",
-      type: "Desvio",
-      severity: "high",
-      status: "open",
-      companyId: 1,
-      unitId: 1,
-      reportedBy: 4,
-      description: "Material segregado aguardando tratativa.",
-      createdAt: "2026-08-25T12:10:00.000Z",
-      dueDate: "2026-08-27"
-    },
-    {
-      id: 2,
-      title: "Sinalizacao de emergencia reforcada",
-      type: "Comportamento",
-      severity: "low",
-      status: "resolved",
-      companyId: 1,
-      unitId: 2,
-      reportedBy: 3,
-      description: "Ajuste concluido na area de picking.",
-      createdAt: "2026-08-23T15:40:00.000Z",
-      dueDate: "2026-08-24"
-    }
-  ],
-  trainings: [
-    {
-      id: 1,
-      title: "DDS movimentacao de cargas",
-      category: "Seguranca",
-      status: "scheduled",
-      companyId: 1,
-      unitId: 1,
-      dueDate: "2026-08-28",
-      instructor: "Gabriely",
-      targetRoles: ["operator", "supervisor"],
-      participants: [
-        { userId: 4, status: "pending", completedAt: null, score: null },
-        { userId: 3, status: "pending", completedAt: null, score: null }
-      ],
-      createdBy: 1,
-      createdAt: "2026-08-24T08:30:00.000Z"
-    },
-    {
-      id: 2,
-      title: "Reciclagem de ergonomia",
-      category: "Saude ocupacional",
-      status: "completed",
-      companyId: 1,
-      unitId: 2,
-      dueDate: "2026-08-22",
-      instructor: "Iago",
-      targetRoles: ["operator"],
-      participants: [
-        { userId: 4, status: "completed", completedAt: "2026-08-22T18:00:00.000Z", score: 96 }
-      ],
-      createdBy: 2,
-      createdAt: "2026-08-20T11:45:00.000Z"
-    }
-  ],
-  tickets: [
-    {
-      id: 1,
-      title: "Coletor sem bateria",
-      category: "Infraestrutura",
-      priority: "high",
-      status: "open",
-      companyId: 1,
-      unitId: 1,
-      requesterId: 4,
-      ownerId: 3,
-      description: "Equipamento da conferência precisa de reposicao.",
-      openedAt: "2026-08-25T07:10:00.000Z",
-      dueDate: "2026-08-26"
-    },
-    {
-      id: 2,
-      title: "Ajuste de acesso ao painel",
-      category: "Sistemas",
-      priority: "medium",
-      status: "resolved",
-      companyId: 1,
-      unitId: 2,
-      requesterId: 3,
-      ownerId: 2,
-      description: "Permissao liberada para a supervisao.",
-      openedAt: "2026-08-23T09:15:00.000Z",
-      dueDate: "2026-08-24"
-    }
-  ],
-  notifications: [
-    {
-      id: 1,
-      userId: 1,
-      title: "Dashboard atualizado",
-      message: "Os indicadores consolidados da semana ja estao disponiveis.",
-      level: "success",
-      link: "dashboard",
-      read: false,
-      createdAt: "2026-08-25T18:00:00.000Z"
-    },
-    {
-      id: 2,
-      userId: 1,
-      title: "Treinamento agendado",
-      message: "DDS movimentacao de cargas confirmado para sexta-feira.",
-      level: "info",
-      link: "trainings",
-      read: false,
-      createdAt: "2026-08-25T16:30:00.000Z"
-    },
-    {
-      id: 3,
-      userId: 3,
-      title: "Novo chamado",
-      message: "Coletor sem bateria atribuido para tratativa.",
-      level: "warning",
-      link: "tickets",
-      read: false,
-      createdAt: "2026-08-25T07:12:00.000Z"
-    },
-    {
-      id: 4,
-      userId: 4,
-      title: "Nova tarefa atribuida",
-      message: "Fechar inventario rotativo.",
-      level: "info",
-      link: "tasks",
-      read: false,
-      createdAt: "2026-08-24T11:02:00.000Z"
-    },
-    {
-      id: 5,
-      userId: 1,
-      title: "Relato em aberto",
-      message: "Palete avariado na doca 4 requer acompanhamento.",
-      level: "warning",
-      link: "safety",
-      read: true,
-      createdAt: "2026-08-25T12:15:00.000Z"
-    }
-  ],
-  history: [
-    {
-      id: 1,
-      module: "checklists",
-      action: "created",
-      entityId: 1,
-      actorId: 1,
-      companyId: 1,
-      unitId: 1,
-      description: "Checklist 'Abertura operacional' criado.",
-      createdAt: "2026-08-18T10:00:00.000Z"
-    },
-    {
-      id: 2,
-      module: "checklists",
-      action: "created",
-      entityId: 2,
-      actorId: 2,
-      companyId: 1,
-      unitId: 3,
-      description: "Checklist 'Conferencia de expedicao' criado.",
-      createdAt: "2026-08-19T16:10:00.000Z"
-    },
-    {
-      id: 3,
-      module: "trainings",
-      action: "created",
-      entityId: 2,
-      actorId: 2,
-      companyId: 1,
-      unitId: 2,
-      description: "Treinamento 'Reciclagem de ergonomia' cadastrado.",
-      createdAt: "2026-08-20T11:45:00.000Z"
-    },
-    {
-      id: 4,
-      module: "tasks",
-      action: "created",
-      entityId: 3,
-      actorId: 1,
-      companyId: 1,
-      unitId: 1,
-      description: "Tarefa 'Atualizar painel de indicadores' criada.",
-      createdAt: "2026-08-22T14:40:00.000Z"
-    },
-    {
-      id: 5,
-      module: "tickets",
-      action: "created",
-      entityId: 2,
-      actorId: 3,
-      companyId: 1,
-      unitId: 2,
-      description: "Chamado 'Ajuste de acesso ao painel' aberto.",
-      createdAt: "2026-08-23T09:15:00.000Z"
-    },
-    {
-      id: 6,
-      module: "tasks",
-      action: "created",
-      entityId: 1,
-      actorId: 2,
-      companyId: 1,
-      unitId: 1,
-      description: "Tarefa 'Fechar inventario rotativo' criada.",
-      createdAt: "2026-08-24T11:00:00.000Z"
-    },
-    {
-      id: 7,
-      module: "trainings",
-      action: "created",
-      entityId: 1,
-      actorId: 1,
-      companyId: 1,
-      unitId: 1,
-      description: "Treinamento 'DDS movimentacao de cargas' cadastrado.",
-      createdAt: "2026-08-24T08:30:00.000Z"
-    },
-    {
-      id: 8,
-      module: "safety",
-      action: "created",
-      entityId: 1,
-      actorId: 4,
-      companyId: 1,
-      unitId: 1,
-      description: "Relato 'Palete avariado na doca 4' registrado.",
-      createdAt: "2026-08-25T12:10:00.000Z"
-    }
-  ],
+  companies: [],
+  units: [],
+  tasks: [],
+  checklists: [],
+  safetyReports: [],
+  trainings: [],
+  tickets: [],
+  notifications: [],
+  history: [],
   sessions: []
 };
 

@@ -7,7 +7,7 @@ O projeto foi construído com:
 - frontend em `HTML`, `CSS` e `JavaScript` puro;
 - API REST em `PowerShell` com `HttpListener`;
 - persistência local em `JSON`;
-- dados fictícios para demonstração;
+- base inicial vazia, preservando apenas o acesso administrativo da Gabriely;
 - testes automatizados em `PowerShell`.
 
 ## Acesso inicial

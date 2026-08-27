@@ -4,8 +4,9 @@
     return @{
         meta = @{
             appName    = "LEAD Gestão"
-            seededAt   = "2026-08-25T08:00:00Z"
-            lastExport = $null
+            seededAt      = "2026-08-26T00:00:00Z"
+            lastExport    = $null
+            storageVersion = 2
         }
         sequence = @{
             users          = 1
@@ -150,6 +151,7 @@ function Update-DatabaseSchema {
             appName = "LEAD Gestão"
             seededAt = [DateTime]::UtcNow.ToString("o")
             lastExport = $null
+            storageVersion = 2
         }
         $changed = $true
     }
@@ -212,6 +214,15 @@ function Load-Database {
     Initialize-DataStore -DataFile $DataFile
     $raw = Get-Content -LiteralPath $DataFile -Raw -Encoding UTF8
     $db = $raw | ConvertFrom-Json
+
+    # Version 2 intentionally starts with an empty workspace and only Gabriely.
+    # Any older persisted database is reset once so demo records and users cannot survive deployment.
+    $storageVersion = 2
+    if ($null -eq $db.meta -or [int]$db.meta.storageVersion -ne $storageVersion) {
+        $db = Repair-DataNode -Node (New-SeedDatabase)
+        Save-Database -DataFile $DataFile -Database $db
+        return $db
+    }
 
     foreach ($collection in @("users", "companies", "units", "tasks", "checklists", "safetyReports", "trainings", "tickets", "notifications", "history", "sessions")) {
         if ($null -eq $db.$collection) {

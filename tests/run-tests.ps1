@@ -115,8 +115,20 @@ try {
     $me = Invoke-Api -Uri "$baseUrl/api/auth/me" -Method "Get" -Headers $adminHeaders
     Assert-Equal -Actual $me.user.username -Expected "Gabriely" -Message "Auth/me deveria retornar o usuário logado"
 
+    $initialUsers = Invoke-Api -Uri "$baseUrl/api/users" -Method "Get" -Headers $adminHeaders
+    Assert-Equal -Actual ((@($initialUsers.items) | Measure-Object).Count) -Expected 1 -Message "A base inicial deveria manter somente um usuário"
+    Assert-Equal -Actual $initialUsers.items[0].username -Expected "Gabriely" -Message "O usuário mantido deveria ser Gabriely"
+    Assert-Equal -Actual $initialUsers.items[0].role -Expected "admin" -Message "Gabriely deveria continuar como admin"
+
     $dashboard = Invoke-Api -Uri "$baseUrl/api/dashboard" -Method "Get" -Headers $adminHeaders
     Assert-True -Condition (($dashboard.kpis | Measure-Object).Count -ge 4) -Message "Dashboard deveria expor cartões de KPI"
+    Assert-True -Condition ((@($dashboard.highlights.overdueTasks) | Measure-Object).Count -eq 0) -Message "Dashboard não deveria carregar tarefas fictícias"
+
+    $reportSummary = Invoke-Api -Uri "$baseUrl/api/reports/summary" -Method "Get" -Headers $adminHeaders
+    Assert-Equal -Actual $reportSummary.cards[0].value -Expected 0 -Message "Relatórios deveriam iniciar sem checklists fictícios"
+    Assert-Equal -Actual $reportSummary.cards[1].value -Expected 0 -Message "Relatórios deveriam iniciar sem treinamentos fictícios"
+    Assert-Equal -Actual $reportSummary.cards[2].value -Expected 0 -Message "Relatórios deveriam iniciar sem relatos fictícios"
+    Assert-Equal -Actual $reportSummary.cards[3].value -Expected 0 -Message "Relatórios deveriam iniciar sem chamados fictícios"
 
     $createdUser = Invoke-Api -Uri "$baseUrl/api/users" -Method "Post" -Headers $adminHeaders -Body @{
         name     = "Novo Operador"
