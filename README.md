@@ -1,0 +1,86 @@
+# LEAD Gestão
+
+Plataforma de gestão operacional com acesso restrito por login, dashboard executivo e módulos para tarefas, checklists, segurança, treinamentos, chamados, relatórios, notificações e histórico.
+
+O projeto foi construído com:
+
+- frontend em `HTML`, `CSS` e `JavaScript` puro;
+- API REST em `PowerShell` com `HttpListener`;
+- persistência local em `JSON`;
+- dados fictícios para demonstração;
+- testes automatizados em `PowerShell`.
+
+## Acesso inicial
+
+- Usuário administrador: `Gabriely`
+- Senha: `gaby0739`
+
+Esse perfil é `admin` e tem acesso total para edição.
+
+## Estrutura do projeto
+
+```text
+.
+|-- public/
+|   |-- index.html
+|   `-- assets/
+|       |-- css/styles.css
+|       |-- js/
+|       |   |-- api.js
+|       |   |-- app.js
+|       |   |-- state.js
+|       |   `-- modules/index.js
+|       `-- lead-logo.png
+|-- server/
+|   |-- server.ps1
+|   |-- data/
+|   `-- lib/
+|       |-- Auth.ps1
+|       |-- Data.ps1
+|       `-- Responses.ps1
+|-- tests/run-tests.ps1
+|-- start.ps1
+`-- README.md
+```
+
+## Como executar
+
+Abra um terminal PowerShell na pasta do projeto e rode:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+Depois acesse:
+
+```text
+http://localhost:8080
+```
+
+Na primeira execução, o arquivo `server/data/database.json` é criado ou atualizado automaticamente com a estrutura atual da plataforma.
+
+## Testes
+
+Para validar a aplicação:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tests\run-tests.ps1
+```
+
+Os testes cobrem:
+
+- healthcheck da API;
+- login por usuário e senha;
+- sessão autenticada;
+- carregamento do dashboard;
+- criação e leitura de tarefas;
+- atualização de notificações;
+- bloqueio de permissão para operador;
+- exportação CSV;
+- entrega da tela inicial com a marca LEAD.
+
+## Observações
+
+- Toda funcionalidade operacional fica disponível apenas após autenticação.
+- O frontend segue a identidade visual da marca LEAD fornecida na imagem de referência.
+- A base antiga é migrada automaticamente para o formato com `username` quando necessário.

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LEAD Gestão</title>
+  <meta
+    name="description"
+    content="LEAD Gestão: plataforma operacional com acesso restrito para acompanhar tarefas, segurança, treinamentos, chamados e relatórios."
+  >
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260826-1">
+</head>
+<body>
+  <div id="loginRoot" class="login-shell" aria-labelledby="login-title">
+    <section class="login-stage">
+      <div class="login-showcase">
+        <div class="login-showcase-inner">
+          <span class="eyebrow">Plataforma operacional</span>
+          <img class="login-brand-logo" src="assets/lead-logo.png" alt="LEAD">
+          <h1 id="login-title">Gestão clara, rápida e acessível para toda a operação.</h1>
+          <p class="login-copy">
+            Centralize tarefas, checklists, segurança, treinamentos, chamados e relatórios em uma única experiência.
+          </p>
+
+          <div class="login-highlights" aria-label="Resumo da plataforma">
+            <article class="highlight-card">
+              <strong>Visão unificada</strong>
+              <p>Dashboard com indicadores, pendências críticas e histórico recente.</p>
+            </article>
+            <article class="highlight-card">
+              <strong>Controle por perfil</strong>
+              <p>Permissões diferentes para administração, gestão, supervisão e operação.</p>
+            </article>
+            <article class="highlight-card">
+              <strong>Execução com rastreabilidade</strong>
+              <p>Registros, notificações e exportações para acompanhar cada decisão.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-panel">
+        <div class="login-card">
+          <div class="login-card-copy">
+            <span class="eyebrow">Acesso restrito</span>
+            <h2>Entrar no ambiente LEAD</h2>
+            <p>Somente usuários autenticados podem acessar as funcionalidades da plataforma.</p>
+          </div>
+
+          <form id="login-form" class="auth-form" novalidate>
+            <label class="field">
+              <span>Nome de usuário</span>
+              <input type="text" name="username" autocomplete="username" required placeholder="Digite seu usuário">
+            </label>
+
+            <label class="field">
+              <span>Senha</span>
+              <input type="password" name="password" autocomplete="current-password" required placeholder="Digite sua senha">
+            </label>
+
+            <button class="button primary" type="submit">Entrar</button>
+            <p id="login-error" class="form-message" role="alert" hidden></p>
+          </form>
+
+          <p class="module-copy">Ambiente de demonstracao: os dados ficam salvos neste navegador apos o login.</p>
+
+          <div class="login-hint">
+            <strong>Dados que orientam.</strong>
+            <span>Decisões que transformam. Resultados que movem.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="app" class="workspace-shell" hidden>
+    <section id="workspace" class="workspace" aria-label="Sistema LEAD Gestão">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <div class="sidebar-header">
+          <div class="brand-block">
+            <img class="sidebar-logo" src="assets/lead-logo.png" alt="LEAD">
+            <p>Movimento, performance e gestão em uma visão operacional contínua.</p>
+          </div>
+          <button id="sidebar-toggle" class="icon-button mobile-only" type="button" aria-label="Abrir menu">
+            Menu
+          </button>
+        </div>
+
+        <nav>
+          <ul id="nav-list" class="nav-list"></ul>
+        </nav>
+      </aside>
+
+      <div class="workspace-main">
+        <header class="topbar">
+          <div class="topbar-heading">
+            <button id="topbar-menu" class="icon-button mobile-only" type="button" aria-label="Abrir navegação">
+              Menu
+            </button>
+            <div>
+              <p class="eyebrow">Visão geral</p>
+              <h1 id="page-title">Dashboard</h1>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <label class="search-field" aria-label="Busca rápida">
+              <span class="sr-only">Busca rápida</span>
+              <input type="search" placeholder="Buscar demandas..." disabled>
+            </label>
+
+            <button id="notification-link" class="icon-button counter-button" type="button" aria-label="Abrir notificações">
+              <span>Notificações</span>
+              <strong id="notification-badge" class="counter">0</strong>
+            </button>
+
+            <div class="user-chip">
+              <div id="user-avatar" class="avatar">LG</div>
+              <div>
+                <strong id="user-name">Usuário</strong>
+                <p id="user-role">Perfil</p>
+              </div>
+            </div>
+
+            <button id="logout-button" class="button ghost" type="button">Sair</button>
+          </div>
+        </header>
+
+        <main class="content">
+          <div id="status-banner" class="status-banner" hidden></div>
+          <div id="page-content" class="page-content" aria-live="polite"></div>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="assets/js/app.js?v=20260826-1"></script>
+</body>
+</html>

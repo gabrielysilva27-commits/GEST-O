@@ -1,0 +1,97 @@
+﻿{
+    "sequence":  {
+                     "safetyReports":  0,
+                     "notifications":  0,
+                     "tickets":  0,
+                     "users":  2,
+                     "companies":  0,
+                     "trainings":  0,
+                     "sessions":  2,
+                     "units":  0,
+                     "history":  1,
+                     "tasks":  0,
+                     "checklists":  0
+                 },
+    "users":  [
+                  {
+                      "companyId":  0,
+                      "id":  1,
+                      "username":  "Gabriely",
+                      "unitIds":  [
+
+                                  ],
+                      "passwordHash":  "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42",
+                      "avatar":  "GA",
+                      "createdAt":  "2026-08-01T09:00:00Z",
+                      "title":  "Administradora da plataforma",
+                      "role":  "admin",
+                      "name":  "Gabriely",
+                      "status":  "active"
+                  },
+                  {
+                      "companyId":  0,
+                      "id":  2,
+                      "username":  "Iagoro",
+                      "unitIds":  {
+
+                                  },
+                      "passwordHash":  "a9c3ea8d1fd6875fdac2014308335445f68ac64a8487a005a2af290694b5c486",
+                      "avatar":  "I",
+                      "createdAt":  "2026-08-25T02:04:57.1643451Z",
+                      "title":  "Usuário da plataforma",
+                      "role":  "admin",
+                      "name":  "Iago",
+                      "status":  "active"
+                  }
+              ],
+    "tickets":  {
+
+                },
+    "history":  [
+                    {
+
+                    },
+                    {
+                        "actorId":  1,
+                        "companyId":  0,
+                        "id":  1,
+                        "createdAt":  "2026-08-25T02:04:57.1863129Z",
+                        "description":  "Usuário Iago criado com perfil Administrador.",
+                        "unitId":  0,
+                        "module":  "users",
+                        "entityId":  2,
+                        "action":  "created"
+                    }
+                ],
+    "notifications":  {
+
+                      },
+    "trainings":  {
+
+                  },
+    "safetyReports":  {
+
+                      },
+    "sessions":  [
+                     {
+
+                     }
+                 ],
+    "checklists":  {
+
+                   },
+    "meta":  {
+                 "seededAt":  "2026-08-25T08:00:00Z",
+                 "lastExport":  null,
+                 "appName":  "LEAD Gestão"
+             },
+    "companies":  {
+
+                  },
+    "units":  {
+
+              },
+    "tasks":  {
+
+              }
+}
