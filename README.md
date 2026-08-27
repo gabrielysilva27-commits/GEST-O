@@ -30,7 +30,8 @@ Esse perfil é `admin` e tem acesso total para edição.
 |       |   |-- app.js
 |       |   |-- state.js
 |       |   `-- modules/index.js
-|       `-- lead-logo.png
+|       |-- lead-logo-clean.png
+|       `-- lead-mark-clean.png
 |-- server/
 |   |-- server.ps1
 |   |-- data/
