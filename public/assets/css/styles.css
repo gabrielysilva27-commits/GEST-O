@@ -408,6 +408,14 @@ button {
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, transform 180ms ease;
 }
 
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  color: var(--text-soft);
+  background: rgba(240, 244, 251, 0.82);
+  cursor: not-allowed;
+}
+
 .field textarea {
   min-height: 120px;
   resize: vertical;
@@ -466,6 +474,17 @@ button {
 
 .button.ghost {
   background: rgba(255, 255, 255, 0.72);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.form-actions .button {
+  min-width: 150px;
 }
 
 .login-meta {

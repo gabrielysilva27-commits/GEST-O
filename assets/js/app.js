@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260828-1";
+import { api, ApiError } from "./api.js?v=20260828-2";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260828-1";
+import { views } from "./modules/index.js?v=20260828-2";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -29,6 +29,7 @@ const formRoutes = {
   companies: "/companies",
   units: "/units",
   actionPlans: "/action-plans",
+  meetingActions: "/meetings/actions",
   meetings: "/meetings",
   gapa: "/gapa",
   dto: "/dto",
@@ -103,7 +104,7 @@ function getFormData(form) {
   const data = new FormData(form);
   const payload = Object.fromEntries(data.entries());
 
-  ["companyId", "unitId", "ownerId"].forEach((key) => {
+  ["companyId", "unitId", "ownerId", "meetingId"].forEach((key) => {
     if (payload[key]) {
       payload[key] = Number(payload[key]);
     }
@@ -229,11 +230,78 @@ async function handleDynamicSubmit(event) {
     const payload = getFormData(form);
     await api.create(state.token, path, payload);
     showToast("Registro criado com sucesso.");
+
+    if (formName === "meetingActions") {
+      form.querySelectorAll("[data-action-field]").forEach((field) => {
+        if (field.tagName === "SELECT") {
+          field.selectedIndex = 0;
+          return;
+        }
+        field.value = "";
+      });
+      await refreshBootstrap();
+      return;
+    }
+
     await refreshBootstrap();
     await loadView(state.currentView);
     form.reset();
   } catch (error) {
     handleError(error, "Não foi possível salvar o registro.");
+  }
+}
+
+function escapeOption(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function syncMeetingSubjectOptions(meetingSelect) {
+  const form = meetingSelect.closest("form");
+  const subjectSelect = form?.querySelector("[data-meeting-subject]");
+  if (!subjectSelect) {
+    return;
+  }
+
+  let subjects = [];
+  try {
+    subjects = JSON.parse(meetingSelect.selectedOptions[0]?.dataset.subjects || "[]");
+  } catch {
+    subjects = [];
+  }
+
+  if (subjects.length === 0) {
+    subjectSelect.innerHTML = "<option value=\"\">Nenhum assunto cadastrado</option>";
+    subjectSelect.disabled = true;
+    return;
+  }
+
+  subjectSelect.disabled = false;
+  subjectSelect.innerHTML = subjects
+    .map((subject) => `<option value="${escapeOption(subject)}">${escapeOption(subject)}</option>`)
+    .join("");
+}
+
+async function closeMeetingFromForm(form) {
+  const payload = getFormData(form);
+
+  if (!payload.meetingId || !payload.executionDate) {
+    handleError(new Error("Informe reuniao e data de execucao."), "Informe reuniao e data de execucao.");
+    return;
+  }
+
+  try {
+    await api.patch(state.token, `/meetings/${payload.meetingId}/close`, {
+      executionDate: payload.executionDate
+    });
+    showToast("Reuniao encerrada com sucesso.");
+    await refreshBootstrap();
+    await loadView("meetings");
+  } catch (error) {
+    handleError(error, "Nao foi possivel encerrar a reuniao.");
   }
 }
 
@@ -261,6 +329,15 @@ async function handleDynamicClick(event) {
     return;
   }
 
+  const closeMeetingButton = event.target.closest("[data-close-meeting]");
+  if (closeMeetingButton) {
+    const form = closeMeetingButton.closest("form[data-form='meetingActions']");
+    if (form) {
+      await closeMeetingFromForm(form);
+    }
+    return;
+  }
+
   const readButton = event.target.closest("[data-read-notification]");
   if (readButton) {
     try {
@@ -270,6 +347,13 @@ async function handleDynamicClick(event) {
     } catch (error) {
       handleError(error, "Não foi possível atualizar a notificação.");
     }
+  }
+}
+
+function handleDynamicChange(event) {
+  const meetingSelect = event.target.closest("[data-meeting-select]");
+  if (meetingSelect) {
+    syncMeetingSubjectOptions(meetingSelect);
   }
 }
 
@@ -307,6 +391,7 @@ function wireEvents() {
   elements.logoutButton.addEventListener("click", handleLogout);
   elements.navList.addEventListener("click", handleDynamicClick);
   elements.pageContent.addEventListener("click", handleDynamicClick);
+  elements.pageContent.addEventListener("change", handleDynamicChange);
   elements.pageContent.addEventListener("submit", handleDynamicSubmit);
   elements.notificationLink.addEventListener("click", () => {
     window.location.hash = "notifications";

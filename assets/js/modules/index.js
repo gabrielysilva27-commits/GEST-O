@@ -38,6 +38,10 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#39;");
 }
 
+function arrayValue(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function badgeClass(value = "") {
   return String(value).toLowerCase().replaceAll(" ", "_");
 }
@@ -48,6 +52,19 @@ function optionList(items, selectedValue = "", labelKey = "name") {
       const label = item[labelKey] || item.name || item.label || item.username || item.id;
       const selected = String(item.id) === String(selectedValue) ? "selected" : "";
       return `<option value="${escapeHtml(item.id)}" ${selected}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+}
+
+function jsonAttribute(value) {
+  return escapeHtml(JSON.stringify(value || []));
+}
+
+function valueOptions(items, selectedValue = "") {
+  return items
+    .map((item) => {
+      const selected = item === selectedValue ? "selected" : "";
+      return `<option value="${escapeHtml(item)}" ${selected}>${escapeHtml(item)}</option>`;
     })
     .join("");
 }
@@ -426,13 +443,16 @@ const actionPlansConfig = {
   description: "Estruture frentes, responsaveis e prazos em um fluxo claro de execucao.",
   tableTitle: "Carteira de planos",
   tableDescription: "Planos de acao acessiveis ao seu perfil.",
-  headers: ["Plano", "Unidade", "Responsavel", "Prazo", "Prioridade", "Status"],
+  headers: ["Plano", "Origem", "Unidade", "Responsavel", "Prazo", "Prioridade", "Status"],
   formTitle: "Novo plano de acao",
   formDescription: "Abra uma frente com objetivo claro e dono definido.",
   dependencies: { requiresUnits: true, requiresUsers: true },
   managePermission: "actionPlans.manage",
   columns: [
     (item) => escapeHtml(item.title),
+    (item) => item.meetingSubject
+      ? `<span class="badge info">${escapeHtml(item.meetingSubject)}</span>`
+      : "<span class=\"badge\">Direta</span>",
     (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
     (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
     (item) => escapeHtml(formatDate(item.dueDate)),
@@ -479,61 +499,96 @@ const actionPlansConfig = {
   }
 };
 
-const meetingsConfig = {
-  title: "Reunioes",
-  description: "Organize pautas, responsaveis e desdobramentos em uma agenda mais objetiva.",
-  tableTitle: "Agenda de reunioes",
-  tableDescription: "Reunioes previstas e registradas dentro do seu escopo.",
-  headers: ["Reuniao", "Unidade", "Data", "Conducao", "Status"],
-  formTitle: "Nova reuniao",
-  formDescription: "Registre um encontro, sua pauta central e o responsavel pela conducao.",
-  dependencies: { requiresUnits: true, requiresUsers: true },
-  managePermission: "meetings.manage",
-  columns: [
-    (item) => escapeHtml(item.title),
-    (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
-    (item) => escapeHtml(formatDate(item.scheduledAt)),
-    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
-    (item) => statusBadge(item.status || "scheduled")
-  ],
-  form(context) {
+function meetingsView(data, context) {
+  const meetings = data.items || [];
+  const initialMeeting = meetings.find((item) => arrayValue(item.subjects).length > 0) || meetings[0] || null;
+  const initialSubjects = arrayValue(initialMeeting?.subjects);
+  const meetingOptions = meetings.map((item) => {
+    const selected = initialMeeting && String(item.id) === String(initialMeeting.id) ? "selected" : "";
     return `
-      <form class="stack" data-form="meetings">
+      <option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" ${selected}>
+        ${escapeHtml(item.title)}
+      </option>
+    `;
+  }).join("");
+  const ownerOptions = optionList(context.lookups?.users || [], context.user?.id);
+  const rows = meetings.map((item) => [
+    escapeHtml(item.title),
+    escapeHtml(arrayValue(item.subjects).length),
+    escapeHtml(item.lastExecutionDate ? formatDate(item.lastExecutionDate) : "Ainda nao executada"),
+    statusBadge(item.status || "scheduled")
+  ]);
+  const disabledSubject = initialSubjects.length === 0 ? "disabled" : "";
+
+  const formContent = userCan(context, "meetings.manage") && userCan(context, "actionPlans.manage")
+    ? `
+      <form class="stack meeting-action-form" data-form="meetingActions">
+        <div class="form-grid">
+          <label class="field">
+            <span>Reuniao</span>
+            <select name="meetingId" data-meeting-select required>
+              ${meetingOptions}
+            </select>
+          </label>
+          <label class="field">
+            <span>Data de execucao</span>
+            <input type="date" name="executionDate" required>
+          </label>
+          <label class="field">
+            <span>Assunto</span>
+            <select name="subject" data-meeting-subject ${disabledSubject} required>
+              ${initialSubjects.length > 0
+                ? valueOptions(initialSubjects)
+                : "<option value=\"\">Nenhum assunto cadastrado</option>"}
+            </select>
+          </label>
+          <label class="field">
+            <span>Responsavel pela acao</span>
+            <select name="ownerId" required>${ownerOptions}</select>
+          </label>
+        </div>
         <label class="field">
-          <span>Titulo da reuniao</span>
-          <input name="title" required>
+          <span>Titulo da acao</span>
+          <input name="title" data-action-field required placeholder="Descreva a acao a ser aberta">
         </label>
         <label class="field">
-          <span>Pauta principal</span>
-          <textarea name="objective" placeholder="O que precisa ser alinhado ou decidido"></textarea>
+          <span>Detalhamento da acao</span>
+          <textarea name="objective" data-action-field placeholder="Contexto, encaminhamento e criterio de conclusao"></textarea>
         </label>
         <div class="form-grid">
           <label class="field">
-            <span>Unidade</span>
-            <select name="unitId" required>${optionList(context.lookups.units)}</select>
+            <span>Prazo da acao</span>
+            <input type="date" name="dueDate" data-action-field>
           </label>
           <label class="field">
-            <span>Conducao</span>
-            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
-          </label>
-          <label class="field">
-            <span>Data</span>
-            <input type="date" name="scheduledAt" required>
-          </label>
-          <label class="field">
-            <span>Status</span>
-            <select name="status">
-              <option value="scheduled">Agendada</option>
-              <option value="held">Realizada</option>
-              <option value="follow_up">Follow-up</option>
+            <span>Prioridade</span>
+            <select name="priority" data-action-field>
+              <option value="medium">Media</option>
+              <option value="high">Alta</option>
+              <option value="critical">Critica</option>
+              <option value="low">Baixa</option>
             </select>
           </label>
         </div>
-        <button class="button primary" type="submit">Registrar reuniao</button>
+        <div class="form-actions">
+          <button class="button primary" type="submit">Salvar acao</button>
+          <button class="button secondary" type="button" data-close-meeting>Encerrar reuniao</button>
+        </div>
       </form>
-    `;
-  }
-};
+    `
+    : dependencyNotice(
+        "Acesso somente para consulta",
+        "Seu perfil pode visualizar reunioes, mas nao pode abrir acoes ou encerrar reunioes por aqui."
+      );
+
+  return `
+    ${moduleHeader("Reunioes", "Selecione uma reuniao, escolha um assunto correspondente e abra acoes sem repetir a data de execucao.")}
+    <div class="split-layout">
+      ${tableCard("Reunioes cadastradas", "Reunioes importadas da planilha TOR DPO Revendas_2023.xlsx.", ["Reuniao", "Assuntos", "Ultima execucao", "Status"], rows)}
+      ${formCard("Conduzir reuniao", "As acoes salvas aqui entram automaticamente em Planos de acao.", formContent)}
+    </div>
+  `;
+}
 
 const gapaConfig = {
   title: "GAPA",
@@ -787,7 +842,7 @@ export const views = {
   meetings: {
     title: "Reunioes",
     load: (api, token) => api.list(token, "/meetings"),
-    render: (data, context) => operationsView(meetingsConfig, data, context)
+    render: (data, context) => meetingsView(data, context)
   },
   gapa: {
     title: "GAPA",

@@ -109,6 +109,213 @@ const NAVIGATION = [
 
 const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42";
 
+const MEETING_TEMPLATES = [
+  {
+    id: 1,
+    title: "Agenda Gerentes CDD",
+    subjects: []
+  },
+  {
+    id: 2,
+    title: "MPR Armaz\u00e9m_Controle",
+    subjects: [
+      "TO",
+      "Absente\u00edsmo",
+      "Banco de Horas >= 40 hrs (Pr\u00f3prio)",
+      "RV Equipe de Armaz\u00e9m",
+      "% Atingimento de Metas \u00c1rea",
+      "Ader\u00eancia ao GSDP",
+      "CDP Falta de Produto",
+      "OTIF",
+      "TMA e EFA",
+      "WLP e FLP",
+      "OBZ - \u00c1rvores de Efeitos",
+      "% Efici\u00eancia de Carregamento",
+      "Ader\u00eancia ao WMS - Todos os M\u00f3dulos",
+      "IV Cr\u00edtico",
+      "Trocas e Reposi\u00e7\u00e3o",
+      "Toolkit",
+      "Dif. Estoque PA e AG",
+      "HL Perdido / HL Vendido",
+      "Quebras",
+      "Refugo",
+      "FEFO + Erro Programa\u00e7\u00e3o + FGLI",
+      "WMS - M\u00f3dulo Contagem/erro/360",
+      "OBZ Preju\u00edzo + Impairment",
+      "GOPs"
+    ]
+  },
+  {
+    id: 3,
+    title: "RPS Armaz\u00e9m_Controle",
+    subjects: [
+      "TO",
+      "Absenteismo",
+      "CDP Falta de Produto",
+      "OTIF",
+      "Reposi\u00e7\u00e3o e Erros de Montagem",
+      "Refugo",
+      "Efici\u00eancia de Carregamento",
+      "Pallet / Ajudante e Pontua\u00e7\u00e3o WMS - Tratar RV",
+      "Efici\u00eancia e Produtividade de Descarga",
+      "TMA e EFA",
+      "KPI Local"
+    ]
+  },
+  {
+    id: 4,
+    title: "Team Room Armaz\u00e9m",
+    subjects: [
+      "TRI",
+      "Relato Incidente",
+      "Absente\u00edsmo",
+      "TMA",
+      "Tempo m\u00e9dio de descarga de carreta",
+      "Ader\u00eancia ao ressuprimento",
+      "Caixas reembaladas",
+      "5S por area",
+      "Tempo interno",
+      "Pallets descarregados",
+      "Caixas inspecionadas no refugo",
+      "Recomposi\u00e7\u00e3o de garrafeiras at\u00e9 a 22hs",
+      "Eficiencia de carregamento",
+      "Turno C: Carregar Certo*",
+      "Eficiencia de montagem",
+      "Pallets carregados"
+    ]
+  },
+  {
+    id: 5,
+    title: "Pr\u00e9 Team Room Armaz\u00e9m",
+    subjects: []
+  },
+  {
+    id: 6,
+    title: "Team Room Mensal Armaz\u00e9m",
+    subjects: []
+  },
+  {
+    id: 7,
+    title: "Troca de Turno Frota",
+    subjects: []
+  },
+  {
+    id: 8,
+    title: "RPS Frota",
+    subjects: []
+  },
+  {
+    id: 9,
+    title: "MPR Distribui\u00e7\u00e3o",
+    subjects: []
+  },
+  {
+    id: 10,
+    title: "Team Room Distribui\u00e7\u00e3o",
+    subjects: [
+      "Relatos e Excessos",
+      "Jornada L\u00edquida (TML/ TR/ TI)",
+      "Tracking / Apontamentos Zerados",
+      "Devolu\u00e7\u00e3o PDV",
+      "Rating",
+      "IV Cr\u00edtico"
+    ]
+  },
+  {
+    id: 11,
+    title: "Planejamento Di\u00e1rio Rota",
+    subjects: []
+  },
+  {
+    id: 12,
+    title: "RPS Distribui\u00e7\u00e3o",
+    subjects: []
+  },
+  {
+    id: 13,
+    title: "Pr\u00e9 Team Room Distribui\u00e7\u00e3o",
+    subjects: []
+  },
+  {
+    id: 14,
+    title: "Team Room Mensal Distribui\u00e7\u00e3o",
+    subjects: []
+  },
+  {
+    id: 15,
+    title: "Reuni\u00e3o de Seguran\u00e7a",
+    subjects: []
+  },
+  {
+    id: 16,
+    title: "Matinal DPO",
+    subjects: [
+      "TRI",
+      "Relatos",
+      "Priorizado 1",
+      "Volume Vendas",
+      "Priorizado 2",
+      "Priorizado 3",
+      "Disponibilidade"
+    ]
+  },
+  {
+    id: 17,
+    title: "Reuni\u00e3o DPO",
+    subjects: []
+  },
+  {
+    id: 18,
+    title: "Pr\u00e9 e P\u00f3s Invent\u00e1rio_SPO + DPO",
+    subjects: []
+  },
+  {
+    id: 19,
+    title: "RLP_SPO + DPO",
+    subjects: []
+  },
+  {
+    id: 20,
+    title: "RNS",
+    subjects: ["GC", "GAF, GNS/SNS", "GV", "GOD"]
+  },
+  {
+    id: 21,
+    title: "KICK OFF_SPO + DPO",
+    subjects: ["GC", "GOD", "GG", "GAF", "GNS/SNS", "GG + GVs"]
+  },
+  {
+    id: 22,
+    title: "SUPER & PEX DAY_SPO + DPO",
+    subjects: ["GC"]
+  },
+  {
+    id: 23,
+    title: "RPP_SPO + DPO",
+    subjects: ["GC", "GOD", "GG/TST", "GG", "GAF", "GNS/SNS", "GVs"]
+  }
+];
+
+function buildMeetingTemplateRecord(template, id = template.id) {
+  return {
+    id,
+    templateId: template.id,
+    title: template.title,
+    objective: "Modelo importado de TOR DPO Revendas_2023.xlsx.",
+    status: "scheduled",
+    companyId: 0,
+    unitId: 0,
+    ownerId: 1,
+    scheduledAt: "",
+    lastExecutionDate: "",
+    subjects: [...template.subjects],
+    importedFrom: "TOR DPO Revendas_2023.xlsx",
+    createdBy: 1,
+    createdAt: "2026-08-28T00:00:00.000Z",
+    updatedAt: "2026-08-28T00:00:00.000Z"
+  };
+}
+
 const INITIAL_DATABASE = {
   meta: {
     appName: "LEAD Gestao",
@@ -121,7 +328,7 @@ const INITIAL_DATABASE = {
     companies: 0,
     units: 0,
     actionPlans: 0,
-    meetings: 0,
+    meetings: MEETING_TEMPLATES.length,
     gapaRecords: 0,
     dtoRecords: 0,
     anomalyReports: 0,
@@ -148,7 +355,7 @@ const INITIAL_DATABASE = {
   companies: [],
   units: [],
   actionPlans: [],
-  meetings: [],
+  meetings: MEETING_TEMPLATES.map((template) => buildMeetingTemplateRecord(template)),
   gapaRecords: [],
   dtoRecords: [],
   anomalyReports: [],
@@ -202,6 +409,31 @@ function todaysDateKey() {
   return date;
 }
 
+function ensureMeetingTemplates(database) {
+  database.meetings = arrayValue(database.meetings);
+  database.sequence.meetings = Math.max(
+    toInt(database.sequence?.meetings, 0),
+    ...database.meetings.map((item) => toInt(item.id))
+  );
+
+  MEETING_TEMPLATES.forEach((template) => {
+    const existing = database.meetings.find(
+      (item) => toInt(item.templateId) === template.id || item.title === template.title
+    );
+
+    if (existing) {
+      existing.templateId = existing.templateId || template.id;
+      existing.subjects = Array.from(new Set([...arrayValue(existing.subjects), ...template.subjects]));
+      existing.importedFrom = existing.importedFrom || "TOR DPO Revendas_2023.xlsx";
+      existing.updatedAt = existing.updatedAt || "2026-08-28T00:00:00.000Z";
+      return;
+    }
+
+    database.sequence.meetings += 1;
+    database.meetings.push(buildMeetingTemplateRecord(template, database.sequence.meetings));
+  });
+}
+
 async function sha256(value) {
   const bytes = new TextEncoder().encode(String(value));
   const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
@@ -213,7 +445,7 @@ function sanitizeDatabase(database) {
     return clone(INITIAL_DATABASE);
   }
 
-  return {
+  const sanitized = {
     meta: {
       appName: database.meta.appName || INITIAL_DATABASE.meta.appName,
       seededAt: database.meta.seededAt || INITIAL_DATABASE.meta.seededAt,
@@ -247,6 +479,9 @@ function sanitizeDatabase(database) {
     history: arrayValue(database.history),
     sessions: arrayValue(database.sessions)
   };
+
+  ensureMeetingTemplates(sanitized);
+  return sanitized;
 }
 
 function loadDatabase() {
@@ -369,6 +604,9 @@ function testCollectionScope(collectionName, record, user) {
       }
       return toInt(record.ownerId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
     case "meetings":
+      if (record.templateId) {
+        return true;
+      }
       if (user.role === "manager") {
         return toInt(record.companyId) === toInt(user.companyId);
       }
@@ -904,6 +1142,104 @@ function createMeeting(database, user, payload) {
   return { item: record };
 }
 
+function createMeetingAction(database, user, payload) {
+  ensurePermission(user, "meetings.manage");
+  ensurePermission(user, "actionPlans.manage");
+
+  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.title?.trim()) {
+    throw new ApiError("Reuniao, assunto e titulo da acao sao obrigatorios.", 400);
+  }
+
+  const meeting = database.meetings.find((item) => toInt(item.id) === toInt(payload.meetingId));
+  if (!meeting || !testCollectionScope("meetings", meeting, user)) {
+    throw new ApiError("Reuniao nao encontrada.", 404);
+  }
+
+  const subjects = arrayValue(meeting.subjects);
+  const subject = payload.subject.trim();
+  if (!subjects.includes(subject)) {
+    throw new ApiError("O assunto selecionado nao pertence a reuniao.", 400);
+  }
+
+  const fallbackUnitId = arrayValue(user.unitIds)[0] || meeting.unitId || 0;
+  const unit = fallbackUnitId ? getUnit(database, fallbackUnitId) : null;
+  const unitId = unit ? toInt(unit.id) : toInt(fallbackUnitId);
+  const companyId = unit
+    ? toInt(unit.companyId)
+    : toInt(user.companyId || meeting.companyId || 0);
+  const record = {
+    id: nextId(database, "actionPlans"),
+    title: payload.title.trim(),
+    objective: payload.objective?.trim() || `Acao aberta na reuniao ${meeting.title}, assunto ${subject}.`,
+    status: "open",
+    priority: payload.priority || "medium",
+    companyId,
+    unitId,
+    ownerId: toInt(payload.ownerId || user.id),
+    createdBy: toInt(user.id),
+    dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    meetingId: toInt(meeting.id),
+    meetingTitle: meeting.title,
+    meetingSubject: subject,
+    meetingExecutionDate: payload.executionDate || "",
+    source: "meetings",
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  if (!testCollectionScope("actionPlans", record, user)) {
+    throw new ApiError("A acao precisa estar dentro da sua area de atuacao.", 403);
+  }
+
+  database.actionPlans.push(record);
+  addHistoryEntry(database, {
+    module: "actionPlans",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: record.companyId,
+    unitId: record.unitId,
+    description: `Acao '${record.title}' criada na reuniao '${meeting.title}'.`
+  });
+  addNotification(database, {
+    userId: record.ownerId,
+    title: "Nova acao de reuniao",
+    message: `${meeting.title}: ${record.title}`,
+    level: "info",
+    link: "actionPlans"
+  });
+
+  return { item: record };
+}
+
+function closeMeeting(database, user, meetingId, payload = {}) {
+  ensurePermission(user, "meetings.manage");
+
+  const meeting = database.meetings.find((item) => toInt(item.id) === toInt(meetingId));
+  if (!meeting || !testCollectionScope("meetings", meeting, user)) {
+    throw new ApiError("Reuniao nao encontrada.", 404);
+  }
+
+  if (!payload.executionDate?.trim()) {
+    throw new ApiError("Informe a data de execucao antes de encerrar a reuniao.", 400);
+  }
+
+  meeting.status = "held";
+  meeting.lastExecutionDate = payload.executionDate;
+  meeting.updatedAt = nowIso();
+  addHistoryEntry(database, {
+    module: "meetings",
+    action: "closed",
+    entityId: meeting.id,
+    actorId: user.id,
+    companyId: meeting.companyId,
+    unitId: meeting.unitId,
+    description: `Reuniao '${meeting.title}' encerrada em ${payload.executionDate}.`
+  });
+
+  return { item: meeting };
+}
+
 function createGapaRecord(database, user, payload) {
   ensurePermission(user, "gapa.manage");
 
@@ -1400,9 +1736,14 @@ function listPath(database, user, path) {
     case "/meetings":
       ensurePermission(user, "meetings.read");
       return {
-        items: getScopedCollection(database, user, "meetings").sort((left, right) =>
-          String(left.scheduledAt).localeCompare(String(right.scheduledAt))
-        )
+        items: getScopedCollection(database, user, "meetings").sort((left, right) => {
+          const leftOrder = toInt(left.templateId, 9999);
+          const rightOrder = toInt(right.templateId, 9999);
+          if (leftOrder !== rightOrder) {
+            return leftOrder - rightOrder;
+          }
+          return String(left.title).localeCompare(String(right.title), "pt-BR");
+        })
       };
     case "/gapa":
       ensurePermission(user, "gapa.read");
@@ -1465,6 +1806,8 @@ function createPath(database, user, path, body) {
       return Promise.resolve(createActionPlan(database, user, body));
     case "/meetings":
       return Promise.resolve(createMeeting(database, user, body));
+    case "/meetings/actions":
+      return Promise.resolve(createMeetingAction(database, user, body));
     case "/gapa":
       return Promise.resolve(createGapaRecord(database, user, body));
     case "/dto":
@@ -1478,21 +1821,26 @@ function createPath(database, user, path, body) {
   }
 }
 
-function patchPath(database, user, path) {
-  const match = path.match(/^\/notifications\/(\d+)\/read$/);
-  if (!match) {
-    throw new ApiError("Endpoint nao encontrado.", 404);
+function patchPath(database, user, path, body = {}) {
+  const notificationMatch = path.match(/^\/notifications\/(\d+)\/read$/);
+  if (notificationMatch) {
+    ensurePermission(user, "notifications.view");
+    const notificationId = toInt(notificationMatch[1]);
+    const notification = database.notifications.find((item) => toInt(item.id) === notificationId);
+    if (!notification || toInt(notification.userId) !== toInt(user.id)) {
+      throw new ApiError("Notificacao nao encontrada.", 404);
+    }
+
+    notification.read = true;
+    return { item: notification };
   }
 
-  ensurePermission(user, "notifications.view");
-  const notificationId = toInt(match[1]);
-  const notification = database.notifications.find((item) => toInt(item.id) === notificationId);
-  if (!notification || toInt(notification.userId) !== toInt(user.id)) {
-    throw new ApiError("Notificacao nao encontrada.", 404);
+  const closeMeetingMatch = path.match(/^\/meetings\/(\d+)\/close$/);
+  if (closeMeetingMatch) {
+    return closeMeeting(database, user, closeMeetingMatch[1], body);
   }
 
-  notification.read = true;
-  return { item: notification };
+  throw new ApiError("Endpoint nao encontrado.", 404);
 }
 
 export const api = {
@@ -1562,9 +1910,9 @@ export const api = {
     return payload;
   },
 
-  async patch(token, path) {
+  async patch(token, path, body = {}) {
     const { database, user } = getAuthContext(token);
-    const payload = patchPath(database, user, path);
+    const payload = patchPath(database, user, path, body);
     saveDatabase(database);
     return payload;
   },
