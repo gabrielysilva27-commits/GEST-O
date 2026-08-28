@@ -96,6 +96,7 @@ const ROLE_PERMISSIONS = {
 const NAVIGATION = [
   { id: "dashboard", label: "Dashboard", permission: "dashboard.view" },
   { id: "audit", label: "Painel de auditoria", permission: "audit.view" },
+  { id: "administration", label: "Administração", permission: "administration.view" },
   { id: "actionPlans", label: "Planos de ação", permission: "actionPlans.read" },
   { id: "meetings", label: "Reuniões", permission: "meetings.read" },
   { id: "gapa", label: "GAPA", permission: "gapa.read" },
@@ -321,6 +322,7 @@ const INITIAL_DATABASE = {
     appName: "LEAD Gestao",
     seededAt: "2026-08-26T00:00:00.000Z",
     lastExport: null,
+    deletedMeetingTemplateIds: [],
     storageVersion: 2
   },
   sequence: {
@@ -411,12 +413,17 @@ function todaysDateKey() {
 
 function ensureMeetingTemplates(database) {
   database.meetings = arrayValue(database.meetings);
+  const deletedTemplateIds = arrayValue(database.meta?.deletedMeetingTemplateIds).map((item) => toInt(item));
   database.sequence.meetings = Math.max(
     toInt(database.sequence?.meetings, 0),
     ...database.meetings.map((item) => toInt(item.id))
   );
 
   MEETING_TEMPLATES.forEach((template) => {
+    if (deletedTemplateIds.includes(template.id)) {
+      return;
+    }
+
     const existing = database.meetings.find(
       (item) => toInt(item.templateId) === template.id || item.title === template.title
     );
@@ -450,6 +457,7 @@ function sanitizeDatabase(database) {
       appName: database.meta.appName || INITIAL_DATABASE.meta.appName,
       seededAt: database.meta.seededAt || INITIAL_DATABASE.meta.seededAt,
       lastExport: database.meta.lastExport || null,
+      deletedMeetingTemplateIds: arrayValue(database.meta.deletedMeetingTemplateIds),
       storageVersion: INITIAL_DATABASE.meta.storageVersion
     },
     sequence: {
@@ -543,6 +551,11 @@ function getUserByUsername(database, username) {
 function getUserProfile(database, userRecord) {
   const company = getCompany(database, userRecord.companyId);
   const units = database.units.filter((item) => arrayValue(userRecord.unitIds).includes(toInt(item.id)));
+  const permissions = getRolePermissions(userRecord.role);
+
+  if (userRecord.role === "admin" && userRecord.username === "Gabriely") {
+    permissions.push("administration.view", "administration.manage");
+  }
 
   return {
     id: toInt(userRecord.id),
@@ -557,7 +570,7 @@ function getUserProfile(database, userRecord) {
     status: userRecord.status || "active",
     avatar: userRecord.avatar || getInitials(userRecord.name),
     title: userRecord.title || "Usuario da plataforma",
-    permissions: getRolePermissions(userRecord.role)
+    permissions
   };
 }
 
@@ -662,6 +675,28 @@ function testCollectionScope(collectionName, record, user) {
 function ensurePermission(user, permission) {
   if (!arrayValue(user.permissions).includes(permission)) {
     throw new ApiError("Seu perfil nao tem permissao para esta acao.", 403);
+  }
+}
+
+function parseSubjects(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(/\r?\n|;/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function meetingSortOrder(record) {
+  return record.templateId ? toInt(record.templateId, 9999) : 9999;
+}
+
+function ensureGabrielyAdministration(user) {
+  ensurePermission(user, "administration.manage");
+  if (user.username !== "Gabriely" || user.role !== "admin") {
+    throw new ApiError("A administracao de reunioes e exclusiva da Gabriely.", 403);
   }
 }
 
@@ -1142,12 +1177,81 @@ function createMeeting(database, user, payload) {
   return { item: record };
 }
 
+function createAdministrationMeeting(database, user, payload) {
+  ensureGabrielyAdministration(user);
+
+  if (!payload?.title?.trim()) {
+    throw new ApiError("Informe o nome da reuniao.", 400);
+  }
+
+  const subjects = parseSubjects(payload.subjects);
+  const record = {
+    id: nextId(database, "meetings"),
+    templateId: null,
+    title: payload.title.trim(),
+    objective: "Reuniao cadastrada pela administracao.",
+    status: "scheduled",
+    companyId: 0,
+    unitId: 0,
+    ownerId: toInt(user.id),
+    scheduledAt: "",
+    lastExecutionDate: "",
+    subjects,
+    importedFrom: "",
+    createdBy: toInt(user.id),
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  database.meetings.push(record);
+  addHistoryEntry(database, {
+    module: "meetings",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: 0,
+    unitId: 0,
+    description: `Reuniao '${record.title}' cadastrada pela administracao.`
+  });
+
+  return { item: record };
+}
+
+function deleteAdministrationMeeting(database, user, meetingId) {
+  ensureGabrielyAdministration(user);
+
+  const meeting = database.meetings.find((item) => toInt(item.id) === toInt(meetingId));
+  if (!meeting) {
+    throw new ApiError("Reuniao nao encontrada.", 404);
+  }
+
+  database.meetings = database.meetings.filter((item) => toInt(item.id) !== toInt(meetingId));
+
+  if (meeting.templateId) {
+    database.meta.deletedMeetingTemplateIds = Array.from(
+      new Set([...arrayValue(database.meta.deletedMeetingTemplateIds), toInt(meeting.templateId)])
+    );
+  }
+
+  addHistoryEntry(database, {
+    module: "meetings",
+    action: "deleted",
+    entityId: meeting.id,
+    actorId: user.id,
+    companyId: meeting.companyId,
+    unitId: meeting.unitId,
+    description: `Reuniao '${meeting.title}' excluida pela administracao.`
+  });
+
+  return { success: true };
+}
+
 function createMeetingAction(database, user, payload) {
   ensurePermission(user, "meetings.manage");
   ensurePermission(user, "actionPlans.manage");
 
-  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.title?.trim()) {
-    throw new ApiError("Reuniao, assunto e titulo da acao sao obrigatorios.", 400);
+  if (!payload?.meetingId || !payload?.subject?.trim()) {
+    throw new ApiError("Reuniao e assunto sao obrigatorios.", 400);
   }
 
   const meeting = database.meetings.find((item) => toInt(item.id) === toInt(payload.meetingId));
@@ -1169,13 +1273,15 @@ function createMeetingAction(database, user, payload) {
     : toInt(user.companyId || meeting.companyId || 0);
   const record = {
     id: nextId(database, "actionPlans"),
-    title: payload.title.trim(),
-    objective: payload.objective?.trim() || `Acao aberta na reuniao ${meeting.title}, assunto ${subject}.`,
+    title: subject,
+    objective: `Acao aberta na reuniao ${meeting.title}. Solicitante: ${user.name}.`,
     status: "open",
     priority: payload.priority || "medium",
     companyId,
     unitId,
-    ownerId: toInt(payload.ownerId || user.id),
+    ownerId: toInt(payload.ownerId || 0),
+    requesterId: toInt(user.id),
+    requesterName: user.name,
     createdBy: toInt(user.id),
     dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
     meetingId: toInt(meeting.id),
@@ -1201,13 +1307,15 @@ function createMeetingAction(database, user, payload) {
     unitId: record.unitId,
     description: `Acao '${record.title}' criada na reuniao '${meeting.title}'.`
   });
-  addNotification(database, {
-    userId: record.ownerId,
-    title: "Nova acao de reuniao",
-    message: `${meeting.title}: ${record.title}`,
-    level: "info",
-    link: "actionPlans"
-  });
+  if (record.ownerId) {
+    addNotification(database, {
+      userId: record.ownerId,
+      title: "Nova acao de reuniao",
+      message: `${meeting.title}: ${record.title}`,
+      level: "info",
+      link: "actionPlans"
+    });
+  }
 
   return { item: record };
 }
@@ -1726,6 +1834,18 @@ function listPath(database, user, path) {
       return {
         items: getScopedCollection(database, user, "users").map((record) => getUserProfile(database, record))
       };
+    case "/administration/meetings":
+      ensurePermission(user, "administration.view");
+      return {
+        items: arrayValue(database.meetings).sort((left, right) => {
+          const leftOrder = meetingSortOrder(left);
+          const rightOrder = meetingSortOrder(right);
+          if (leftOrder !== rightOrder) {
+            return leftOrder - rightOrder;
+          }
+          return String(left.title).localeCompare(String(right.title), "pt-BR");
+        })
+      };
     case "/action-plans":
       ensurePermission(user, "actionPlans.read");
       return {
@@ -1737,8 +1857,8 @@ function listPath(database, user, path) {
       ensurePermission(user, "meetings.read");
       return {
         items: getScopedCollection(database, user, "meetings").sort((left, right) => {
-          const leftOrder = toInt(left.templateId, 9999);
-          const rightOrder = toInt(right.templateId, 9999);
+          const leftOrder = meetingSortOrder(left);
+          const rightOrder = meetingSortOrder(right);
           if (leftOrder !== rightOrder) {
             return leftOrder - rightOrder;
           }
@@ -1806,6 +1926,8 @@ function createPath(database, user, path, body) {
       return Promise.resolve(createActionPlan(database, user, body));
     case "/meetings":
       return Promise.resolve(createMeeting(database, user, body));
+    case "/administration/meetings":
+      return Promise.resolve(createAdministrationMeeting(database, user, body));
     case "/meetings/actions":
       return Promise.resolve(createMeetingAction(database, user, body));
     case "/gapa":
@@ -1838,6 +1960,11 @@ function patchPath(database, user, path, body = {}) {
   const closeMeetingMatch = path.match(/^\/meetings\/(\d+)\/close$/);
   if (closeMeetingMatch) {
     return closeMeeting(database, user, closeMeetingMatch[1], body);
+  }
+
+  const deleteMeetingMatch = path.match(/^\/administration\/meetings\/(\d+)\/delete$/);
+  if (deleteMeetingMatch) {
+    return deleteAdministrationMeeting(database, user, deleteMeetingMatch[1]);
   }
 
   throw new ApiError("Endpoint nao encontrado.", 404);

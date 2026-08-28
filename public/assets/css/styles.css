@@ -468,6 +468,13 @@ button {
   transform: translateY(-1px);
 }
 
+.button:disabled,
+.icon-button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .button.primary:hover {
   box-shadow: 0 20px 40px rgba(38, 102, 234, 0.3);
 }
@@ -485,6 +492,42 @@ button {
 
 .form-actions .button {
   min-width: 150px;
+}
+
+.meeting-workspace .panel-card {
+  max-width: 980px;
+}
+
+.meeting-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px;
+  border: 1px solid rgba(16, 59, 145, 0.08);
+  border-radius: 18px;
+  background: rgba(16, 59, 145, 0.04);
+}
+
+.meeting-timer {
+  display: grid;
+  gap: 4px;
+  min-width: 150px;
+  text-align: right;
+}
+
+.meeting-timer span {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.meeting-timer strong {
+  color: var(--primary-strong);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  letter-spacing: 0;
 }
 
 .login-meta {
@@ -770,6 +813,11 @@ button {
 
 .split-layout {
   grid-template-columns: 1.08fr 0.92fr;
+}
+
+.single-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .metric-card,

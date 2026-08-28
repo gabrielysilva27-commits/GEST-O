@@ -1,6 +1,7 @@
 const MODULE_LABELS = {
   dashboard: "Dashboard",
   audit: "Painel de auditoria",
+  administration: "Administracao",
   actionPlans: "Planos de acao",
   meetings: "Reunioes",
   gapa: "GAPA",
@@ -511,18 +512,19 @@ function meetingsView(data, context) {
       </option>
     `;
   }).join("");
-  const ownerOptions = optionList(context.lookups?.users || [], context.user?.id);
-  const rows = meetings.map((item) => [
-    escapeHtml(item.title),
-    escapeHtml(arrayValue(item.subjects).length),
-    escapeHtml(item.lastExecutionDate ? formatDate(item.lastExecutionDate) : "Ainda nao executada"),
-    statusBadge(item.status || "scheduled")
-  ]);
+  const ownerOptions = `<option value="">Selecionar</option>${optionList(context.lookups?.users || [])}`;
   const disabledSubject = initialSubjects.length === 0 ? "disabled" : "";
 
   const formContent = userCan(context, "meetings.manage") && userCan(context, "actionPlans.manage")
     ? `
       <form class="stack meeting-action-form" data-form="meetingActions">
+        <div class="meeting-toolbar">
+          <button class="button secondary" type="button" data-start-meeting>Iniciar reuniao</button>
+          <div class="meeting-timer" aria-live="polite">
+            <span>Duração</span>
+            <strong data-meeting-timer>00:00:00</strong>
+          </div>
+        </div>
         <div class="form-grid">
           <label class="field">
             <span>Reuniao</span>
@@ -535,6 +537,10 @@ function meetingsView(data, context) {
             <input type="date" name="executionDate" required>
           </label>
           <label class="field">
+            <span>Solicitante</span>
+            <input value="${escapeHtml(context.user?.name || "")}" disabled>
+          </label>
+          <label class="field">
             <span>Assunto</span>
             <select name="subject" data-meeting-subject ${disabledSubject} required>
               ${initialSubjects.length > 0
@@ -544,17 +550,9 @@ function meetingsView(data, context) {
           </label>
           <label class="field">
             <span>Responsavel pela acao</span>
-            <select name="ownerId" required>${ownerOptions}</select>
+            <select name="ownerId" data-action-field>${ownerOptions}</select>
           </label>
         </div>
-        <label class="field">
-          <span>Titulo da acao</span>
-          <input name="title" data-action-field required placeholder="Descreva a acao a ser aberta">
-        </label>
-        <label class="field">
-          <span>Detalhamento da acao</span>
-          <textarea name="objective" data-action-field placeholder="Contexto, encaminhamento e criterio de conclusao"></textarea>
-        </label>
         <div class="form-grid">
           <label class="field">
             <span>Prazo da acao</span>
@@ -571,7 +569,7 @@ function meetingsView(data, context) {
           </label>
         </div>
         <div class="form-actions">
-          <button class="button primary" type="submit">Salvar acao</button>
+          <button class="button primary" type="submit" data-save-meeting-action ${initialSubjects.length === 0 ? "disabled" : ""}>Salvar acao</button>
           <button class="button secondary" type="button" data-close-meeting>Encerrar reuniao</button>
         </div>
       </form>
@@ -582,10 +580,43 @@ function meetingsView(data, context) {
       );
 
   return `
-    ${moduleHeader("Reunioes", "Selecione uma reuniao, escolha um assunto correspondente e abra acoes sem repetir a data de execucao.")}
-    <div class="split-layout">
-      ${tableCard("Reunioes cadastradas", "Reunioes importadas da planilha TOR DPO Revendas_2023.xlsx.", ["Reuniao", "Assuntos", "Ultima execucao", "Status"], rows)}
-      ${formCard("Conduzir reuniao", "As acoes salvas aqui entram automaticamente em Planos de acao.", formContent)}
+    ${moduleHeader("Reunioes", "Conduza a reuniao, selecione o assunto e abra acoes diretamente em Planos de acao.")}
+    <div class="single-layout meeting-workspace">
+      ${formCard("Conduzir reuniao", "A data de execucao permanece na tela enquanto voce abre quantas acoes forem necessarias.", formContent)}
+    </div>
+  `;
+}
+
+function administrationView(data, context) {
+  const meetings = data.items || [];
+  const rows = meetings.map((item) => [
+    escapeHtml(item.title),
+    escapeHtml(arrayValue(item.subjects).length),
+    escapeHtml(item.lastExecutionDate ? formatDate(item.lastExecutionDate) : "Ainda nao executada"),
+    item.importedFrom ? "<span class=\"badge info\">Planilha</span>" : "<span class=\"badge success\">Manual</span>",
+    `<button class="button secondary" type="button" data-delete-meeting="${escapeHtml(item.id)}">Excluir</button>`
+  ]);
+  const formContent = userCan(context, "administration.manage")
+    ? `
+      <form class="stack" data-form="adminMeetings">
+        <label class="field">
+          <span>Nome da reuniao</span>
+          <input name="title" required placeholder="Ex.: Reuniao semanal de resultados">
+        </label>
+        <label class="field">
+          <span>Assuntos</span>
+          <textarea name="subjects" placeholder="Digite um assunto por linha"></textarea>
+        </label>
+        <button class="button primary" type="submit">Cadastrar reuniao</button>
+      </form>
+    `
+    : dependencyNotice("Acesso restrito", "Este modulo e exclusivo da administracao.");
+
+  return `
+    ${moduleHeader("Administracao", "Gerencie as reunioes cadastradas e os assuntos disponiveis no modulo Reunioes.")}
+    <div class="split-layout administration-layout">
+      ${tableCard("Reunioes cadastradas", "Cadastros disponiveis para conducao de reunioes.", ["Reuniao", "Assuntos", "Ultima execucao", "Origem", "Acao"], rows)}
+      ${formCard("Nova reuniao", "Cadastre novas reunioes e seus assuntos correspondentes.", formContent)}
     </div>
   `;
 }
@@ -833,6 +864,11 @@ export const views = {
       return { dashboard, notifications, history };
     },
     render: (data) => auditPanelView(data)
+  },
+  administration: {
+    title: "Administracao",
+    load: (api, token) => api.list(token, "/administration/meetings"),
+    render: (data, context) => administrationView(data, context)
   },
   actionPlans: {
     title: "Planos de acao",

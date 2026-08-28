@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260828-2";
+import { api, ApiError } from "./api.js?v=20260828-3";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260828-2";
+import { views } from "./modules/index.js?v=20260828-3";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -28,6 +28,7 @@ const formRoutes = {
   users: "/users",
   companies: "/companies",
   units: "/units",
+  adminMeetings: "/administration/meetings",
   actionPlans: "/action-plans",
   meetingActions: "/meetings/actions",
   meetings: "/meetings",
@@ -36,6 +37,9 @@ const formRoutes = {
   anomalyReports: "/anomaly-reports",
   gerot: "/gerot"
 };
+
+let meetingTimerInterval = null;
+let meetingTimerStartedAt = null;
 
 function showToast(message, tone = "success") {
   const node = document.createElement("div");
@@ -113,6 +117,41 @@ function getFormData(form) {
   return payload;
 }
 
+function formatDuration(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function stopMeetingTimer() {
+  if (meetingTimerInterval) {
+    clearInterval(meetingTimerInterval);
+  }
+  meetingTimerInterval = null;
+  meetingTimerStartedAt = null;
+}
+
+function startMeetingTimer(form) {
+  const output = form.querySelector("[data-meeting-timer]");
+  const button = form.querySelector("[data-start-meeting]");
+  if (!output) {
+    return;
+  }
+
+  stopMeetingTimer();
+  meetingTimerStartedAt = Date.now();
+  output.textContent = "00:00:00";
+  if (button) {
+    button.textContent = "Reuniao em andamento";
+    button.disabled = true;
+  }
+  meetingTimerInterval = setInterval(() => {
+    output.textContent = formatDuration(Date.now() - meetingTimerStartedAt);
+  }, 1000);
+}
+
 async function refreshBootstrap() {
   const bootstrap = await api.me(state.token);
   setSession({ token: state.token, user: bootstrap.user, lookups: bootstrap.lookups });
@@ -124,6 +163,10 @@ async function loadView(viewId) {
   const view = views[viewId];
   if (!view) {
     return;
+  }
+
+  if (viewId !== "meetings") {
+    stopMeetingTimer();
   }
 
   state.currentView = viewId;
@@ -262,6 +305,7 @@ function escapeOption(value = "") {
 function syncMeetingSubjectOptions(meetingSelect) {
   const form = meetingSelect.closest("form");
   const subjectSelect = form?.querySelector("[data-meeting-subject]");
+  const submitButton = form?.querySelector("[data-save-meeting-action]");
   if (!subjectSelect) {
     return;
   }
@@ -276,10 +320,16 @@ function syncMeetingSubjectOptions(meetingSelect) {
   if (subjects.length === 0) {
     subjectSelect.innerHTML = "<option value=\"\">Nenhum assunto cadastrado</option>";
     subjectSelect.disabled = true;
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
     return;
   }
 
   subjectSelect.disabled = false;
+  if (submitButton) {
+    submitButton.disabled = false;
+  }
   subjectSelect.innerHTML = subjects
     .map((subject) => `<option value="${escapeOption(subject)}">${escapeOption(subject)}</option>`)
     .join("");
@@ -297,6 +347,7 @@ async function closeMeetingFromForm(form) {
     await api.patch(state.token, `/meetings/${payload.meetingId}/close`, {
       executionDate: payload.executionDate
     });
+    stopMeetingTimer();
     showToast("Reuniao encerrada com sucesso.");
     await refreshBootstrap();
     await loadView("meetings");
@@ -329,11 +380,37 @@ async function handleDynamicClick(event) {
     return;
   }
 
+  const startMeetingButton = event.target.closest("[data-start-meeting]");
+  if (startMeetingButton) {
+    const form = startMeetingButton.closest("form[data-form='meetingActions']");
+    if (form) {
+      startMeetingTimer(form);
+    }
+    return;
+  }
+
   const closeMeetingButton = event.target.closest("[data-close-meeting]");
   if (closeMeetingButton) {
     const form = closeMeetingButton.closest("form[data-form='meetingActions']");
     if (form) {
       await closeMeetingFromForm(form);
+    }
+    return;
+  }
+
+  const deleteMeetingButton = event.target.closest("[data-delete-meeting]");
+  if (deleteMeetingButton) {
+    if (!window.confirm("Excluir esta reuniao cadastrada?")) {
+      return;
+    }
+
+    try {
+      await api.patch(state.token, `/administration/meetings/${deleteMeetingButton.dataset.deleteMeeting}/delete`);
+      showToast("Reuniao excluida com sucesso.");
+      await refreshBootstrap();
+      await loadView("administration");
+    } catch (error) {
+      handleError(error, "Nao foi possivel excluir a reuniao.");
     }
     return;
   }
