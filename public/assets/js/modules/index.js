@@ -1,33 +1,33 @@
 const MODULE_LABELS = {
   dashboard: "Dashboard",
   audit: "Painel de auditoria",
-  administration: "Administracao",
-  actionPlans: "Planos de acao",
-  meetings: "Reunioes",
+  administration: "Administração",
+  actionPlans: "Planos de ação",
+  meetings: "Reuniões",
   gapa: "GAPA",
-  dto: "DTO - Diagnostico de tarefa operacional",
+  dto: "DTO - Diagnóstico de tarefa operacional",
   anomalyReports: "Relato de anomalia",
   gerot: "GEROT",
-  users: "Usuarios e permissoes",
-  notifications: "Notificacoes",
-  history: "Historico"
+  users: "Usuários e permissões",
+  notifications: "Notificações",
+  history: "Histórico"
 };
 
 const VALUE_LABELS = {
   open: "Aberto",
   in_progress: "Em andamento",
-  done: "Concluido",
+  done: "Concluído",
   scheduled: "Agendada",
   held: "Realizada",
   follow_up: "Follow-up",
-  analysis: "Em diagnostico",
-  completed: "Concluido",
+  analysis: "Em diagnóstico",
+  completed: "Concluído",
   resolved: "Resolvido",
   closed: "Encerrado",
   low: "Baixa",
-  medium: "Media",
+  medium: "Média",
   high: "Alta",
-  critical: "Critica"
+  critical: "Crítica"
 };
 
 function escapeHtml(value = "") {
@@ -95,17 +95,8 @@ function moduleLabel(value = "") {
   return MODULE_LABELS[value] || value;
 }
 
-function moduleHeader(title, description, actions = "") {
-  return `
-    <header class="module-header">
-      <div>
-        <span class="eyebrow">Modulo</span>
-        <h2>${escapeHtml(title)}</h2>
-        <p class="module-copy">${escapeHtml(description)}</p>
-      </div>
-      ${actions}
-    </header>
-  `;
+function moduleHeader() {
+  return "";
 }
 
 function metricCards(cards) {
@@ -156,7 +147,7 @@ function tableCard(title, description, headers, rows) {
         <div class="empty-state">
           <div>
             <h2>Sem registros</h2>
-            <p>Novos itens aparecerao aqui conforme voce comecar a usar este modulo.</p>
+            <p>Novos itens aparecerão aqui conforme você começar a usar este módulo.</p>
           </div>
         </div>
       ` : `
@@ -194,7 +185,7 @@ function timelineCard(title, description, items) {
         <div class="empty-state">
           <div>
             <h2>Nenhum evento ainda</h2>
-            <p>O historico comecara a aparecer conforme novos registros forem criados.</p>
+            <p>O histórico começará a aparecer conforme novos registros forem criados.</p>
           </div>
         </div>
       ` : `
@@ -215,12 +206,12 @@ function timelineCard(title, description, items) {
 function getLookupName(lookups, type, id) {
   const list = lookups?.[type] || [];
   const item = list.find((entry) => String(entry.id) === String(id));
-  return item ? item.name : "Nao definido";
+  return item ? item.name : "Não definido";
 }
 
 function getUserLabel(lookups, id) {
   const user = (lookups?.users || []).find((entry) => String(entry.id) === String(id));
-  return user ? `${user.name} · @${user.username}` : "Nao definido";
+  return user ? `${user.name} · @${user.username}` : "Não definido";
 }
 
 function dependencyNotice(title, message) {
@@ -241,14 +232,14 @@ function getDependencyState(context, { requiresUnits = false, requiresUsers = fa
   if (requiresUnits && units.length === 0) {
     return dependencyNotice(
       "Cadastros complementares pendentes",
-      "Este modulo precisa de unidades cadastradas na base antes de receber novos registros."
+      "Este módulo precisa de unidades cadastradas na base antes de receber novos registros."
     );
   }
 
   if (requiresUsers && users.length === 0) {
     return dependencyNotice(
       "Cadastros complementares pendentes",
-      "Este modulo precisa de usuarios cadastrados antes de receber novos registros."
+      "Este módulo precisa de usuários cadastrados antes de receber novos registros."
     );
   }
 
@@ -273,23 +264,23 @@ function dashboardView(data) {
 
   const anomalyRows = (data.highlights?.priorityAnomalies || []).map((item) => [
     escapeHtml(item.title),
-    escapeHtml(item.unitName || "Nao definida"),
+    escapeHtml(item.unitName || "Não definida"),
     statusBadge(item.severity || "high"),
     statusBadge(item.status || "open")
   ]);
 
   return `
-    ${moduleHeader("Dashboard operacional", "Acompanhe rapidamente o ritmo dos principais modulos da operacao.")}
+    ${moduleHeader("Dashboard operacional", "Acompanhe rapidamente o ritmo dos principais módulos da operação.")}
     ${metricCards(data.kpis || [])}
     <div class="charts-grid">
-      ${progressList("Planos de acao", "Leitura do andamento por status.", data.charts?.actionPlansByStatus || [], (item) => `${item.value} registros`)}
-      ${progressList("Reunioes", "Agenda e desdobramentos do periodo.", data.charts?.meetingsByStatus || [], (item) => `${item.value} registros`)}
-      ${progressList("Carga por modulo", "Volume atual nos modulos mais operacionais.", data.charts?.moduleLoad || [], (item) => `${item.value} registros`)}
-      ${timelineCard("Historico recente", "Ultimos movimentos relevantes registrados na plataforma.", data.feed || [])}
+      ${progressList("Planos de ação", "Leitura do andamento por status.", data.charts?.actionPlansByStatus || [], (item) => `${item.value} registros`)}
+      ${progressList("Reuniões", "Agenda e desdobramentos do período.", data.charts?.meetingsByStatus || [], (item) => `${item.value} registros`)}
+      ${progressList("Carga por módulo", "Volume atual nos módulos mais operacionais.", data.charts?.moduleLoad || [], (item) => `${item.value} registros`)}
+      ${timelineCard("Histórico recente", "Últimos movimentos relevantes registrados na plataforma.", data.feed || [])}
     </div>
     <div class="split-layout">
-      ${tableCard("Prazos em foco", "Itens vencidos ou que pedem atencao imediata.", ["Registro", "Modulo", "Prazo", "Status"], overdueRows)}
-      ${tableCard("Anomalias prioritarias", "Relatos com severidade alta ou critica ainda em aberto.", ["Relato", "Unidade", "Severidade", "Status"], anomalyRows)}
+      ${tableCard("Prazos em foco", "Itens vencidos ou que pedem atenção imediata.", ["Registro", "Módulo", "Prazo", "Status"], overdueRows)}
+      ${tableCard("Anomalias prioritárias", "Relatos com severidade alta ou crítica ainda em aberto.", ["Relato", "Unidade", "Severidade", "Status"], anomalyRows)}
     </div>
   `;
 }
@@ -301,14 +292,14 @@ function auditPanelView(data) {
 
   const cards = [
     {
-      label: "Nao lidas",
+      label: "Não lidas",
       value: notifications.unreadCount || 0,
-      helper: "Notificacoes ainda pendentes"
+      helper: "Notificações ainda pendentes"
     },
     {
       label: "Prazos vencidos",
       value: (dashboard.highlights?.overdueItems || []).length,
-      helper: "Itens que pedem acao imediata"
+      helper: "Itens que pedem ação imediata"
     },
     {
       label: "Anomalias criticas",
@@ -316,9 +307,9 @@ function auditPanelView(data) {
       helper: "Ocorrencias de maior sensibilidade"
     },
     {
-      label: "Movimentacoes",
+      label: "Movimentações",
       value: (history.items || []).length,
-      helper: "Ultimos registros monitorados"
+      helper: "Últimos registros monitorados"
     }
   ];
 
@@ -336,11 +327,11 @@ function auditPanelView(data) {
   ]);
 
   return `
-    ${moduleHeader("Painel de auditoria", "Consolide alertas, prazos e movimentacoes recentes em uma leitura unica.")}
+    ${moduleHeader("Painel de auditoria", "Consolide alertas, prazos e movimentações recentes em uma leitura única.")}
     ${metricCards(cards)}
     <div class="split-layout">
-      ${tableCard("Alertas recentes", "Visao rapida do que ainda merece acompanhamento.", ["Titulo", "Mensagem", "Quando", "Situacao"], alertRows)}
-      ${tableCard("Movimentacoes monitoradas", "Ultimos registros relevantes para acompanhamento.", ["Modulo", "Descricao", "Quando"], movementRows)}
+      ${tableCard("Alertas recentes", "Visão rápida do que ainda merece acompanhamento.", ["Título", "Mensagem", "Quando", "Situação"], alertRows)}
+      ${tableCard("Movimentações monitoradas", "Últimos registros relevantes para acompanhamento.", ["Módulo", "Descrição", "Quando"], movementRows)}
     </div>
     ${timelineCard("Rastro operacional", "Cronologia dos eventos mais recentes da plataforma.", history.items || [])}
   `;
@@ -367,7 +358,7 @@ function usersView(data, context) {
             <input name="name" required>
           </label>
           <label class="field">
-            <span>Nome de usuario</span>
+            <span>Nome de usuário</span>
             <input name="username" required>
           </label>
           <label class="field">
@@ -379,19 +370,19 @@ function usersView(data, context) {
             <input name="password" placeholder="Defina uma senha">
           </label>
         </div>
-        <button class="button primary" type="submit">Cadastrar usuario</button>
+        <button class="button primary" type="submit">Cadastrar usuário</button>
       </form>
     `
     : dependencyNotice(
         "Acesso somente para consulta",
-        "Seu perfil pode visualizar os usuarios, mas nao pode cadastrar novos acessos por aqui."
+        "Seu perfil pode visualizar os usuários, mas não pode cadastrar novos acessos por aqui."
       );
 
   return `
-    ${moduleHeader("Usuarios e permissoes", "Cadastre acessos, senhas iniciais e perfis diretamente pela plataforma.")}
+    ${moduleHeader("Usuários e permissões", "Cadastre acessos, senhas iniciais e perfis diretamente pela plataforma.")}
     <div class="split-layout">
-      ${tableCard("Usuarios ativos", "Lista atual de acessos disponiveis.", ["Nome", "Usuario", "Perfil", "Status"], rows)}
-      ${formCard("Novo usuario", "Crie um novo acesso com nome de usuario e senha inicial.", formContent)}
+      ${tableCard("Usuários ativos", "Lista atual de acessos disponíveis.", ["Nome", "Usuário", "Perfil", "Status"], rows)}
+      ${formCard("Novo usuário", "Crie um novo acesso com nome de usuário e senha inicial.", formContent)}
     </div>
   `;
 }
@@ -404,7 +395,7 @@ function operationsView(config, data, context) {
       ? config.form(context)
       : dependencyNotice(
           "Acesso somente para consulta",
-          "Seu perfil pode visualizar este modulo, mas nao pode criar registros por aqui."
+          "Seu perfil pode visualizar este módulo, mas não pode criar registros por aqui."
         ));
 
   return `
@@ -427,25 +418,25 @@ function notificationsView(data) {
   ]);
 
   return `
-    ${moduleHeader("Notificacoes", "Acompanhe alertas e mensagens direcionadas ao seu perfil.")}
-    ${tableCard("Caixa de entrada", `${data.unreadCount || 0} notificacoes ainda nao lidas.`, ["Titulo", "Mensagem", "Quando", "Acao"], rows)}
+    ${moduleHeader("Notificações", "Acompanhe alertas e mensagens direcionadas ao seu perfil.")}
+    ${tableCard("Caixa de entrada", `${data.unreadCount || 0} notificações ainda não lidas.`, ["Título", "Mensagem", "Quando", "Ação"], rows)}
   `;
 }
 
 function historyView(data) {
   return `
-    ${moduleHeader("Historico", "Auditoria simples do que aconteceu na plataforma e quando aconteceu.")}
+    ${moduleHeader("Histórico", "Auditoria simples do que aconteceu na plataforma e quando aconteceu.")}
     ${timelineCard("Linha do tempo", "Eventos mais recentes registrados no sistema.", data.items || [])}
   `;
 }
 
 const actionPlansConfig = {
-  title: "Planos de acao",
-  description: "Estruture frentes, responsaveis e prazos em um fluxo claro de execucao.",
+  title: "Planos de ação",
+  description: "Estruture frentes, responsáveis e prazos em um fluxo claro de execução.",
   tableTitle: "Carteira de planos",
-  tableDescription: "Planos de acao acessiveis ao seu perfil.",
-  headers: ["Plano", "Origem", "Unidade", "Responsavel", "Prazo", "Prioridade", "Status"],
-  formTitle: "Novo plano de acao",
+  tableDescription: "Planos de ação acessíveis ao seu perfil.",
+  headers: ["Plano", "Origem", "Unidade", "Responsável", "Prazo", "Prioridade", "Status"],
+  formTitle: "Novo plano de ação",
   formDescription: "Abra uma frente com objetivo claro e dono definido.",
   dependencies: { requiresUnits: true, requiresUsers: true },
   managePermission: "actionPlans.manage",
@@ -464,7 +455,7 @@ const actionPlansConfig = {
     return `
       <form class="stack" data-form="actionPlans">
         <label class="field">
-          <span>Titulo do plano</span>
+          <span>Título do plano</span>
           <input name="title" required>
         </label>
         <label class="field">
@@ -477,16 +468,16 @@ const actionPlansConfig = {
             <select name="unitId" required>${optionList(context.lookups.units)}</select>
           </label>
           <label class="field">
-            <span>Responsavel</span>
+          <span>Responsável</span>
             <select name="ownerId" required>${optionList(context.lookups.users)}</select>
           </label>
           <label class="field">
             <span>Prioridade</span>
             <select name="priority">
               <option value="low">Baixa</option>
-              <option value="medium">Media</option>
+              <option value="medium">Média</option>
               <option value="high">Alta</option>
-              <option value="critical">Critica</option>
+              <option value="critical">Crítica</option>
             </select>
           </label>
           <label class="field">
@@ -519,7 +510,7 @@ function meetingsView(data, context) {
     ? `
       <form class="stack meeting-action-form" data-form="meetingActions">
         <div class="meeting-toolbar">
-          <button class="button secondary" type="button" data-start-meeting>Iniciar reuniao</button>
+          <button class="button secondary" type="button" data-start-meeting>Iniciar reunião</button>
           <div class="meeting-timer" aria-live="polite">
             <span>Duração</span>
             <strong data-meeting-timer>00:00:00</strong>
@@ -527,13 +518,13 @@ function meetingsView(data, context) {
         </div>
         <div class="form-grid">
           <label class="field">
-            <span>Reuniao</span>
+            <span>Reunião</span>
             <select name="meetingId" data-meeting-select required>
               ${meetingOptions}
             </select>
           </label>
           <label class="field">
-            <span>Data de execucao</span>
+            <span>Data de execução</span>
             <input type="date" name="executionDate" required>
           </label>
           <label class="field">
@@ -549,40 +540,40 @@ function meetingsView(data, context) {
             </select>
           </label>
           <label class="field">
-            <span>Responsavel pela acao</span>
+            <span>Responsável pela ação</span>
             <select name="ownerId" data-action-field>${ownerOptions}</select>
           </label>
         </div>
         <div class="form-grid">
           <label class="field">
-            <span>Prazo da acao</span>
+            <span>Prazo da ação</span>
             <input type="date" name="dueDate" data-action-field>
           </label>
           <label class="field">
             <span>Prioridade</span>
             <select name="priority" data-action-field>
-              <option value="medium">Media</option>
+              <option value="medium">Média</option>
               <option value="high">Alta</option>
-              <option value="critical">Critica</option>
+              <option value="critical">Crítica</option>
               <option value="low">Baixa</option>
             </select>
           </label>
         </div>
         <div class="form-actions">
-          <button class="button primary" type="submit" data-save-meeting-action ${initialSubjects.length === 0 ? "disabled" : ""}>Salvar acao</button>
-          <button class="button secondary" type="button" data-close-meeting>Encerrar reuniao</button>
+          <button class="button primary" type="submit" data-save-meeting-action ${initialSubjects.length === 0 ? "disabled" : ""}>Salvar ação</button>
+          <button class="button secondary" type="button" data-close-meeting>Encerrar reunião</button>
         </div>
       </form>
     `
     : dependencyNotice(
         "Acesso somente para consulta",
-        "Seu perfil pode visualizar reunioes, mas nao pode abrir acoes ou encerrar reunioes por aqui."
+        "Seu perfil pode visualizar reuniões, mas não pode abrir ações ou encerrar reuniões por aqui."
       );
 
   return `
-    ${moduleHeader("Reunioes", "Conduza a reuniao, selecione o assunto e abra acoes diretamente em Planos de acao.")}
+    ${moduleHeader("Reuniões", "Conduza a reunião, selecione o assunto e abra ações diretamente em Planos de ação.")}
     <div class="single-layout meeting-workspace">
-      ${formCard("Conduzir reuniao", "A data de execucao permanece na tela enquanto voce abre quantas acoes forem necessarias.", formContent)}
+      ${formCard("Conduzir reunião", "A data de execução permanece na tela enquanto você abre quantas ações forem necessárias.", formContent)}
     </div>
   `;
 }
@@ -592,7 +583,7 @@ function administrationView(data, context) {
   const rows = meetings.map((item) => [
     escapeHtml(item.title),
     escapeHtml(arrayValue(item.subjects).length),
-    escapeHtml(item.lastExecutionDate ? formatDate(item.lastExecutionDate) : "Ainda nao executada"),
+    escapeHtml(item.lastExecutionDate ? formatDate(item.lastExecutionDate) : "Ainda não executada"),
     item.importedFrom ? "<span class=\"badge info\">Planilha</span>" : "<span class=\"badge success\">Manual</span>",
     `<button class="button secondary" type="button" data-delete-meeting="${escapeHtml(item.id)}">Excluir</button>`
   ]);
@@ -600,35 +591,35 @@ function administrationView(data, context) {
     ? `
       <form class="stack" data-form="adminMeetings">
         <label class="field">
-          <span>Nome da reuniao</span>
-          <input name="title" required placeholder="Ex.: Reuniao semanal de resultados">
+          <span>Nome da reunião</span>
+          <input name="title" required placeholder="Ex.: Reunião semanal de resultados">
         </label>
         <label class="field">
           <span>Assuntos</span>
           <textarea name="subjects" placeholder="Digite um assunto por linha"></textarea>
         </label>
-        <button class="button primary" type="submit">Cadastrar reuniao</button>
+        <button class="button primary" type="submit">Cadastrar reunião</button>
       </form>
     `
-    : dependencyNotice("Acesso restrito", "Este modulo e exclusivo da administracao.");
+    : dependencyNotice("Acesso restrito", "Este módulo é exclusivo da administração.");
 
   return `
-    ${moduleHeader("Administracao", "Gerencie as reunioes cadastradas e os assuntos disponiveis no modulo Reunioes.")}
+    ${moduleHeader("Administração", "Gerencie as reuniões cadastradas e os assuntos disponíveis no módulo Reuniões.")}
     <div class="split-layout administration-layout">
-      ${tableCard("Reunioes cadastradas", "Cadastros disponiveis para conducao de reunioes.", ["Reuniao", "Assuntos", "Ultima execucao", "Origem", "Acao"], rows)}
-      ${formCard("Nova reuniao", "Cadastre novas reunioes e seus assuntos correspondentes.", formContent)}
+      ${tableCard("Reuniões cadastradas", "Cadastros disponíveis para condução de reuniões.", ["Reunião", "Assuntos", "Última execução", "Origem", "Ação"], rows)}
+      ${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}
     </div>
   `;
 }
 
 const gapaConfig = {
   title: "GAPA",
-  description: "Centralize registros GAPA, frentes em andamento e responsaveis pela tratativa.",
+  description: "Centralize registros GAPA, frentes em andamento e responsáveis pela tratativa.",
   tableTitle: "Registros GAPA",
-  tableDescription: "Itens GAPA disponiveis para acompanhamento do seu perfil.",
-  headers: ["Registro", "Categoria", "Unidade", "Responsavel", "Status"],
+  tableDescription: "Itens GAPA disponíveis para acompanhamento do seu perfil.",
+  headers: ["Registro", "Categoria", "Unidade", "Responsável", "Status"],
   formTitle: "Novo registro GAPA",
-  formDescription: "Abra um registro com contexto, dono e proximo passo definidos.",
+  formDescription: "Abra um registro com contexto, dono e próximo passo definidos.",
   dependencies: { requiresUnits: true, requiresUsers: true },
   managePermission: "gapa.manage",
   columns: [
@@ -642,7 +633,7 @@ const gapaConfig = {
     return `
       <form class="stack" data-form="gapa">
         <label class="field">
-          <span>Titulo do registro</span>
+          <span>Título do registro</span>
           <input name="title" required>
         </label>
         <div class="form-grid">
@@ -655,7 +646,7 @@ const gapaConfig = {
             <select name="unitId" required>${optionList(context.lookups.units)}</select>
           </label>
           <label class="field">
-            <span>Responsavel</span>
+            <span>Responsável</span>
             <select name="ownerId" required>${optionList(context.lookups.users)}</select>
           </label>
           <label class="field">
@@ -663,7 +654,7 @@ const gapaConfig = {
             <select name="status">
               <option value="open">Aberto</option>
               <option value="in_progress">Em andamento</option>
-              <option value="done">Concluido</option>
+              <option value="done">Concluído</option>
             </select>
           </label>
         </div>
@@ -678,13 +669,13 @@ const gapaConfig = {
 };
 
 const dtoConfig = {
-  title: "DTO - Diagnostico de tarefa operacional",
-  description: "Registre o diagnostico, o responsavel e o proximo passo para cada tratativa operacional.",
-  tableTitle: "Diagnosticos operacionais",
+  title: "DTO - Diagnóstico de tarefa operacional",
+  description: "Registre o diagnóstico, o responsável e o próximo passo para cada tratativa operacional.",
+  tableTitle: "Diagnósticos operacionais",
   tableDescription: "DTOs ativos ou recentemente atualizados no seu escopo.",
-  headers: ["Diagnostico", "Unidade", "Responsavel", "Prazo", "Status"],
+  headers: ["Diagnóstico", "Unidade", "Responsável", "Prazo", "Status"],
   formTitle: "Novo DTO",
-  formDescription: "Formalize um diagnostico de tarefa operacional com clareza e rastreabilidade.",
+  formDescription: "Formalize um diagnóstico de tarefa operacional com clareza e rastreabilidade.",
   dependencies: { requiresUnits: true, requiresUsers: true },
   managePermission: "dto.manage",
   columns: [
@@ -698,11 +689,11 @@ const dtoConfig = {
     return `
       <form class="stack" data-form="dto">
         <label class="field">
-          <span>Titulo do diagnostico</span>
+          <span>Título do diagnóstico</span>
           <input name="title" required>
         </label>
         <label class="field">
-          <span>Diagnostico</span>
+          <span>Diagnóstico</span>
           <textarea name="diagnosis" placeholder="Descreva causa, impacto e direcionamento"></textarea>
         </label>
         <div class="form-grid">
@@ -711,7 +702,7 @@ const dtoConfig = {
             <select name="unitId" required>${optionList(context.lookups.units)}</select>
           </label>
           <label class="field">
-            <span>Responsavel</span>
+            <span>Responsável</span>
             <select name="ownerId" required>${optionList(context.lookups.users)}</select>
           </label>
           <label class="field">
@@ -721,9 +712,9 @@ const dtoConfig = {
           <label class="field">
             <span>Status</span>
             <select name="status">
-              <option value="analysis">Em diagnostico</option>
+              <option value="analysis">Em diagnóstico</option>
               <option value="in_progress">Em andamento</option>
-              <option value="completed">Concluido</option>
+              <option value="completed">Concluído</option>
             </select>
           </label>
         </div>
@@ -745,7 +736,7 @@ const anomalyReportsConfig = {
   managePermission: "anomalyReports.manage",
   columns: [
     (item) => escapeHtml(item.title),
-    (item) => escapeHtml(item.source || "Operacao"),
+    (item) => escapeHtml(item.source || "Operação"),
     (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
     (item) => statusBadge(item.severity || "medium"),
     (item) => statusBadge(item.status || "open")
@@ -754,7 +745,7 @@ const anomalyReportsConfig = {
     return `
       <form class="stack" data-form="anomalyReports">
         <label class="field">
-          <span>Titulo do relato</span>
+          <span>Título do relato</span>
           <input name="title" required>
         </label>
         <div class="form-grid">
@@ -770,9 +761,9 @@ const anomalyReportsConfig = {
             <span>Severidade</span>
             <select name="severity">
               <option value="low">Baixa</option>
-              <option value="medium">Media</option>
+              <option value="medium">Média</option>
               <option value="high">Alta</option>
-              <option value="critical">Critica</option>
+              <option value="critical">Crítica</option>
             </select>
           </label>
           <label class="field">
@@ -781,7 +772,7 @@ const anomalyReportsConfig = {
           </label>
         </div>
         <label class="field">
-          <span>Descricao</span>
+          <span>Descrição</span>
           <textarea name="description" placeholder="Descreva a anomalia e o impacto observado"></textarea>
         </label>
         <button class="button primary" type="submit">Registrar anomalia</button>
@@ -792,12 +783,12 @@ const anomalyReportsConfig = {
 
 const gerotConfig = {
   title: "GEROT",
-  description: "Acompanhe registros, frentes e encaminhamentos do GEROT em uma trilha unica.",
+  description: "Acompanhe registros, frentes e encaminhamentos do GEROT em uma trilha única.",
   tableTitle: "Registros GEROT",
   tableDescription: "Itens GEROT ativos no seu escopo.",
-  headers: ["Registro", "Frente", "Unidade", "Responsavel", "Status"],
+  headers: ["Registro", "Frente", "Unidade", "Responsável", "Status"],
   formTitle: "Novo registro GEROT",
-  formDescription: "Abra um registro GEROT com responsavel definido e prazo claro.",
+  formDescription: "Abra um registro GEROT com responsável definido e prazo claro.",
   dependencies: { requiresUnits: true, requiresUsers: true },
   managePermission: "gerot.manage",
   columns: [
@@ -811,7 +802,7 @@ const gerotConfig = {
     return `
       <form class="stack" data-form="gerot">
         <label class="field">
-          <span>Titulo do registro</span>
+          <span>Título do registro</span>
           <input name="title" required>
         </label>
         <div class="form-grid">
@@ -824,7 +815,7 @@ const gerotConfig = {
             <select name="unitId" required>${optionList(context.lookups.units)}</select>
           </label>
           <label class="field">
-            <span>Responsavel</span>
+            <span>Responsável</span>
             <select name="ownerId" required>${optionList(context.lookups.users)}</select>
           </label>
           <label class="field">
@@ -837,8 +828,8 @@ const gerotConfig = {
           </label>
         </div>
         <label class="field">
-          <span>Observacoes</span>
-          <textarea name="notes" placeholder="Registre contexto, tratativa e proximo passo"></textarea>
+          <span>Observações</span>
+          <textarea name="notes" placeholder="Registre contexto, tratativa e próximo passo"></textarea>
         </label>
         <button class="button primary" type="submit">Criar registro</button>
       </form>
@@ -866,17 +857,17 @@ export const views = {
     render: (data) => auditPanelView(data)
   },
   administration: {
-    title: "Administracao",
+    title: "Administração",
     load: (api, token) => api.list(token, "/administration/meetings"),
     render: (data, context) => administrationView(data, context)
   },
   actionPlans: {
-    title: "Planos de acao",
+    title: "Planos de ação",
     load: (api, token) => api.list(token, "/action-plans"),
     render: (data, context) => operationsView(actionPlansConfig, data, context)
   },
   meetings: {
-    title: "Reunioes",
+    title: "Reuniões",
     load: (api, token) => api.list(token, "/meetings"),
     render: (data, context) => meetingsView(data, context)
   },
@@ -901,17 +892,17 @@ export const views = {
     render: (data, context) => operationsView(gerotConfig, data, context)
   },
   users: {
-    title: "Usuarios e permissoes",
+    title: "Usuários e permissões",
     load: (api, token) => api.list(token, "/users"),
     render: (data, context) => usersView(data, context)
   },
   notifications: {
-    title: "Notificacoes",
+    title: "Notificações",
     load: (api, token) => api.list(token, "/notifications"),
     render: (data) => notificationsView(data)
   },
   history: {
-    title: "Historico",
+    title: "Histórico",
     load: (api, token) => api.list(token, "/history"),
     render: (data) => historyView(data)
   }

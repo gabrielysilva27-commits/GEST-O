@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260828-3";
+import { api, ApiError } from "./api.js?v=20260828-4";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260828-3";
+import { views } from "./modules/index.js?v=20260828-4";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -144,7 +144,7 @@ function startMeetingTimer(form) {
   meetingTimerStartedAt = Date.now();
   output.textContent = "00:00:00";
   if (button) {
-    button.textContent = "Reuniao em andamento";
+    button.textContent = "Reunião em andamento";
     button.disabled = true;
   }
   meetingTimerInterval = setInterval(() => {
@@ -265,7 +265,7 @@ async function handleDynamicSubmit(event) {
   const path = formRoutes[formName];
 
   if (!path) {
-    handleError(new Error("Formulario nao reconhecido."), "Nao foi possivel identificar o formulario.");
+    handleError(new Error("Formulário não reconhecido."), "Não foi possível identificar o formulário.");
     return;
   }
 
@@ -339,7 +339,7 @@ async function closeMeetingFromForm(form) {
   const payload = getFormData(form);
 
   if (!payload.meetingId || !payload.executionDate) {
-    handleError(new Error("Informe reuniao e data de execucao."), "Informe reuniao e data de execucao.");
+    handleError(new Error("Informe reunião e data de execução."), "Informe reunião e data de execução.");
     return;
   }
 
@@ -348,11 +348,11 @@ async function closeMeetingFromForm(form) {
       executionDate: payload.executionDate
     });
     stopMeetingTimer();
-    showToast("Reuniao encerrada com sucesso.");
+    showToast("Reunião encerrada com sucesso.");
     await refreshBootstrap();
     await loadView("meetings");
   } catch (error) {
-    handleError(error, "Nao foi possivel encerrar a reuniao.");
+    handleError(error, "Não foi possível encerrar a reunião.");
   }
 }
 
@@ -400,17 +400,17 @@ async function handleDynamicClick(event) {
 
   const deleteMeetingButton = event.target.closest("[data-delete-meeting]");
   if (deleteMeetingButton) {
-    if (!window.confirm("Excluir esta reuniao cadastrada?")) {
+    if (!window.confirm("Excluir esta reunião cadastrada?")) {
       return;
     }
 
     try {
       await api.patch(state.token, `/administration/meetings/${deleteMeetingButton.dataset.deleteMeeting}/delete`);
-      showToast("Reuniao excluida com sucesso.");
+      showToast("Reunião excluída com sucesso.");
       await refreshBootstrap();
       await loadView("administration");
     } catch (error) {
-      handleError(error, "Nao foi possivel excluir a reuniao.");
+      handleError(error, "Não foi possível excluir a reunião.");
     }
     return;
   }

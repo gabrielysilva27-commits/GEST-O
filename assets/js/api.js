@@ -103,9 +103,9 @@ const NAVIGATION = [
   { id: "dto", label: "DTO - Diagnóstico de tarefa operacional", permission: "dto.read" },
   { id: "anomalyReports", label: "Relato de anomalia", permission: "anomalyReports.read" },
   { id: "gerot", label: "GEROT", permission: "gerot.read" },
-  { id: "users", label: "Usuarios", permission: "users.read" },
-  { id: "notifications", label: "Notificacoes", permission: "notifications.view" },
-  { id: "history", label: "Historico", permission: "history.view" }
+  { id: "users", label: "Usuários", permission: "users.read" },
+  { id: "notifications", label: "Notificações", permission: "notifications.view" },
+  { id: "history", label: "Histórico", permission: "history.view" }
 ];
 
 const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42";
@@ -174,14 +174,14 @@ const MEETING_TEMPLATES = [
       "Tempo m\u00e9dio de descarga de carreta",
       "Ader\u00eancia ao ressuprimento",
       "Caixas reembaladas",
-      "5S por area",
+      "5S por área",
       "Tempo interno",
       "Pallets descarregados",
       "Caixas inspecionadas no refugo",
       "Recomposi\u00e7\u00e3o de garrafeiras at\u00e9 a 22hs",
-      "Eficiencia de carregamento",
+      "Eficiência de carregamento",
       "Turno C: Carregar Certo*",
-      "Eficiencia de montagem",
+      "Eficiência de montagem",
       "Pallets carregados"
     ]
   },
@@ -674,7 +674,7 @@ function testCollectionScope(collectionName, record, user) {
 
 function ensurePermission(user, permission) {
   if (!arrayValue(user.permissions).includes(permission)) {
-    throw new ApiError("Seu perfil nao tem permissao para esta acao.", 403);
+    throw new ApiError("Seu perfil não tem permissão para esta ação.", 403);
   }
 }
 
@@ -696,7 +696,7 @@ function meetingSortOrder(record) {
 function ensureGabrielyAdministration(user) {
   ensurePermission(user, "administration.manage");
   if (user.username !== "Gabriely" || user.role !== "admin") {
-    throw new ApiError("A administracao de reunioes e exclusiva da Gabriely.", 403);
+    throw new ApiError("A administração de reuniões é exclusiva da Gabriely.", 403);
   }
 }
 
@@ -868,9 +868,9 @@ function buildDashboard(database, user) {
         helper: "Frentes em acompanhamento"
       },
       {
-        label: "Reunioes agendadas",
+        label: "Reuniões agendadas",
         value: meetings.filter((item) => item.status === "scheduled").length,
-        helper: "Agenda do periodo"
+        helper: "Agenda do período"
       },
       {
         label: "GAPAs ativos",
@@ -880,7 +880,7 @@ function buildDashboard(database, user) {
       {
         label: "DTOs abertos",
         value: dtoRecords.filter((item) => item.status !== "completed").length,
-        helper: "Diagnosticos em analise"
+        helper: "Diagnósticos em análise"
       },
       {
         label: "Anomalias abertas",
@@ -897,7 +897,7 @@ function buildDashboard(database, user) {
       actionPlansByStatus: buildProgressSeries([
         { label: "Abertos", value: actionPlans.filter((item) => item.status === "open").length },
         { label: "Em andamento", value: actionPlans.filter((item) => item.status === "in_progress").length },
-        { label: "Concluidos", value: actionPlans.filter((item) => item.status === "done").length }
+        { label: "Concluídos", value: actionPlans.filter((item) => item.status === "done").length }
       ]),
       meetingsByStatus: buildProgressSeries([
         { label: "Agendadas", value: meetings.filter((item) => item.status === "scheduled").length },
@@ -913,7 +913,7 @@ function buildDashboard(database, user) {
         .slice(0, 6)
         .map((item) => ({
           ...item,
-          unitName: getUnit(database, item.unitId)?.name || "Nao definida"
+          unitName: getUnit(database, item.unitId)?.name || "Não definida"
         })),
       unreadNotifications: notifications.filter((item) => !item.read).length
     },
@@ -940,7 +940,7 @@ function buildReportsSummary(database, user) {
     generatedAt: nowIso(),
     cards: [
       { label: "Conformidade de checklists", value: checklistAverage, unit: "%" },
-      { label: "Treinamentos concluidos", value: trainings.filter((item) => item.status === "completed").length, unit: "" },
+      { label: "Treinamentos concluídos", value: trainings.filter((item) => item.status === "completed").length, unit: "" },
       { label: "Relatos resolvidos", value: safety.filter((item) => item.status === "resolved").length, unit: "" },
       { label: "Chamados em SLA", value: tickets.filter((item) => ["open", "in_progress"].includes(item.status)).length, unit: "" }
     ],
@@ -1021,7 +1021,7 @@ function getAuthContext(token) {
   const database = loadDatabase();
   const user = getCurrentUser(database, token);
   if (!user) {
-    throw new ApiError("Sessao invalida ou expirada. Faca login novamente.", 401);
+    throw new ApiError("Sessão inválida ou expirada. Faça login novamente.", 401);
   }
 
   return { database, user };
@@ -1031,11 +1031,11 @@ async function createUser(database, user, payload) {
   ensurePermission(user, "users.manage");
 
   if (!payload?.name?.trim() || !payload?.username?.trim() || !payload?.role?.trim()) {
-    throw new ApiError("Nome, usuario e perfil sao obrigatorios.", 400);
+    throw new ApiError("Nome, usuário e perfil são obrigatórios.", 400);
   }
 
   if (getUserByUsername(database, payload.username)) {
-    throw new ApiError("Ja existe um usuario com este nome de usuario.", 409);
+    throw new ApiError("Já existe um usuário com este nome de usuário.", 409);
   }
 
   const defaultUnitIds =
@@ -1056,7 +1056,7 @@ async function createUser(database, user, payload) {
     status: "active",
     passwordHash,
     avatar: getInitials(payload.name),
-    title: "Usuario da plataforma",
+    title: "Usuário da plataforma",
     createdAt: nowIso()
   };
 
@@ -1068,7 +1068,7 @@ async function createUser(database, user, payload) {
     actorId: user.id,
     companyId: record.companyId,
     unitId: record.unitIds[0] || 0,
-    description: `Usuario ${record.name} criado com perfil ${getRoleLabel(record.role)}.`
+    description: `Usuário ${record.name} criado com perfil ${getRoleLabel(record.role)}.`
   });
 
   return { item: getUserProfile(database, record) };
@@ -1078,12 +1078,12 @@ function createActionPlan(database, user, payload) {
   ensurePermission(user, "actionPlans.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
-    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e responsável são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
@@ -1102,7 +1102,7 @@ function createActionPlan(database, user, payload) {
   };
 
   if (!testCollectionScope("actionPlans", record, user)) {
-    throw new ApiError("O plano precisa estar dentro da sua area de atuacao.", 403);
+    throw new ApiError("O plano precisa estar dentro da sua área de atuação.", 403);
   }
 
   database.actionPlans.push(record);
@@ -1113,11 +1113,11 @@ function createActionPlan(database, user, payload) {
     actorId: user.id,
     companyId: record.companyId,
     unitId: record.unitId,
-    description: `Plano de acao '${record.title}' criado.`
+    description: `Plano de ação '${record.title}' criado.`
   });
   addNotification(database, {
     userId: record.ownerId,
-    title: "Novo plano de acao",
+    title: "Novo plano de ação",
     message: record.title,
     level: "info",
     link: "actionPlans"
@@ -1130,12 +1130,12 @@ function createMeeting(database, user, payload) {
   ensurePermission(user, "meetings.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId || !payload?.scheduledAt?.trim()) {
-    throw new ApiError("Titulo, unidade, data e conducao sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade, data e condução são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
@@ -1153,7 +1153,7 @@ function createMeeting(database, user, payload) {
   };
 
   if (!testCollectionScope("meetings", record, user)) {
-    throw new ApiError("A reuniao precisa estar dentro do seu escopo.", 403);
+    throw new ApiError("A reunião precisa estar dentro do seu escopo.", 403);
   }
 
   database.meetings.push(record);
@@ -1164,11 +1164,11 @@ function createMeeting(database, user, payload) {
     actorId: user.id,
     companyId: record.companyId,
     unitId: record.unitId,
-    description: `Reuniao '${record.title}' registrada.`
+    description: `Reunião '${record.title}' registrada.`
   });
   addNotification(database, {
     userId: record.ownerId,
-    title: "Nova reuniao",
+    title: "Nova reunião",
     message: record.title,
     level: "info",
     link: "meetings"
@@ -1181,7 +1181,7 @@ function createAdministrationMeeting(database, user, payload) {
   ensureGabrielyAdministration(user);
 
   if (!payload?.title?.trim()) {
-    throw new ApiError("Informe o nome da reuniao.", 400);
+    throw new ApiError("Informe o nome da reunião.", 400);
   }
 
   const subjects = parseSubjects(payload.subjects);
@@ -1189,7 +1189,7 @@ function createAdministrationMeeting(database, user, payload) {
     id: nextId(database, "meetings"),
     templateId: null,
     title: payload.title.trim(),
-    objective: "Reuniao cadastrada pela administracao.",
+    objective: "Reunião cadastrada pela administração.",
     status: "scheduled",
     companyId: 0,
     unitId: 0,
@@ -1211,7 +1211,7 @@ function createAdministrationMeeting(database, user, payload) {
     actorId: user.id,
     companyId: 0,
     unitId: 0,
-    description: `Reuniao '${record.title}' cadastrada pela administracao.`
+    description: `Reunião '${record.title}' cadastrada pela administração.`
   });
 
   return { item: record };
@@ -1222,7 +1222,7 @@ function deleteAdministrationMeeting(database, user, meetingId) {
 
   const meeting = database.meetings.find((item) => toInt(item.id) === toInt(meetingId));
   if (!meeting) {
-    throw new ApiError("Reuniao nao encontrada.", 404);
+    throw new ApiError("Reunião não encontrada.", 404);
   }
 
   database.meetings = database.meetings.filter((item) => toInt(item.id) !== toInt(meetingId));
@@ -1240,7 +1240,7 @@ function deleteAdministrationMeeting(database, user, meetingId) {
     actorId: user.id,
     companyId: meeting.companyId,
     unitId: meeting.unitId,
-    description: `Reuniao '${meeting.title}' excluida pela administracao.`
+    description: `Reunião '${meeting.title}' excluída pela administração.`
   });
 
   return { success: true };
@@ -1251,18 +1251,18 @@ function createMeetingAction(database, user, payload) {
   ensurePermission(user, "actionPlans.manage");
 
   if (!payload?.meetingId || !payload?.subject?.trim()) {
-    throw new ApiError("Reuniao e assunto sao obrigatorios.", 400);
+    throw new ApiError("Reunião e assunto são obrigatórios.", 400);
   }
 
   const meeting = database.meetings.find((item) => toInt(item.id) === toInt(payload.meetingId));
   if (!meeting || !testCollectionScope("meetings", meeting, user)) {
-    throw new ApiError("Reuniao nao encontrada.", 404);
+    throw new ApiError("Reunião não encontrada.", 404);
   }
 
   const subjects = arrayValue(meeting.subjects);
   const subject = payload.subject.trim();
   if (!subjects.includes(subject)) {
-    throw new ApiError("O assunto selecionado nao pertence a reuniao.", 400);
+    throw new ApiError("O assunto selecionado não pertence à reunião.", 400);
   }
 
   const fallbackUnitId = arrayValue(user.unitIds)[0] || meeting.unitId || 0;
@@ -1274,7 +1274,7 @@ function createMeetingAction(database, user, payload) {
   const record = {
     id: nextId(database, "actionPlans"),
     title: subject,
-    objective: `Acao aberta na reuniao ${meeting.title}. Solicitante: ${user.name}.`,
+    objective: `Ação aberta na reunião ${meeting.title}. Solicitante: ${user.name}.`,
     status: "open",
     priority: payload.priority || "medium",
     companyId,
@@ -1294,7 +1294,7 @@ function createMeetingAction(database, user, payload) {
   };
 
   if (!testCollectionScope("actionPlans", record, user)) {
-    throw new ApiError("A acao precisa estar dentro da sua area de atuacao.", 403);
+    throw new ApiError("A ação precisa estar dentro da sua área de atuação.", 403);
   }
 
   database.actionPlans.push(record);
@@ -1305,12 +1305,12 @@ function createMeetingAction(database, user, payload) {
     actorId: user.id,
     companyId: record.companyId,
     unitId: record.unitId,
-    description: `Acao '${record.title}' criada na reuniao '${meeting.title}'.`
+    description: `Ação '${record.title}' criada na reunião '${meeting.title}'.`
   });
   if (record.ownerId) {
     addNotification(database, {
       userId: record.ownerId,
-      title: "Nova acao de reuniao",
+      title: "Nova ação de reunião",
       message: `${meeting.title}: ${record.title}`,
       level: "info",
       link: "actionPlans"
@@ -1325,11 +1325,11 @@ function closeMeeting(database, user, meetingId, payload = {}) {
 
   const meeting = database.meetings.find((item) => toInt(item.id) === toInt(meetingId));
   if (!meeting || !testCollectionScope("meetings", meeting, user)) {
-    throw new ApiError("Reuniao nao encontrada.", 404);
+    throw new ApiError("Reunião não encontrada.", 404);
   }
 
   if (!payload.executionDate?.trim()) {
-    throw new ApiError("Informe a data de execucao antes de encerrar a reuniao.", 400);
+    throw new ApiError("Informe a data de execução antes de encerrar a reunião.", 400);
   }
 
   meeting.status = "held";
@@ -1342,7 +1342,7 @@ function closeMeeting(database, user, meetingId, payload = {}) {
     actorId: user.id,
     companyId: meeting.companyId,
     unitId: meeting.unitId,
-    description: `Reuniao '${meeting.title}' encerrada em ${payload.executionDate}.`
+    description: `Reunião '${meeting.title}' encerrada em ${payload.executionDate}.`
   });
 
   return { item: meeting };
@@ -1352,12 +1352,12 @@ function createGapaRecord(database, user, payload) {
   ensurePermission(user, "gapa.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
-    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e responsável são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
@@ -1403,12 +1403,12 @@ function createDtoRecord(database, user, payload) {
   ensurePermission(user, "dto.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
-    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e responsável são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
@@ -1426,7 +1426,7 @@ function createDtoRecord(database, user, payload) {
   };
 
   if (!testCollectionScope("dtoRecords", record, user)) {
-    throw new ApiError("O DTO precisa estar dentro da sua area de atuacao.", 403);
+    throw new ApiError("O DTO precisa estar dentro da sua área de atuação.", 403);
   }
 
   database.dtoRecords.push(record);
@@ -1454,18 +1454,18 @@ function createAnomalyReport(database, user, payload) {
   ensurePermission(user, "anomalyReports.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.severity?.trim()) {
-    throw new ApiError("Titulo, unidade e severidade sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e severidade são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
     id: nextId(database, "anomalyReports"),
     title: payload.title.trim(),
-    source: payload.source?.trim() || "Operacao",
+    source: payload.source?.trim() || "Operação",
     severity: payload.severity,
     status: payload.status || "open",
     companyId: toInt(unit.companyId),
@@ -1505,12 +1505,12 @@ function createGerotRecord(database, user, payload) {
   ensurePermission(user, "gerot.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
-    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e responsável são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
@@ -1557,12 +1557,12 @@ function createTask(database, user, payload) {
   ensurePermission(user, "tasks.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.assigneeId) {
-    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e responsável são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
@@ -1582,7 +1582,7 @@ function createTask(database, user, payload) {
   };
 
   if (!testCollectionScope("tasks", record, user)) {
-    throw new ApiError("A tarefa precisa estar dentro da sua area de atuacao.", 403);
+    throw new ApiError("A tarefa precisa estar dentro da sua área de atuação.", 403);
   }
 
   database.tasks.push(record);
@@ -1663,12 +1663,12 @@ function createSafetyReport(database, user, payload) {
   ensurePermission(user, "safety.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.severity?.trim()) {
-    throw new ApiError("Titulo, unidade e severidade sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e severidade são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
@@ -1714,12 +1714,12 @@ function createTraining(database, user, payload) {
   ensurePermission(user, "trainings.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId || !payload?.dueDate?.trim()) {
-    throw new ApiError("Titulo, unidade e data sao obrigatorios.", 400);
+    throw new ApiError("Título, unidade e data são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const participants = arrayValue(payload.participantIds)
@@ -1735,7 +1735,7 @@ function createTraining(database, user, payload) {
   const record = {
     id: nextId(database, "trainings"),
     title: payload.title.trim(),
-    category: payload.category?.trim() || "Operacao",
+    category: payload.category?.trim() || "Operação",
     status: payload.status || "scheduled",
     companyId: toInt(unit.companyId),
     unitId: toInt(unit.id),
@@ -1779,18 +1779,18 @@ function createTicket(database, user, payload) {
   ensurePermission(user, "tickets.manage");
 
   if (!payload?.title?.trim() || !payload?.unitId) {
-    throw new ApiError("Titulo e unidade sao obrigatorios.", 400);
+    throw new ApiError("Título e unidade são obrigatórios.", 400);
   }
 
   const unit = getUnit(database, payload.unitId);
   if (!unit) {
-    throw new ApiError("Unidade informada nao existe.", 404);
+    throw new ApiError("Unidade informada não existe.", 404);
   }
 
   const record = {
     id: nextId(database, "tickets"),
     title: payload.title.trim(),
-    category: payload.category?.trim() || "Operacao",
+    category: payload.category?.trim() || "Operação",
     priority: payload.priority || "medium",
     status: payload.status || "open",
     companyId: toInt(unit.companyId),
@@ -1914,7 +1914,7 @@ function listPath(database, user, path) {
       ensurePermission(user, "reports.view");
       return buildReportsSummary(database, user);
     default:
-      throw new ApiError("Endpoint nao encontrado.", 404);
+      throw new ApiError("Endpoint não encontrado.", 404);
   }
 }
 
@@ -1939,7 +1939,7 @@ function createPath(database, user, path, body) {
     case "/gerot":
       return Promise.resolve(createGerotRecord(database, user, body));
     default:
-      throw new ApiError("Endpoint nao encontrado.", 404);
+      throw new ApiError("Endpoint não encontrado.", 404);
   }
 }
 
@@ -1950,7 +1950,7 @@ function patchPath(database, user, path, body = {}) {
     const notificationId = toInt(notificationMatch[1]);
     const notification = database.notifications.find((item) => toInt(item.id) === notificationId);
     if (!notification || toInt(notification.userId) !== toInt(user.id)) {
-      throw new ApiError("Notificacao nao encontrada.", 404);
+      throw new ApiError("Notificação não encontrada.", 404);
     }
 
     notification.read = true;
@@ -1967,24 +1967,24 @@ function patchPath(database, user, path, body = {}) {
     return deleteAdministrationMeeting(database, user, deleteMeetingMatch[1]);
   }
 
-  throw new ApiError("Endpoint nao encontrado.", 404);
+  throw new ApiError("Endpoint não encontrado.", 404);
 }
 
 export const api = {
   async login(credentials) {
     const database = loadDatabase();
     if (!credentials?.username?.trim() || !credentials?.password?.trim()) {
-      throw new ApiError("Informe usuario e senha para continuar.", 400);
+      throw new ApiError("Informe usuário e senha para continuar.", 400);
     }
 
     const userRecord = getUserByUsername(database, credentials.username);
     if (!userRecord) {
-      throw new ApiError("Credenciais invalidas.", 401);
+      throw new ApiError("Credenciais inválidas.", 401);
     }
 
     const passwordHash = await sha256(credentials.password.trim());
     if (passwordHash !== userRecord.passwordHash) {
-      throw new ApiError("Credenciais invalidas.", 401);
+      throw new ApiError("Credenciais inválidas.", 401);
     }
 
     const issuedAt = new Date();
@@ -2058,7 +2058,7 @@ export const api = {
 
     const collectionName = map[entity];
     if (!collectionName) {
-      throw new ApiError("Escolha um tipo de exportacao valido.", 400);
+      throw new ApiError("Escolha um tipo de exportação válido.", 400);
     }
 
     const items = getScopedCollection(database, user, collectionName);
