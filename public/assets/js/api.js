@@ -11,86 +11,98 @@ const ROLE_LABELS = {
 const ROLE_PERMISSIONS = {
   admin: [
     "dashboard.view",
+    "audit.view",
     "users.read",
     "users.manage",
     "companies.read",
     "companies.manage",
     "units.read",
     "units.manage",
-    "tasks.read",
-    "tasks.manage",
-    "checklists.read",
-    "checklists.manage",
-    "safety.read",
-    "safety.manage",
-    "trainings.read",
-    "trainings.manage",
-    "tickets.read",
-    "tickets.manage",
-    "reports.view",
-    "reports.export",
+    "actionPlans.read",
+    "actionPlans.manage",
+    "meetings.read",
+    "meetings.manage",
+    "gapa.read",
+    "gapa.manage",
+    "dto.read",
+    "dto.manage",
+    "anomalyReports.read",
+    "anomalyReports.manage",
+    "gerot.read",
+    "gerot.manage",
     "notifications.view",
     "history.view"
   ],
   manager: [
     "dashboard.view",
+    "audit.view",
     "users.read",
     "companies.read",
     "units.read",
-    "tasks.read",
-    "tasks.manage",
-    "checklists.read",
-    "checklists.manage",
-    "safety.read",
-    "safety.manage",
-    "trainings.read",
-    "trainings.manage",
-    "tickets.read",
-    "tickets.manage",
-    "reports.view",
-    "reports.export",
+    "actionPlans.read",
+    "actionPlans.manage",
+    "meetings.read",
+    "meetings.manage",
+    "gapa.read",
+    "gapa.manage",
+    "dto.read",
+    "dto.manage",
+    "anomalyReports.read",
+    "anomalyReports.manage",
+    "gerot.read",
+    "gerot.manage",
     "notifications.view",
     "history.view"
   ],
   supervisor: [
     "dashboard.view",
+    "audit.view",
     "units.read",
-    "tasks.read",
-    "tasks.manage",
-    "checklists.read",
-    "checklists.manage",
-    "safety.read",
-    "safety.manage",
-    "trainings.read",
-    "trainings.manage",
-    "tickets.read",
-    "tickets.manage",
-    "reports.view",
+    "actionPlans.read",
+    "actionPlans.manage",
+    "meetings.read",
+    "meetings.manage",
+    "gapa.read",
+    "gapa.manage",
+    "dto.read",
+    "dto.manage",
+    "anomalyReports.read",
+    "anomalyReports.manage",
+    "gerot.read",
+    "gerot.manage",
     "notifications.view",
     "history.view"
   ],
   operator: [
     "dashboard.view",
-    "tasks.read",
-    "checklists.read",
-    "safety.read",
-    "safety.manage",
-    "trainings.read",
-    "tickets.read",
-    "tickets.manage",
-    "notifications.view"
+    "audit.view",
+    "actionPlans.read",
+    "actionPlans.manage",
+    "meetings.read",
+    "meetings.manage",
+    "gapa.read",
+    "gapa.manage",
+    "dto.read",
+    "dto.manage",
+    "anomalyReports.read",
+    "anomalyReports.manage",
+    "gerot.read",
+    "gerot.manage",
+    "notifications.view",
+    "history.view"
   ]
 };
 
 const NAVIGATION = [
   { id: "dashboard", label: "Dashboard", permission: "dashboard.view" },
+  { id: "audit", label: "Painel de auditoria", permission: "audit.view" },
+  { id: "actionPlans", label: "Planos de ação", permission: "actionPlans.read" },
+  { id: "meetings", label: "Reuniões", permission: "meetings.read" },
+  { id: "gapa", label: "GAPA", permission: "gapa.read" },
+  { id: "dto", label: "DTO - Diagnóstico de tarefa operacional", permission: "dto.read" },
+  { id: "anomalyReports", label: "Relato de anomalia", permission: "anomalyReports.read" },
+  { id: "gerot", label: "GEROT", permission: "gerot.read" },
   { id: "users", label: "Usuarios", permission: "users.read" },
-  { id: "tasks", label: "Tarefas", permission: "tasks.read" },
-  { id: "checklists", label: "Checklists", permission: "checklists.read" },
-  { id: "safety", label: "Relatos de seguranca", permission: "safety.read" },
-  { id: "trainings", label: "Treinamentos", permission: "trainings.read" },
-  { id: "tickets", label: "Chamados", permission: "tickets.read" },
-  { id: "reports", label: "Relatorios", permission: "reports.view" },
   { id: "notifications", label: "Notificacoes", permission: "notifications.view" },
   { id: "history", label: "Historico", permission: "history.view" }
 ];
@@ -108,11 +120,12 @@ const INITIAL_DATABASE = {
     users: 1,
     companies: 0,
     units: 0,
-    tasks: 0,
-    checklists: 0,
-    safetyReports: 0,
-    trainings: 0,
-    tickets: 0,
+    actionPlans: 0,
+    meetings: 0,
+    gapaRecords: 0,
+    dtoRecords: 0,
+    anomalyReports: 0,
+    gerotRecords: 0,
     notifications: 0,
     history: 0,
     sessions: 0
@@ -134,11 +147,12 @@ const INITIAL_DATABASE = {
   ],
   companies: [],
   units: [],
-  tasks: [],
-  checklists: [],
-  safetyReports: [],
-  trainings: [],
-  tickets: [],
+  actionPlans: [],
+  meetings: [],
+  gapaRecords: [],
+  dtoRecords: [],
+  anomalyReports: [],
+  gerotRecords: [],
   notifications: [],
   history: [],
   sessions: []
@@ -210,11 +224,12 @@ function sanitizeDatabase(database) {
       users: toInt(database.sequence?.users, INITIAL_DATABASE.sequence.users),
       companies: toInt(database.sequence?.companies, INITIAL_DATABASE.sequence.companies),
       units: toInt(database.sequence?.units, INITIAL_DATABASE.sequence.units),
-      tasks: toInt(database.sequence?.tasks, INITIAL_DATABASE.sequence.tasks),
-      checklists: toInt(database.sequence?.checklists, INITIAL_DATABASE.sequence.checklists),
-      safetyReports: toInt(database.sequence?.safetyReports, INITIAL_DATABASE.sequence.safetyReports),
-      trainings: toInt(database.sequence?.trainings, INITIAL_DATABASE.sequence.trainings),
-      tickets: toInt(database.sequence?.tickets, INITIAL_DATABASE.sequence.tickets),
+      actionPlans: toInt(database.sequence?.actionPlans, INITIAL_DATABASE.sequence.actionPlans),
+      meetings: toInt(database.sequence?.meetings, INITIAL_DATABASE.sequence.meetings),
+      gapaRecords: toInt(database.sequence?.gapaRecords, INITIAL_DATABASE.sequence.gapaRecords),
+      dtoRecords: toInt(database.sequence?.dtoRecords, INITIAL_DATABASE.sequence.dtoRecords),
+      anomalyReports: toInt(database.sequence?.anomalyReports, INITIAL_DATABASE.sequence.anomalyReports),
+      gerotRecords: toInt(database.sequence?.gerotRecords, INITIAL_DATABASE.sequence.gerotRecords),
       notifications: toInt(database.sequence?.notifications, INITIAL_DATABASE.sequence.notifications),
       history: toInt(database.sequence?.history, INITIAL_DATABASE.sequence.history),
       sessions: toInt(database.sequence?.sessions, 0)
@@ -222,11 +237,12 @@ function sanitizeDatabase(database) {
     users: arrayValue(database.users),
     companies: arrayValue(database.companies),
     units: arrayValue(database.units),
-    tasks: arrayValue(database.tasks),
-    checklists: arrayValue(database.checklists),
-    safetyReports: arrayValue(database.safetyReports),
-    trainings: arrayValue(database.trainings),
-    tickets: arrayValue(database.tickets),
+    actionPlans: arrayValue(database.actionPlans),
+    meetings: arrayValue(database.meetings),
+    gapaRecords: arrayValue(database.gapaRecords),
+    dtoRecords: arrayValue(database.dtoRecords),
+    anomalyReports: arrayValue(database.anomalyReports),
+    gerotRecords: arrayValue(database.gerotRecords),
     notifications: arrayValue(database.notifications),
     history: arrayValue(database.history),
     sessions: arrayValue(database.sessions)
@@ -344,20 +360,39 @@ function testCollectionScope(collectionName, record, user) {
         return toInt(record.companyId) === toInt(user.companyId);
       }
       return userUnitIds.includes(toInt(record.id));
-    case "tasks":
+    case "actionPlans":
       if (user.role === "manager") {
         return toInt(record.companyId) === toInt(user.companyId);
       }
       if (user.role === "supervisor") {
         return userUnitIds.includes(toInt(record.unitId));
       }
-      return toInt(record.assigneeId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
-    case "checklists":
+      return toInt(record.ownerId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
+    case "meetings":
       if (user.role === "manager") {
         return toInt(record.companyId) === toInt(user.companyId);
       }
-      return arrayValue(record.unitIds).some((unitId) => userUnitIds.includes(toInt(unitId)));
-    case "safetyReports":
+      if (user.role === "supervisor") {
+        return userUnitIds.includes(toInt(record.unitId));
+      }
+      return toInt(record.ownerId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
+    case "gapaRecords":
+      if (user.role === "manager") {
+        return toInt(record.companyId) === toInt(user.companyId);
+      }
+      if (user.role === "supervisor") {
+        return userUnitIds.includes(toInt(record.unitId));
+      }
+      return toInt(record.ownerId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
+    case "dtoRecords":
+      if (user.role === "manager") {
+        return toInt(record.companyId) === toInt(user.companyId);
+      }
+      if (user.role === "supervisor") {
+        return userUnitIds.includes(toInt(record.unitId));
+      }
+      return toInt(record.ownerId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
+    case "anomalyReports":
       if (user.role === "manager") {
         return toInt(record.companyId) === toInt(user.companyId);
       }
@@ -365,22 +400,14 @@ function testCollectionScope(collectionName, record, user) {
         return userUnitIds.includes(toInt(record.unitId));
       }
       return toInt(record.reportedBy) === toInt(user.id) || userUnitIds.includes(toInt(record.unitId));
-    case "trainings":
+    case "gerotRecords":
       if (user.role === "manager") {
         return toInt(record.companyId) === toInt(user.companyId);
       }
       if (user.role === "supervisor") {
         return userUnitIds.includes(toInt(record.unitId));
       }
-      return arrayValue(record.participants).some((participant) => toInt(participant.userId) === toInt(user.id));
-    case "tickets":
-      if (user.role === "manager") {
-        return toInt(record.companyId) === toInt(user.companyId);
-      }
-      if (user.role === "supervisor") {
-        return userUnitIds.includes(toInt(record.unitId));
-      }
-      return toInt(record.requesterId) === toInt(user.id) || toInt(record.ownerId) === toInt(user.id);
+      return toInt(record.ownerId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
     case "history":
       if (user.role === "manager") {
         return toInt(record.companyId) === toInt(user.companyId);
@@ -487,101 +514,134 @@ function bootstrapPayload(database, user) {
   };
 }
 
-function buildDashboard(database, user) {
-  const tasks = getScopedCollection(database, user, "tasks");
-  const tickets = getScopedCollection(database, user, "tickets");
-  const trainings = getScopedCollection(database, user, "trainings");
-  const safety = getScopedCollection(database, user, "safetyReports");
-  const checklists = getScopedCollection(database, user, "checklists");
-  const notifications = getScopedCollection(database, user, "notifications");
-  const today = todaysDateKey();
+function buildProgressSeries(items) {
+  const max = Math.max(...items.map((item) => toInt(item.value)), 1);
+  return items.map((item) => ({
+    ...item,
+    progress: Math.round((toInt(item.value) / max) * 100)
+  }));
+}
 
-  const overdueTasks = tasks.filter((item) => {
-    if (item.status === "done" || !item.dueDate) {
-      return false;
-    }
-
-    const date = new Date(item.dueDate);
-    if (Number.isNaN(date.getTime())) {
-      return false;
-    }
-
-    date.setHours(0, 0, 0, 0);
-    return date < today;
-  });
-
-  let pendingTrainingCount = 0;
-  for (const training of trainings) {
-    for (const participant of arrayValue(training.participants)) {
-      if (toInt(participant.userId) === toInt(user.id) && participant.status !== "completed") {
-        pendingTrainingCount += 1;
-      }
-    }
-
-    if (["admin", "manager", "supervisor"].includes(user.role) && training.status !== "completed") {
-      pendingTrainingCount += 1;
-    }
+function isPastDue(value) {
+  if (!value) {
+    return false;
   }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const today = todaysDateKey();
+  date.setHours(0, 0, 0, 0);
+  return date < today;
+}
+
+function buildDashboard(database, user) {
+  const actionPlans = getScopedCollection(database, user, "actionPlans");
+  const meetings = getScopedCollection(database, user, "meetings");
+  const gapaRecords = getScopedCollection(database, user, "gapaRecords");
+  const dtoRecords = getScopedCollection(database, user, "dtoRecords");
+  const anomalyReports = getScopedCollection(database, user, "anomalyReports");
+  const gerotRecords = getScopedCollection(database, user, "gerotRecords");
+  const notifications = getScopedCollection(database, user, "notifications");
+  const overdueItems = [
+    ...actionPlans
+      .filter((item) => item.status !== "done" && isPastDue(item.dueDate))
+      .map((item) => ({
+        title: item.title,
+        module: "Planos de ação",
+        dueDate: item.dueDate,
+        status: item.status
+      })),
+    ...dtoRecords
+      .filter((item) => item.status !== "completed" && isPastDue(item.dueDate))
+      .map((item) => ({
+        title: item.title,
+        module: "DTO",
+        dueDate: item.dueDate,
+        status: item.status
+      })),
+    ...anomalyReports
+      .filter((item) => item.status !== "resolved" && isPastDue(item.dueDate))
+      .map((item) => ({
+        title: item.title,
+        module: "Relato de anomalia",
+        dueDate: item.dueDate,
+        status: item.status
+      })),
+    ...gerotRecords
+      .filter((item) => item.status !== "closed" && isPastDue(item.dueDate))
+      .map((item) => ({
+        title: item.title,
+        module: "GEROT",
+        dueDate: item.dueDate,
+        status: item.status
+      }))
+  ].sort((left, right) => String(left.dueDate).localeCompare(String(right.dueDate)));
+
+  const moduleLoad = buildProgressSeries([
+    { label: "Planos de ação", value: actionPlans.length },
+    { label: "GAPA", value: gapaRecords.length },
+    { label: "DTO", value: dtoRecords.length },
+    { label: "GEROT", value: gerotRecords.length }
+  ]);
 
   return {
     kpis: [
       {
-        label: "Tarefas ativas",
-        value: tasks.filter((item) => item.status !== "done").length,
-        helper: "Fluxo operacional em execucao"
+        label: "Planos ativos",
+        value: actionPlans.filter((item) => item.status !== "done").length,
+        helper: "Frentes em acompanhamento"
       },
       {
-        label: "Tarefas vencidas",
-        value: overdueTasks.length,
-        helper: "Prioridade imediata"
+        label: "Reunioes agendadas",
+        value: meetings.filter((item) => item.status === "scheduled").length,
+        helper: "Agenda do periodo"
       },
       {
-        label: "Chamados abertos",
-        value: tickets.filter((item) => !["resolved", "closed"].includes(item.status)).length,
-        helper: "Demandas de suporte"
+        label: "GAPAs ativos",
+        value: gapaRecords.filter((item) => item.status !== "done").length,
+        helper: "Registros em andamento"
       },
       {
-        label: "Treinamentos pendentes",
-        value: pendingTrainingCount,
-        helper: "Planos ainda nao concluidos"
+        label: "DTOs abertos",
+        value: dtoRecords.filter((item) => item.status !== "completed").length,
+        helper: "Diagnosticos em analise"
       },
       {
-        label: "Nao conformidades",
-        value: safety.filter((item) => item.status !== "resolved").length,
-        helper: "Ocorrencias de seguranca"
+        label: "Anomalias abertas",
+        value: anomalyReports.filter((item) => item.status !== "resolved").length,
+        helper: "Tratativas pendentes"
       },
       {
-        label: "Checklists ativos",
-        value: checklists.length,
-        helper: "Rotinas monitoradas"
+        label: "GEROT em aberto",
+        value: gerotRecords.filter((item) => item.status !== "closed").length,
+        helper: "Registros monitorados"
       }
     ],
     charts: {
-      tasksByStatus: [
-        { label: "Abertas", value: tasks.filter((item) => item.status === "open").length },
-        { label: "Em andamento", value: tasks.filter((item) => item.status === "in_progress").length },
-        { label: "Concluidas", value: tasks.filter((item) => item.status === "done").length }
-      ],
-      safetyBySeverity: [
-        { label: "Critico/alto", value: safety.filter((item) => ["critical", "high"].includes(item.severity)).length },
-        { label: "Medio", value: safety.filter((item) => item.severity === "medium").length },
-        { label: "Baixo", value: safety.filter((item) => item.severity === "low").length }
-      ],
-      trainingCompletion: trainings.map((training) => {
-        const participants = arrayValue(training.participants);
-        const completed = participants.filter((item) => item.status === "completed").length;
-        const total = Math.max(participants.length, 1);
-        return {
-          label: training.title,
-          value: Math.round((completed / total) * 100)
-        };
-      })
+      actionPlansByStatus: buildProgressSeries([
+        { label: "Abertos", value: actionPlans.filter((item) => item.status === "open").length },
+        { label: "Em andamento", value: actionPlans.filter((item) => item.status === "in_progress").length },
+        { label: "Concluidos", value: actionPlans.filter((item) => item.status === "done").length }
+      ]),
+      meetingsByStatus: buildProgressSeries([
+        { label: "Agendadas", value: meetings.filter((item) => item.status === "scheduled").length },
+        { label: "Realizadas", value: meetings.filter((item) => item.status === "held").length },
+        { label: "Follow-up", value: meetings.filter((item) => item.status === "follow_up").length }
+      ]),
+      moduleLoad
     },
     highlights: {
-      overdueTasks: overdueTasks.slice(0, 5),
-      urgentSafetyItems: safety
+      overdueItems: overdueItems.slice(0, 6),
+      priorityAnomalies: anomalyReports
         .filter((item) => ["critical", "high"].includes(item.severity) && item.status !== "resolved")
-        .slice(0, 5),
+        .slice(0, 6)
+        .map((item) => ({
+          ...item,
+          unitName: getUnit(database, item.unitId)?.name || "Nao definida"
+        })),
       unreadNotifications: notifications.filter((item) => !item.read).length
     },
     feed: getScopedCollection(database, user, "history")
@@ -739,6 +799,314 @@ async function createUser(database, user, payload) {
   });
 
   return { item: getUserProfile(database, record) };
+}
+
+function createActionPlan(database, user, payload) {
+  ensurePermission(user, "actionPlans.manage");
+
+  if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
+    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+  }
+
+  const unit = getUnit(database, payload.unitId);
+  if (!unit) {
+    throw new ApiError("Unidade informada nao existe.", 404);
+  }
+
+  const record = {
+    id: nextId(database, "actionPlans"),
+    title: payload.title.trim(),
+    objective: payload.objective?.trim() || "",
+    status: payload.status || "open",
+    priority: payload.priority || "medium",
+    companyId: resolveCompanyIdForRecord(database, user, unit.companyId, unit.id),
+    unitId: toInt(unit.id),
+    ownerId: toInt(payload.ownerId),
+    createdBy: toInt(user.id),
+    dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  if (!testCollectionScope("actionPlans", record, user)) {
+    throw new ApiError("O plano precisa estar dentro da sua area de atuacao.", 403);
+  }
+
+  database.actionPlans.push(record);
+  addHistoryEntry(database, {
+    module: "actionPlans",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: record.companyId,
+    unitId: record.unitId,
+    description: `Plano de acao '${record.title}' criado.`
+  });
+  addNotification(database, {
+    userId: record.ownerId,
+    title: "Novo plano de acao",
+    message: record.title,
+    level: "info",
+    link: "actionPlans"
+  });
+
+  return { item: record };
+}
+
+function createMeeting(database, user, payload) {
+  ensurePermission(user, "meetings.manage");
+
+  if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId || !payload?.scheduledAt?.trim()) {
+    throw new ApiError("Titulo, unidade, data e conducao sao obrigatorios.", 400);
+  }
+
+  const unit = getUnit(database, payload.unitId);
+  if (!unit) {
+    throw new ApiError("Unidade informada nao existe.", 404);
+  }
+
+  const record = {
+    id: nextId(database, "meetings"),
+    title: payload.title.trim(),
+    objective: payload.objective?.trim() || "",
+    status: payload.status || "scheduled",
+    companyId: resolveCompanyIdForRecord(database, user, unit.companyId, unit.id),
+    unitId: toInt(unit.id),
+    ownerId: toInt(payload.ownerId),
+    scheduledAt: payload.scheduledAt,
+    createdBy: toInt(user.id),
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  if (!testCollectionScope("meetings", record, user)) {
+    throw new ApiError("A reuniao precisa estar dentro do seu escopo.", 403);
+  }
+
+  database.meetings.push(record);
+  addHistoryEntry(database, {
+    module: "meetings",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: record.companyId,
+    unitId: record.unitId,
+    description: `Reuniao '${record.title}' registrada.`
+  });
+  addNotification(database, {
+    userId: record.ownerId,
+    title: "Nova reuniao",
+    message: record.title,
+    level: "info",
+    link: "meetings"
+  });
+
+  return { item: record };
+}
+
+function createGapaRecord(database, user, payload) {
+  ensurePermission(user, "gapa.manage");
+
+  if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
+    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+  }
+
+  const unit = getUnit(database, payload.unitId);
+  if (!unit) {
+    throw new ApiError("Unidade informada nao existe.", 404);
+  }
+
+  const record = {
+    id: nextId(database, "gapaRecords"),
+    title: payload.title.trim(),
+    category: payload.category?.trim() || "Geral",
+    summary: payload.summary?.trim() || "",
+    status: payload.status || "open",
+    companyId: resolveCompanyIdForRecord(database, user, unit.companyId, unit.id),
+    unitId: toInt(unit.id),
+    ownerId: toInt(payload.ownerId),
+    createdBy: toInt(user.id),
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  if (!testCollectionScope("gapaRecords", record, user)) {
+    throw new ApiError("O registro GAPA precisa estar dentro do seu escopo.", 403);
+  }
+
+  database.gapaRecords.push(record);
+  addHistoryEntry(database, {
+    module: "gapa",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: record.companyId,
+    unitId: record.unitId,
+    description: `Registro GAPA '${record.title}' criado.`
+  });
+  addNotification(database, {
+    userId: record.ownerId,
+    title: "Novo registro GAPA",
+    message: record.title,
+    level: "info",
+    link: "gapa"
+  });
+
+  return { item: record };
+}
+
+function createDtoRecord(database, user, payload) {
+  ensurePermission(user, "dto.manage");
+
+  if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
+    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+  }
+
+  const unit = getUnit(database, payload.unitId);
+  if (!unit) {
+    throw new ApiError("Unidade informada nao existe.", 404);
+  }
+
+  const record = {
+    id: nextId(database, "dtoRecords"),
+    title: payload.title.trim(),
+    diagnosis: payload.diagnosis?.trim() || "",
+    status: payload.status || "analysis",
+    companyId: resolveCompanyIdForRecord(database, user, unit.companyId, unit.id),
+    unitId: toInt(unit.id),
+    ownerId: toInt(payload.ownerId),
+    createdBy: toInt(user.id),
+    dueDate: payload.dueDate || new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10),
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  if (!testCollectionScope("dtoRecords", record, user)) {
+    throw new ApiError("O DTO precisa estar dentro da sua area de atuacao.", 403);
+  }
+
+  database.dtoRecords.push(record);
+  addHistoryEntry(database, {
+    module: "dto",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: record.companyId,
+    unitId: record.unitId,
+    description: `DTO '${record.title}' registrado.`
+  });
+  addNotification(database, {
+    userId: record.ownerId,
+    title: "Novo DTO",
+    message: record.title,
+    level: "info",
+    link: "dto"
+  });
+
+  return { item: record };
+}
+
+function createAnomalyReport(database, user, payload) {
+  ensurePermission(user, "anomalyReports.manage");
+
+  if (!payload?.title?.trim() || !payload?.unitId || !payload?.severity?.trim()) {
+    throw new ApiError("Titulo, unidade e severidade sao obrigatorios.", 400);
+  }
+
+  const unit = getUnit(database, payload.unitId);
+  if (!unit) {
+    throw new ApiError("Unidade informada nao existe.", 404);
+  }
+
+  const record = {
+    id: nextId(database, "anomalyReports"),
+    title: payload.title.trim(),
+    source: payload.source?.trim() || "Operacao",
+    severity: payload.severity,
+    status: payload.status || "open",
+    companyId: toInt(unit.companyId),
+    unitId: toInt(unit.id),
+    reportedBy: toInt(user.id),
+    description: payload.description?.trim() || "",
+    createdAt: nowIso(),
+    dueDate: payload.dueDate || new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
+  };
+
+  if (!testCollectionScope("anomalyReports", record, user)) {
+    throw new ApiError("A anomalia precisa estar dentro do seu escopo.", 403);
+  }
+
+  database.anomalyReports.push(record);
+  addHistoryEntry(database, {
+    module: "anomalyReports",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: record.companyId,
+    unitId: record.unitId,
+    description: `Relato de anomalia '${record.title}' registrado.`
+  });
+  addNotification(database, {
+    userId: user.id,
+    title: "Anomalia registrada",
+    message: record.title,
+    level: "warning",
+    link: "anomalyReports"
+  });
+
+  return { item: record };
+}
+
+function createGerotRecord(database, user, payload) {
+  ensurePermission(user, "gerot.manage");
+
+  if (!payload?.title?.trim() || !payload?.unitId || !payload?.ownerId) {
+    throw new ApiError("Titulo, unidade e responsavel sao obrigatorios.", 400);
+  }
+
+  const unit = getUnit(database, payload.unitId);
+  if (!unit) {
+    throw new ApiError("Unidade informada nao existe.", 404);
+  }
+
+  const record = {
+    id: nextId(database, "gerotRecords"),
+    title: payload.title.trim(),
+    front: payload.front?.trim() || "Geral",
+    notes: payload.notes?.trim() || "",
+    status: payload.status || "open",
+    companyId: resolveCompanyIdForRecord(database, user, unit.companyId, unit.id),
+    unitId: toInt(unit.id),
+    ownerId: toInt(payload.ownerId),
+    createdBy: toInt(user.id),
+    dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  if (!testCollectionScope("gerotRecords", record, user)) {
+    throw new ApiError("O registro GEROT precisa estar dentro do seu escopo.", 403);
+  }
+
+  database.gerotRecords.push(record);
+  addHistoryEntry(database, {
+    module: "gerot",
+    action: "created",
+    entityId: record.id,
+    actorId: user.id,
+    companyId: record.companyId,
+    unitId: record.unitId,
+    description: `Registro GEROT '${record.title}' criado.`
+  });
+  addNotification(database, {
+    userId: record.ownerId,
+    title: "Novo registro GEROT",
+    message: record.title,
+    level: "info",
+    link: "gerot"
+  });
+
+  return { item: record };
 }
 
 function createTask(database, user, payload) {
@@ -1022,31 +1390,46 @@ function listPath(database, user, path) {
       return {
         items: getScopedCollection(database, user, "users").map((record) => getUserProfile(database, record))
       };
-    case "/tasks":
-      ensurePermission(user, "tasks.read");
-      return { items: getScopedCollection(database, user, "tasks") };
-    case "/checklists":
-      ensurePermission(user, "checklists.read");
-      return { items: getScopedCollection(database, user, "checklists") };
-    case "/safety-reports":
-      ensurePermission(user, "safety.read");
+    case "/action-plans":
+      ensurePermission(user, "actionPlans.read");
       return {
-        items: getScopedCollection(database, user, "safetyReports").sort((left, right) =>
-          String(right.createdAt).localeCompare(String(left.createdAt))
-        )
-      };
-    case "/trainings":
-      ensurePermission(user, "trainings.read");
-      return {
-        items: getScopedCollection(database, user, "trainings").sort((left, right) =>
+        items: getScopedCollection(database, user, "actionPlans").sort((left, right) =>
           String(left.dueDate).localeCompare(String(right.dueDate))
         )
       };
-    case "/tickets":
-      ensurePermission(user, "tickets.read");
+    case "/meetings":
+      ensurePermission(user, "meetings.read");
       return {
-        items: getScopedCollection(database, user, "tickets").sort((left, right) =>
-          String(right.openedAt).localeCompare(String(left.openedAt))
+        items: getScopedCollection(database, user, "meetings").sort((left, right) =>
+          String(left.scheduledAt).localeCompare(String(right.scheduledAt))
+        )
+      };
+    case "/gapa":
+      ensurePermission(user, "gapa.read");
+      return {
+        items: getScopedCollection(database, user, "gapaRecords").sort((left, right) =>
+          String(right.updatedAt || right.createdAt).localeCompare(String(left.updatedAt || left.createdAt))
+        )
+      };
+    case "/dto":
+      ensurePermission(user, "dto.read");
+      return {
+        items: getScopedCollection(database, user, "dtoRecords").sort((left, right) =>
+          String(left.dueDate).localeCompare(String(right.dueDate))
+        )
+      };
+    case "/anomaly-reports":
+      ensurePermission(user, "anomalyReports.read");
+      return {
+        items: getScopedCollection(database, user, "anomalyReports").sort((left, right) =>
+          String(right.createdAt).localeCompare(String(left.createdAt))
+        )
+      };
+    case "/gerot":
+      ensurePermission(user, "gerot.read");
+      return {
+        items: getScopedCollection(database, user, "gerotRecords").sort((left, right) =>
+          String(right.updatedAt || right.createdAt).localeCompare(String(left.updatedAt || left.createdAt))
         )
       };
     case "/notifications": {
@@ -1078,16 +1461,18 @@ function createPath(database, user, path, body) {
   switch (path) {
     case "/users":
       return createUser(database, user, body);
-    case "/tasks":
-      return Promise.resolve(createTask(database, user, body));
-    case "/checklists":
-      return Promise.resolve(createChecklist(database, user, body));
-    case "/safety-reports":
-      return Promise.resolve(createSafetyReport(database, user, body));
-    case "/trainings":
-      return Promise.resolve(createTraining(database, user, body));
-    case "/tickets":
-      return Promise.resolve(createTicket(database, user, body));
+    case "/action-plans":
+      return Promise.resolve(createActionPlan(database, user, body));
+    case "/meetings":
+      return Promise.resolve(createMeeting(database, user, body));
+    case "/gapa":
+      return Promise.resolve(createGapaRecord(database, user, body));
+    case "/dto":
+      return Promise.resolve(createDtoRecord(database, user, body));
+    case "/anomaly-reports":
+      return Promise.resolve(createAnomalyReport(database, user, body));
+    case "/gerot":
+      return Promise.resolve(createGerotRecord(database, user, body));
     default:
       throw new ApiError("Endpoint nao encontrado.", 404);
   }

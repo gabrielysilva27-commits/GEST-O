@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js";
+import { api, ApiError } from "./api.js?v=20260828-1";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js";
+import { views } from "./modules/index.js?v=20260828-1";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -28,11 +28,12 @@ const formRoutes = {
   users: "/users",
   companies: "/companies",
   units: "/units",
-  tasks: "/tasks",
-  checklists: "/checklists",
-  safety: "/safety-reports",
-  trainings: "/trainings",
-  tickets: "/tickets"
+  actionPlans: "/action-plans",
+  meetings: "/meetings",
+  gapa: "/gapa",
+  dto: "/dto",
+  anomalyReports: "/anomaly-reports",
+  gerot: "/gerot"
 };
 
 function showToast(message, tone = "success") {
@@ -102,20 +103,7 @@ function getFormData(form) {
   const data = new FormData(form);
   const payload = Object.fromEntries(data.entries());
 
-  if (form.dataset.form === "checklists") {
-    payload.items = (payload.items || "")
-      .split(/\r?\n/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    payload.unitIds = payload.unitIds ? [Number(payload.unitIds)] : [];
-  }
-
-  if (form.dataset.form === "trainings") {
-    payload.participantIds = payload.participantIds ? [Number(payload.participantIds)] : [];
-    payload.targetRoles = [state.user.role];
-  }
-
-  ["companyId", "unitId", "assigneeId", "ownerId"].forEach((key) => {
+  ["companyId", "unitId", "ownerId"].forEach((key) => {
     if (payload[key]) {
       payload[key] = Number(payload[key]);
     }
@@ -231,6 +219,11 @@ async function handleDynamicSubmit(event) {
   event.preventDefault();
   const formName = form.dataset.form;
   const path = formRoutes[formName];
+
+  if (!path) {
+    handleError(new Error("Formulario nao reconhecido."), "Nao foi possivel identificar o formulario.");
+    return;
+  }
 
   try {
     const payload = getFormData(form);

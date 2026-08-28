@@ -1,3 +1,34 @@
+const MODULE_LABELS = {
+  dashboard: "Dashboard",
+  audit: "Painel de auditoria",
+  actionPlans: "Planos de acao",
+  meetings: "Reunioes",
+  gapa: "GAPA",
+  dto: "DTO - Diagnostico de tarefa operacional",
+  anomalyReports: "Relato de anomalia",
+  gerot: "GEROT",
+  users: "Usuarios e permissoes",
+  notifications: "Notificacoes",
+  history: "Historico"
+};
+
+const VALUE_LABELS = {
+  open: "Aberto",
+  in_progress: "Em andamento",
+  done: "Concluido",
+  scheduled: "Agendada",
+  held: "Realizada",
+  follow_up: "Follow-up",
+  analysis: "Em diagnostico",
+  completed: "Concluido",
+  resolved: "Resolvido",
+  closed: "Encerrado",
+  low: "Baixa",
+  medium: "Media",
+  high: "Alta",
+  critical: "Critica"
+};
+
 function escapeHtml(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -31,17 +62,26 @@ function formatDate(value) {
     return value;
   }
 
+  const hasTime = typeof value === "string" && value.includes("T");
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "medium",
-    timeStyle: value.includes("T") ? "short" : undefined
+    timeStyle: hasTime ? "short" : undefined
   }).format(date);
+}
+
+function formatValueLabel(value = "") {
+  return VALUE_LABELS[value] || String(value).replaceAll("_", " ");
+}
+
+function moduleLabel(value = "") {
+  return MODULE_LABELS[value] || value;
 }
 
 function moduleHeader(title, description, actions = "") {
   return `
     <header class="module-header">
       <div>
-        <span class="eyebrow">Módulo</span>
+        <span class="eyebrow">Modulo</span>
         <h2>${escapeHtml(title)}</h2>
         <p class="module-copy">${escapeHtml(description)}</p>
       </div>
@@ -70,17 +110,20 @@ function progressList(title, description, items, formatter = (item) => item.valu
       <h2>${escapeHtml(title)}</h2>
       <p>${escapeHtml(description)}</p>
       <ul>
-        ${items.map((item) => `
-          <li>
-            <div class="row">
-              <strong>${escapeHtml(item.label)}</strong>
-              <span>${escapeHtml(formatter(item))}</span>
-            </div>
-            <div class="bar-track">
-              <div class="bar-fill" style="width: ${Math.max(4, Number(item.value) || 0)}%"></div>
-            </div>
-          </li>
-        `).join("")}
+        ${items.map((item) => {
+          const progress = Math.max(4, Math.min(100, Number(item.progress ?? item.value) || 0));
+          return `
+            <li>
+              <div class="row">
+                <strong>${escapeHtml(item.label)}</strong>
+                <span>${escapeHtml(formatter(item))}</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${progress}%"></div>
+              </div>
+            </li>
+          `;
+        }).join("")}
       </ul>
     </article>
   `;
@@ -95,7 +138,7 @@ function tableCard(title, description, headers, rows) {
         <div class="empty-state">
           <div>
             <h2>Sem registros</h2>
-            <p>Novos itens aparecerão aqui conforme você começar a usar a plataforma.</p>
+            <p>Novos itens aparecerao aqui conforme voce comecar a usar este modulo.</p>
           </div>
         </div>
       ` : `
@@ -133,7 +176,7 @@ function timelineCard(title, description, items) {
         <div class="empty-state">
           <div>
             <h2>Nenhum evento ainda</h2>
-            <p>O histórico começará a aparecer conforme novos registros forem criados.</p>
+            <p>O historico comecara a aparecer conforme novos registros forem criados.</p>
           </div>
         </div>
       ` : `
@@ -141,7 +184,7 @@ function timelineCard(title, description, items) {
           ${items.map((item) => `
             <li>
               <strong>${escapeHtml(item.description || item.title || "Registro")}</strong>
-              ${item.module ? `<span class="badge info">${escapeHtml(item.module)}</span>` : ""}
+              ${item.module ? `<span class="badge info">${escapeHtml(moduleLabel(item.module))}</span>` : ""}
               <time datetime="${escapeHtml(item.createdAt || "")}">${escapeHtml(formatDate(item.createdAt))}</time>
             </li>
           `).join("")}
@@ -154,12 +197,12 @@ function timelineCard(title, description, items) {
 function getLookupName(lookups, type, id) {
   const list = lookups?.[type] || [];
   const item = list.find((entry) => String(entry.id) === String(id));
-  return item ? item.name : "Não definido";
+  return item ? item.name : "Nao definido";
 }
 
 function getUserLabel(lookups, id) {
   const user = (lookups?.users || []).find((entry) => String(entry.id) === String(id));
-  return user ? `${user.name} · @${user.username}` : "Não definido";
+  return user ? `${user.name} · @${user.username}` : "Nao definido";
 }
 
 function dependencyNotice(title, message) {
@@ -180,46 +223,108 @@ function getDependencyState(context, { requiresUnits = false, requiresUsers = fa
   if (requiresUnits && units.length === 0) {
     return dependencyNotice(
       "Cadastros complementares pendentes",
-      "Este módulo precisa de unidades cadastradas na base antes de receber novos registros."
+      "Este modulo precisa de unidades cadastradas na base antes de receber novos registros."
     );
   }
 
   if (requiresUsers && users.length === 0) {
     return dependencyNotice(
       "Cadastros complementares pendentes",
-      "Este módulo precisa de usuários cadastrados antes de receber novos registros."
+      "Este modulo precisa de usuarios cadastrados antes de receber novos registros."
     );
   }
 
   return "";
 }
 
+function userCan(context, permission) {
+  return (context.user?.permissions || []).includes(permission);
+}
+
+function statusBadge(value) {
+  return `<span class="badge ${badgeClass(value)}">${escapeHtml(formatValueLabel(value))}</span>`;
+}
+
 function dashboardView(data) {
-  const overdueRows = (data.highlights?.overdueTasks || []).map((item) => [
+  const overdueRows = (data.highlights?.overdueItems || []).map((item) => [
     escapeHtml(item.title),
-    `<span class="badge ${badgeClass(item.priority)}">${escapeHtml(item.priority)}</span>`,
-    escapeHtml(formatDate(item.dueDate))
+    `<span class="badge info">${escapeHtml(item.module)}</span>`,
+    escapeHtml(formatDate(item.dueDate)),
+    statusBadge(item.status || "open")
   ]);
 
-  const safetyRows = (data.highlights?.urgentSafetyItems || []).map((item) => [
+  const anomalyRows = (data.highlights?.priorityAnomalies || []).map((item) => [
     escapeHtml(item.title),
-    `<span class="badge ${badgeClass(item.severity)}">${escapeHtml(item.severity)}</span>`,
-    `<span class="badge ${badgeClass(item.status)}">${escapeHtml(item.status)}</span>`
+    escapeHtml(item.unitName || "Nao definida"),
+    statusBadge(item.severity || "high"),
+    statusBadge(item.status || "open")
   ]);
 
   return `
-    ${moduleHeader("Dashboard operacional", "Acompanhe rapidamente volume, criticidade e andamento da operação.")}
+    ${moduleHeader("Dashboard operacional", "Acompanhe rapidamente o ritmo dos principais modulos da operacao.")}
     ${metricCards(data.kpis || [])}
     <div class="charts-grid">
-      ${progressList("Fluxo de tarefas", "Distribuição das atividades por status.", data.charts?.tasksByStatus || [], (item) => `${item.value} itens`)}
-      ${progressList("Ocorrências de segurança", "Leitura dos relatos por severidade.", data.charts?.safetyBySeverity || [], (item) => `${item.value} registros`)}
-      ${progressList("Treinamentos", "Percentual de conclusão por ação.", data.charts?.trainingCompletion || [], (item) => `${item.value}%`)}
-      ${timelineCard("Histórico recente", "Últimos eventos relevantes registrados na plataforma.", data.feed || [])}
+      ${progressList("Planos de acao", "Leitura do andamento por status.", data.charts?.actionPlansByStatus || [], (item) => `${item.value} registros`)}
+      ${progressList("Reunioes", "Agenda e desdobramentos do periodo.", data.charts?.meetingsByStatus || [], (item) => `${item.value} registros`)}
+      ${progressList("Carga por modulo", "Volume atual nos modulos mais operacionais.", data.charts?.moduleLoad || [], (item) => `${item.value} registros`)}
+      ${timelineCard("Historico recente", "Ultimos movimentos relevantes registrados na plataforma.", data.feed || [])}
     </div>
     <div class="split-layout">
-      ${tableCard("Tarefas vencidas", "Demandas que exigem atenção imediata.", ["Tarefa", "Prioridade", "Vencimento"], overdueRows)}
-      ${tableCard("Segurança em foco", "Ocorrências críticas ou altas ainda abertas.", ["Relato", "Severidade", "Status"], safetyRows)}
+      ${tableCard("Prazos em foco", "Itens vencidos ou que pedem atencao imediata.", ["Registro", "Modulo", "Prazo", "Status"], overdueRows)}
+      ${tableCard("Anomalias prioritarias", "Relatos com severidade alta ou critica ainda em aberto.", ["Relato", "Unidade", "Severidade", "Status"], anomalyRows)}
     </div>
+  `;
+}
+
+function auditPanelView(data) {
+  const dashboard = data.dashboard || {};
+  const notifications = data.notifications || { items: [], unreadCount: 0 };
+  const history = data.history || { items: [] };
+
+  const cards = [
+    {
+      label: "Nao lidas",
+      value: notifications.unreadCount || 0,
+      helper: "Notificacoes ainda pendentes"
+    },
+    {
+      label: "Prazos vencidos",
+      value: (dashboard.highlights?.overdueItems || []).length,
+      helper: "Itens que pedem acao imediata"
+    },
+    {
+      label: "Anomalias criticas",
+      value: (dashboard.highlights?.priorityAnomalies || []).length,
+      helper: "Ocorrencias de maior sensibilidade"
+    },
+    {
+      label: "Movimentacoes",
+      value: (history.items || []).length,
+      helper: "Ultimos registros monitorados"
+    }
+  ];
+
+  const alertRows = (notifications.items || []).slice(0, 8).map((item) => [
+    `<span class="badge ${badgeClass(item.level)}">${escapeHtml(item.title)}</span>`,
+    escapeHtml(item.message),
+    escapeHtml(formatDate(item.createdAt)),
+    item.read ? "<span class=\"badge success\">Lida</span>" : "<span class=\"badge warning\">Pendente</span>"
+  ]);
+
+  const movementRows = (history.items || []).slice(0, 10).map((item) => [
+    `<span class="badge info">${escapeHtml(moduleLabel(item.module))}</span>`,
+    escapeHtml(item.description || ""),
+    escapeHtml(formatDate(item.createdAt))
+  ]);
+
+  return `
+    ${moduleHeader("Painel de auditoria", "Consolide alertas, prazos e movimentacoes recentes em uma leitura unica.")}
+    ${metricCards(cards)}
+    <div class="split-layout">
+      ${tableCard("Alertas recentes", "Visao rapida do que ainda merece acompanhamento.", ["Titulo", "Mensagem", "Quando", "Situacao"], alertRows)}
+      ${tableCard("Movimentacoes monitoradas", "Ultimos registros relevantes para acompanhamento.", ["Modulo", "Descricao", "Quando"], movementRows)}
+    </div>
+    ${timelineCard("Rastro operacional", "Cronologia dos eventos mais recentes da plataforma.", history.items || [])}
   `;
 }
 
@@ -235,33 +340,40 @@ function usersView(data, context) {
     <option value="${escapeHtml(role.id)}">${escapeHtml(role.label)}</option>
   `).join("");
 
+  const formContent = userCan(context, "users.manage")
+    ? `
+      <form class="stack" data-form="users">
+        <div class="form-grid">
+          <label class="field">
+            <span>Nome</span>
+            <input name="name" required>
+          </label>
+          <label class="field">
+            <span>Nome de usuario</span>
+            <input name="username" required>
+          </label>
+          <label class="field">
+            <span>Perfil</span>
+            <select name="role" required>${roleOptions}</select>
+          </label>
+          <label class="field">
+            <span>Senha inicial</span>
+            <input name="password" placeholder="Defina uma senha">
+          </label>
+        </div>
+        <button class="button primary" type="submit">Cadastrar usuario</button>
+      </form>
+    `
+    : dependencyNotice(
+        "Acesso somente para consulta",
+        "Seu perfil pode visualizar os usuarios, mas nao pode cadastrar novos acessos por aqui."
+      );
+
   return `
-    ${moduleHeader("Usuários e permissões", "Cadastre acessos, senhas iniciais e perfis diretamente pela plataforma.")}
+    ${moduleHeader("Usuarios e permissoes", "Cadastre acessos, senhas iniciais e perfis diretamente pela plataforma.")}
     <div class="split-layout">
-      ${tableCard("Usuários ativos", "Lista atual de acessos disponíveis.", ["Nome", "Usuário", "Perfil", "Status"], rows)}
-      ${formCard("Novo usuário", "Crie um novo acesso com nome de usuário e senha inicial.", `
-        <form class="stack" data-form="users">
-          <div class="form-grid">
-            <label class="field">
-              <span>Nome</span>
-              <input name="name" required>
-            </label>
-            <label class="field">
-              <span>Nome de usuário</span>
-              <input name="username" required>
-            </label>
-            <label class="field">
-              <span>Perfil</span>
-              <select name="role" required>${roleOptions}</select>
-            </label>
-            <label class="field">
-              <span>Senha inicial</span>
-              <input name="password" placeholder="Defina uma senha">
-            </label>
-          </div>
-          <button class="button primary" type="submit">Cadastrar usuário</button>
-        </form>
-      `)}
+      ${tableCard("Usuarios ativos", "Lista atual de acessos disponiveis.", ["Nome", "Usuario", "Perfil", "Status"], rows)}
+      ${formCard("Novo usuario", "Crie um novo acesso com nome de usuario e senha inicial.", formContent)}
     </div>
   `;
 }
@@ -269,45 +381,19 @@ function usersView(data, context) {
 function operationsView(config, data, context) {
   const rows = (data.items || []).map((item) => config.columns.map((column) => column(item, context)));
   const blocked = getDependencyState(context, config.dependencies);
+  const formContent = blocked
+    || (userCan(context, config.managePermission)
+      ? config.form(context)
+      : dependencyNotice(
+          "Acesso somente para consulta",
+          "Seu perfil pode visualizar este modulo, mas nao pode criar registros por aqui."
+        ));
 
   return `
     ${moduleHeader(config.title, config.description, config.actions || "")}
     <div class="split-layout">
       ${tableCard(config.tableTitle, config.tableDescription, config.headers, rows)}
-      ${formCard(config.formTitle, config.formDescription, blocked || config.form(context))}
-    </div>
-  `;
-}
-
-function reportsView(data) {
-  const cards = (data.cards || []).map((card) => ({
-    label: card.label,
-    value: `${card.value}${card.unit || ""}`,
-    helper: "Consolidado para leitura gerencial"
-  }));
-
-  return `
-    ${moduleHeader("Relatórios e exportações", "Consulte indicadores consolidados e exporte dados em CSV.", `
-      <div class="stack">
-        <button class="button secondary" type="button" data-export="tasks">Exportar tarefas</button>
-        <button class="button secondary" type="button" data-export="checklists">Exportar checklists</button>
-        <button class="button secondary" type="button" data-export="safetyReports">Exportar segurança</button>
-        <button class="button secondary" type="button" data-export="trainings">Exportar treinamentos</button>
-        <button class="button secondary" type="button" data-export="tickets">Exportar chamados</button>
-      </div>
-    `)}
-    ${metricCards(cards)}
-    <div class="split-layout">
-      ${tableCard("Tarefas", "Resumo por estágio da execução.", ["Abertas", "Em andamento", "Concluídas"], [[
-        escapeHtml(data.breakdown?.tasks?.open ?? 0),
-        escapeHtml(data.breakdown?.tasks?.inProgress ?? 0),
-        escapeHtml(data.breakdown?.tasks?.done ?? 0)
-      ]])}
-      ${tableCard("Segurança e treinamentos", "Leitura rápida para acompanhamento.", ["Relatos resolvidos", "Treinamentos agendados", "Treinamentos em andamento"], [[
-        escapeHtml(data.breakdown?.safety?.resolved ?? 0),
-        escapeHtml(data.breakdown?.trainings?.scheduled ?? 0),
-        escapeHtml(data.breakdown?.trainings?.inProgress ?? 0)
-      ]])}
+      ${formCard(config.formTitle, config.formDescription, formContent)}
     </div>
   `;
 }
@@ -323,45 +409,46 @@ function notificationsView(data) {
   ]);
 
   return `
-    ${moduleHeader("Notificações", "Acompanhe alertas e mensagens direcionadas ao seu perfil.")}
-    ${tableCard("Caixa de entrada", `${data.unreadCount || 0} notificações ainda não lidas.`, ["Título", "Mensagem", "Quando", "Ação"], rows)}
+    ${moduleHeader("Notificacoes", "Acompanhe alertas e mensagens direcionadas ao seu perfil.")}
+    ${tableCard("Caixa de entrada", `${data.unreadCount || 0} notificacoes ainda nao lidas.`, ["Titulo", "Mensagem", "Quando", "Acao"], rows)}
   `;
 }
 
 function historyView(data) {
   return `
-    ${moduleHeader("Histórico", "Auditoria simples do que aconteceu na plataforma e quando aconteceu.")}
+    ${moduleHeader("Historico", "Auditoria simples do que aconteceu na plataforma e quando aconteceu.")}
     ${timelineCard("Linha do tempo", "Eventos mais recentes registrados no sistema.", data.items || [])}
   `;
 }
 
-const taskConfig = {
-  title: "Tarefas",
-  description: "Organize entregas, responsáveis, prioridades e vencimentos em um único fluxo.",
-  tableTitle: "Backlog operacional",
-  tableDescription: "Tarefas acessíveis ao seu perfil.",
-  headers: ["Tarefa", "Responsável", "Unidade", "Prioridade", "Vencimento", "Status"],
-  formTitle: "Nova tarefa",
-  formDescription: "Crie uma atividade e direcione-a ao responsável correto.",
+const actionPlansConfig = {
+  title: "Planos de acao",
+  description: "Estruture frentes, responsaveis e prazos em um fluxo claro de execucao.",
+  tableTitle: "Carteira de planos",
+  tableDescription: "Planos de acao acessiveis ao seu perfil.",
+  headers: ["Plano", "Unidade", "Responsavel", "Prazo", "Prioridade", "Status"],
+  formTitle: "Novo plano de acao",
+  formDescription: "Abra uma frente com objetivo claro e dono definido.",
   dependencies: { requiresUnits: true, requiresUsers: true },
+  managePermission: "actionPlans.manage",
   columns: [
     (item) => escapeHtml(item.title),
-    (item, context) => escapeHtml(getUserLabel(context.lookups, item.assigneeId)),
     (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
-    (item) => `<span class="badge ${badgeClass(item.priority)}">${escapeHtml(item.priority)}</span>`,
+    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
     (item) => escapeHtml(formatDate(item.dueDate)),
-    (item) => `<span class="badge ${badgeClass(item.status)}">${escapeHtml(item.status)}</span>`
+    (item) => statusBadge(item.priority || "medium"),
+    (item) => statusBadge(item.status || "open")
   ],
   form(context) {
     return `
-      <form class="stack" data-form="tasks">
+      <form class="stack" data-form="actionPlans">
         <label class="field">
-          <span>Título</span>
+          <span>Titulo do plano</span>
           <input name="title" required>
         </label>
         <label class="field">
-          <span>Descrição</span>
-          <textarea name="description"></textarea>
+          <span>Objetivo</span>
+          <textarea name="objective" placeholder="Descreva o objetivo principal do plano"></textarea>
         </label>
         <div class="form-grid">
           <label class="field">
@@ -369,103 +456,225 @@ const taskConfig = {
             <select name="unitId" required>${optionList(context.lookups.units)}</select>
           </label>
           <label class="field">
-            <span>Responsável</span>
-            <select name="assigneeId" required>${optionList(context.lookups.users)}</select>
+            <span>Responsavel</span>
+            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
           </label>
           <label class="field">
             <span>Prioridade</span>
             <select name="priority">
               <option value="low">Baixa</option>
-              <option value="medium">Média</option>
+              <option value="medium">Media</option>
               <option value="high">Alta</option>
-              <option value="critical">Crítica</option>
+              <option value="critical">Critica</option>
             </select>
           </label>
           <label class="field">
-            <span>Vencimento</span>
+            <span>Prazo</span>
             <input type="date" name="dueDate" required>
           </label>
         </div>
-        <button class="button primary" type="submit">Criar tarefa</button>
+        <button class="button primary" type="submit">Criar plano</button>
       </form>
     `;
   }
 };
 
-const checklistConfig = {
-  title: "Checklists personalizados",
-  description: "Crie rotinas padronizadas e acompanhe conformidade por unidade.",
-  tableTitle: "Checklists ativos",
-  tableDescription: "Modelos disponíveis para a operação.",
-  headers: ["Checklist", "Categoria", "Unidades", "Conformidade", "Última execução"],
-  formTitle: "Novo checklist",
-  formDescription: "Monte um checklist com itens claros e objetivos.",
-  dependencies: { requiresUnits: true },
-  columns: [
-    (item) => escapeHtml(item.name),
-    (item) => escapeHtml(item.category),
-    (item, context) => escapeHtml((item.unitIds || []).map((id) => getLookupName(context.lookups, "units", id)).join(", ")),
-    (item) => `<span class="badge info">${escapeHtml(item.complianceRate ?? 0)}%</span>`,
-    (item) => escapeHtml(formatDate(item.lastRunAt))
-  ],
-  form(context) {
-    return `
-      <form class="stack" data-form="checklists">
-        <label class="field">
-          <span>Nome</span>
-          <input name="name" required>
-        </label>
-        <div class="form-grid">
-          <label class="field">
-            <span>Categoria</span>
-            <input name="category" required placeholder="Segurança, operação, qualidade...">
-          </label>
-          <label class="field">
-            <span>Unidade</span>
-            <select name="unitIds" required>${optionList(context.lookups.units)}</select>
-          </label>
-        </div>
-        <label class="field">
-          <span>Itens do checklist</span>
-          <textarea name="items" placeholder="Um item por linha" required></textarea>
-        </label>
-        <button class="button primary" type="submit">Criar checklist</button>
-      </form>
-    `;
-  }
-};
-
-const safetyConfig = {
-  title: "Relatos de segurança",
-  description: "Registre desvios, quase acidentes e oportunidades de melhoria com rastreabilidade.",
-  tableTitle: "Ocorrências registradas",
-  tableDescription: "Relatos acessíveis dentro do seu escopo.",
-  headers: ["Relato", "Unidade", "Severidade", "Prazo", "Status"],
-  formTitle: "Novo relato",
-  formDescription: "Capture a ocorrência com clareza para facilitar a tratativa.",
-  dependencies: { requiresUnits: true },
+const meetingsConfig = {
+  title: "Reunioes",
+  description: "Organize pautas, responsaveis e desdobramentos em uma agenda mais objetiva.",
+  tableTitle: "Agenda de reunioes",
+  tableDescription: "Reunioes previstas e registradas dentro do seu escopo.",
+  headers: ["Reuniao", "Unidade", "Data", "Conducao", "Status"],
+  formTitle: "Nova reuniao",
+  formDescription: "Registre um encontro, sua pauta central e o responsavel pela conducao.",
+  dependencies: { requiresUnits: true, requiresUsers: true },
+  managePermission: "meetings.manage",
   columns: [
     (item) => escapeHtml(item.title),
     (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
-    (item) => `<span class="badge ${badgeClass(item.severity)}">${escapeHtml(item.severity)}</span>`,
-    (item) => escapeHtml(formatDate(item.dueDate)),
-    (item) => `<span class="badge ${badgeClass(item.status)}">${escapeHtml(item.status)}</span>`
+    (item) => escapeHtml(formatDate(item.scheduledAt)),
+    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
+    (item) => statusBadge(item.status || "scheduled")
   ],
   form(context) {
     return `
-      <form class="stack" data-form="safety">
+      <form class="stack" data-form="meetings">
         <label class="field">
-          <span>Título</span>
+          <span>Titulo da reuniao</span>
+          <input name="title" required>
+        </label>
+        <label class="field">
+          <span>Pauta principal</span>
+          <textarea name="objective" placeholder="O que precisa ser alinhado ou decidido"></textarea>
+        </label>
+        <div class="form-grid">
+          <label class="field">
+            <span>Unidade</span>
+            <select name="unitId" required>${optionList(context.lookups.units)}</select>
+          </label>
+          <label class="field">
+            <span>Conducao</span>
+            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
+          </label>
+          <label class="field">
+            <span>Data</span>
+            <input type="date" name="scheduledAt" required>
+          </label>
+          <label class="field">
+            <span>Status</span>
+            <select name="status">
+              <option value="scheduled">Agendada</option>
+              <option value="held">Realizada</option>
+              <option value="follow_up">Follow-up</option>
+            </select>
+          </label>
+        </div>
+        <button class="button primary" type="submit">Registrar reuniao</button>
+      </form>
+    `;
+  }
+};
+
+const gapaConfig = {
+  title: "GAPA",
+  description: "Centralize registros GAPA, frentes em andamento e responsaveis pela tratativa.",
+  tableTitle: "Registros GAPA",
+  tableDescription: "Itens GAPA disponiveis para acompanhamento do seu perfil.",
+  headers: ["Registro", "Categoria", "Unidade", "Responsavel", "Status"],
+  formTitle: "Novo registro GAPA",
+  formDescription: "Abra um registro com contexto, dono e proximo passo definidos.",
+  dependencies: { requiresUnits: true, requiresUsers: true },
+  managePermission: "gapa.manage",
+  columns: [
+    (item) => escapeHtml(item.title),
+    (item) => escapeHtml(item.category || "Geral"),
+    (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
+    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
+    (item) => statusBadge(item.status || "open")
+  ],
+  form(context) {
+    return `
+      <form class="stack" data-form="gapa">
+        <label class="field">
+          <span>Titulo do registro</span>
           <input name="title" required>
         </label>
         <div class="form-grid">
           <label class="field">
-            <span>Tipo</span>
-            <select name="type">
-              <option value="Desvio">Desvio</option>
-              <option value="Quase acidente">Quase acidente</option>
-              <option value="Comportamento">Comportamento</option>
+            <span>Categoria</span>
+            <input name="category" placeholder="Processo, rotina, melhoria...">
+          </label>
+          <label class="field">
+            <span>Unidade</span>
+            <select name="unitId" required>${optionList(context.lookups.units)}</select>
+          </label>
+          <label class="field">
+            <span>Responsavel</span>
+            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
+          </label>
+          <label class="field">
+            <span>Status</span>
+            <select name="status">
+              <option value="open">Aberto</option>
+              <option value="in_progress">Em andamento</option>
+              <option value="done">Concluido</option>
             </select>
+          </label>
+        </div>
+        <label class="field">
+          <span>Resumo</span>
+          <textarea name="summary" placeholder="Registre contexto, causa ou encaminhamento"></textarea>
+        </label>
+        <button class="button primary" type="submit">Criar registro</button>
+      </form>
+    `;
+  }
+};
+
+const dtoConfig = {
+  title: "DTO - Diagnostico de tarefa operacional",
+  description: "Registre o diagnostico, o responsavel e o proximo passo para cada tratativa operacional.",
+  tableTitle: "Diagnosticos operacionais",
+  tableDescription: "DTOs ativos ou recentemente atualizados no seu escopo.",
+  headers: ["Diagnostico", "Unidade", "Responsavel", "Prazo", "Status"],
+  formTitle: "Novo DTO",
+  formDescription: "Formalize um diagnostico de tarefa operacional com clareza e rastreabilidade.",
+  dependencies: { requiresUnits: true, requiresUsers: true },
+  managePermission: "dto.manage",
+  columns: [
+    (item) => escapeHtml(item.title),
+    (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
+    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
+    (item) => escapeHtml(formatDate(item.dueDate)),
+    (item) => statusBadge(item.status || "analysis")
+  ],
+  form(context) {
+    return `
+      <form class="stack" data-form="dto">
+        <label class="field">
+          <span>Titulo do diagnostico</span>
+          <input name="title" required>
+        </label>
+        <label class="field">
+          <span>Diagnostico</span>
+          <textarea name="diagnosis" placeholder="Descreva causa, impacto e direcionamento"></textarea>
+        </label>
+        <div class="form-grid">
+          <label class="field">
+            <span>Unidade</span>
+            <select name="unitId" required>${optionList(context.lookups.units)}</select>
+          </label>
+          <label class="field">
+            <span>Responsavel</span>
+            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
+          </label>
+          <label class="field">
+            <span>Prazo</span>
+            <input type="date" name="dueDate" required>
+          </label>
+          <label class="field">
+            <span>Status</span>
+            <select name="status">
+              <option value="analysis">Em diagnostico</option>
+              <option value="in_progress">Em andamento</option>
+              <option value="completed">Concluido</option>
+            </select>
+          </label>
+        </div>
+        <button class="button primary" type="submit">Registrar DTO</button>
+      </form>
+    `;
+  }
+};
+
+const anomalyReportsConfig = {
+  title: "Relato de anomalia",
+  description: "Registre desvios, impactos e prazos de tratativa com uma leitura mais objetiva.",
+  tableTitle: "Anomalias registradas",
+  tableDescription: "Relatos ativos dentro do seu escopo de acompanhamento.",
+  headers: ["Relato", "Origem", "Unidade", "Severidade", "Status"],
+  formTitle: "Novo relato de anomalia",
+  formDescription: "Capture a anomalia com clareza para acelerar o tratamento.",
+  dependencies: { requiresUnits: true },
+  managePermission: "anomalyReports.manage",
+  columns: [
+    (item) => escapeHtml(item.title),
+    (item) => escapeHtml(item.source || "Operacao"),
+    (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
+    (item) => statusBadge(item.severity || "medium"),
+    (item) => statusBadge(item.status || "open")
+  ],
+  form(context) {
+    return `
+      <form class="stack" data-form="anomalyReports">
+        <label class="field">
+          <span>Titulo do relato</span>
+          <input name="title" required>
+        </label>
+        <div class="form-grid">
+          <label class="field">
+            <span>Origem</span>
+            <input name="source" placeholder="Processo, equipamento, rotina...">
           </label>
           <label class="field">
             <span>Unidade</span>
@@ -475,9 +684,9 @@ const safetyConfig = {
             <span>Severidade</span>
             <select name="severity">
               <option value="low">Baixa</option>
-              <option value="medium">Média</option>
+              <option value="medium">Media</option>
               <option value="high">Alta</option>
-              <option value="critical">Crítica</option>
+              <option value="critical">Critica</option>
             </select>
           </label>
           <label class="field">
@@ -486,116 +695,66 @@ const safetyConfig = {
           </label>
         </div>
         <label class="field">
-          <span>Descrição</span>
-          <textarea name="description"></textarea>
+          <span>Descricao</span>
+          <textarea name="description" placeholder="Descreva a anomalia e o impacto observado"></textarea>
         </label>
-        <button class="button primary" type="submit">Registrar relato</button>
+        <button class="button primary" type="submit">Registrar anomalia</button>
       </form>
     `;
   }
 };
 
-const trainingsConfig = {
-  title: "Treinamentos",
-  description: "Planeje formações, defina participantes e acompanhe o andamento.",
-  tableTitle: "Agenda de treinamentos",
-  tableDescription: "Treinamentos ativos no seu escopo.",
-  headers: ["Treinamento", "Unidade", "Data", "Instrutor", "Status"],
-  formTitle: "Novo treinamento",
-  formDescription: "Cadastre uma ação formativa com rapidez.",
+const gerotConfig = {
+  title: "GEROT",
+  description: "Acompanhe registros, frentes e encaminhamentos do GEROT em uma trilha unica.",
+  tableTitle: "Registros GEROT",
+  tableDescription: "Itens GEROT ativos no seu escopo.",
+  headers: ["Registro", "Frente", "Unidade", "Responsavel", "Status"],
+  formTitle: "Novo registro GEROT",
+  formDescription: "Abra um registro GEROT com responsavel definido e prazo claro.",
   dependencies: { requiresUnits: true, requiresUsers: true },
+  managePermission: "gerot.manage",
   columns: [
     (item) => escapeHtml(item.title),
+    (item) => escapeHtml(item.front || "Geral"),
     (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
-    (item) => escapeHtml(formatDate(item.dueDate)),
-    (item) => escapeHtml(item.instructor),
-    (item) => `<span class="badge ${badgeClass(item.status)}">${escapeHtml(item.status)}</span>`
+    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
+    (item) => statusBadge(item.status || "open")
   ],
   form(context) {
     return `
-      <form class="stack" data-form="trainings">
+      <form class="stack" data-form="gerot">
         <label class="field">
-          <span>Título</span>
+          <span>Titulo do registro</span>
           <input name="title" required>
         </label>
         <div class="form-grid">
           <label class="field">
-            <span>Categoria</span>
-            <input name="category" placeholder="Segurança, qualidade, operação">
+            <span>Frente</span>
+            <input name="front" placeholder="Rotina, tratativa, melhoria...">
           </label>
           <label class="field">
             <span>Unidade</span>
             <select name="unitId" required>${optionList(context.lookups.units)}</select>
           </label>
           <label class="field">
-            <span>Data</span>
-            <input type="date" name="dueDate" required>
+            <span>Responsavel</span>
+            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
           </label>
           <label class="field">
-            <span>Instrutor</span>
-            <input name="instructor">
-          </label>
-        </div>
-        <label class="field">
-          <span>Participante</span>
-          <select name="participantIds">${optionList(context.lookups.users)}</select>
-        </label>
-        <button class="button primary" type="submit">Cadastrar treinamento</button>
-      </form>
-    `;
-  }
-};
-
-const ticketsConfig = {
-  title: "Chamados",
-  description: "Centralize demandas operacionais, técnicas e administrativas.",
-  tableTitle: "Fila de chamados",
-  tableDescription: "Chamados acompanhados na plataforma.",
-  headers: ["Chamado", "Categoria", "Unidade", "Prioridade", "Status"],
-  formTitle: "Novo chamado",
-  formDescription: "Abra uma demanda e defina quem cuidará da tratativa.",
-  dependencies: { requiresUnits: true, requiresUsers: true },
-  columns: [
-    (item) => escapeHtml(item.title),
-    (item) => escapeHtml(item.category),
-    (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
-    (item) => `<span class="badge ${badgeClass(item.priority)}">${escapeHtml(item.priority)}</span>`,
-    (item) => `<span class="badge ${badgeClass(item.status)}">${escapeHtml(item.status)}</span>`
-  ],
-  form(context) {
-    return `
-      <form class="stack" data-form="tickets">
-        <label class="field">
-          <span>Título</span>
-          <input name="title" required>
-        </label>
-        <div class="form-grid">
-          <label class="field">
-            <span>Categoria</span>
-            <input name="category" placeholder="Infraestrutura, acessos, qualidade">
-          </label>
-          <label class="field">
-            <span>Unidade</span>
-            <select name="unitId" required>${optionList(context.lookups.units)}</select>
-          </label>
-          <label class="field">
-            <span>Prioridade</span>
-            <select name="priority">
-              <option value="low">Baixa</option>
-              <option value="medium">Média</option>
-              <option value="high">Alta</option>
+            <span>Status</span>
+            <select name="status">
+              <option value="open">Aberto</option>
+              <option value="in_progress">Em andamento</option>
+              <option value="closed">Encerrado</option>
             </select>
           </label>
-          <label class="field">
-            <span>Dono do chamado</span>
-            <select name="ownerId">${optionList(context.lookups.users)}</select>
-          </label>
         </div>
         <label class="field">
-          <span>Descrição</span>
-          <textarea name="description"></textarea>
+          <span>Observacoes</span>
+          <textarea name="notes" placeholder="Registre contexto, tratativa e proximo passo"></textarea>
         </label>
-        <button class="button primary" type="submit">Abrir chamado</button>
+        <button class="button primary" type="submit">Criar registro</button>
       </form>
     `;
   }
@@ -607,48 +766,61 @@ export const views = {
     load: (api, token) => api.dashboard(token),
     render: (data) => dashboardView(data)
   },
+  audit: {
+    title: "Painel de auditoria",
+    load: async (api, token) => {
+      const [dashboard, notifications, history] = await Promise.all([
+        api.dashboard(token),
+        api.list(token, "/notifications"),
+        api.list(token, "/history")
+      ]);
+
+      return { dashboard, notifications, history };
+    },
+    render: (data) => auditPanelView(data)
+  },
+  actionPlans: {
+    title: "Planos de acao",
+    load: (api, token) => api.list(token, "/action-plans"),
+    render: (data, context) => operationsView(actionPlansConfig, data, context)
+  },
+  meetings: {
+    title: "Reunioes",
+    load: (api, token) => api.list(token, "/meetings"),
+    render: (data, context) => operationsView(meetingsConfig, data, context)
+  },
+  gapa: {
+    title: "GAPA",
+    load: (api, token) => api.list(token, "/gapa"),
+    render: (data, context) => operationsView(gapaConfig, data, context)
+  },
+  dto: {
+    title: "DTO",
+    load: (api, token) => api.list(token, "/dto"),
+    render: (data, context) => operationsView(dtoConfig, data, context)
+  },
+  anomalyReports: {
+    title: "Relato de anomalia",
+    load: (api, token) => api.list(token, "/anomaly-reports"),
+    render: (data, context) => operationsView(anomalyReportsConfig, data, context)
+  },
+  gerot: {
+    title: "GEROT",
+    load: (api, token) => api.list(token, "/gerot"),
+    render: (data, context) => operationsView(gerotConfig, data, context)
+  },
   users: {
-    title: "Usuários e permissões",
+    title: "Usuarios e permissoes",
     load: (api, token) => api.list(token, "/users"),
     render: (data, context) => usersView(data, context)
   },
-  tasks: {
-    title: "Tarefas",
-    load: (api, token) => api.list(token, "/tasks"),
-    render: (data, context) => operationsView(taskConfig, data, context)
-  },
-  checklists: {
-    title: "Checklists",
-    load: (api, token) => api.list(token, "/checklists"),
-    render: (data, context) => operationsView(checklistConfig, data, context)
-  },
-  safety: {
-    title: "Segurança",
-    load: (api, token) => api.list(token, "/safety-reports"),
-    render: (data, context) => operationsView(safetyConfig, data, context)
-  },
-  trainings: {
-    title: "Treinamentos",
-    load: (api, token) => api.list(token, "/trainings"),
-    render: (data, context) => operationsView(trainingsConfig, data, context)
-  },
-  tickets: {
-    title: "Chamados",
-    load: (api, token) => api.list(token, "/tickets"),
-    render: (data, context) => operationsView(ticketsConfig, data, context)
-  },
-  reports: {
-    title: "Relatórios",
-    load: (api, token) => api.list(token, "/reports/summary"),
-    render: (data) => reportsView(data)
-  },
   notifications: {
-    title: "Notificações",
+    title: "Notificacoes",
     load: (api, token) => api.list(token, "/notifications"),
     render: (data) => notificationsView(data)
   },
   history: {
-    title: "Histórico",
+    title: "Historico",
     load: (api, token) => api.list(token, "/history"),
     render: (data) => historyView(data)
   }
