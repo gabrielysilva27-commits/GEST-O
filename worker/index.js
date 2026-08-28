@@ -55,6 +55,28 @@ function contentTypeFor(pathname, upstreamResponse) {
   return upstreamResponse.headers.get("content-type") || "application/octet-stream";
 }
 
+function applySecurityHeaders(headers) {
+  headers.set(
+    "content-security-policy",
+    [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src https://fonts.gstatic.com",
+      "img-src 'self' data: blob:",
+      "connect-src 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'"
+    ].join("; ")
+  );
+  headers.set("x-content-type-options", "nosniff");
+  headers.set("referrer-policy", "strict-origin-when-cross-origin");
+  headers.delete("cross-origin-resource-policy");
+  headers.delete("x-frame-options");
+  headers.delete("x-xss-protection");
+}
+
 async function fetchFromRepository(pathname, request) {
   const upstreamUrl = new URL(`${REPO_BASE_URL}${pathname}`);
   upstreamUrl.search = new URL(request.url).search;
@@ -71,10 +93,22 @@ async function fetchFromRepository(pathname, request) {
 }
 
 function buildResponse(upstreamResponse, pathname) {
-  const headers = new Headers(upstreamResponse.headers);
+  const headers = new Headers();
+  const etag = upstreamResponse.headers.get("etag");
+  const lastModified = upstreamResponse.headers.get("last-modified");
+
+  if (etag) {
+    headers.set("etag", etag);
+  }
+
+  if (lastModified) {
+    headers.set("last-modified", lastModified);
+  }
+
   headers.set("content-type", contentTypeFor(pathname, upstreamResponse));
   headers.set("cache-control", cacheControlFor(pathname));
   headers.set("x-lead-source", "github-main");
+  applySecurityHeaders(headers);
 
   return new Response(upstreamResponse.body, {
     status: upstreamResponse.status,
