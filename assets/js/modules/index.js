@@ -555,18 +555,17 @@ function actionPlansView(data, context) {
     const actionText = [item.title, item.objective, item.meetingSubject].filter(Boolean).join(" ");
     const requester = item.requesterName || item.legacyRequesterName || "Não informado";
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
-    return `
-      <article class="action-record" data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution="${escapeHtml(item.meetingExecutionDate || "")}" data-due="${escapeHtml(item.dueDate || "")}" data-priority="${escapeHtml(item.priority || "medium")}" data-status="${escapeHtml(item.status || "open")}">
-        <div class="action-record-cell action-record-date"><span>Data</span><strong>${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</strong></div>
-        <div class="action-record-cell action-record-meeting"><span>Reunião</span><strong>${escapeHtml(item.meetingTitle || "Não vinculada")}</strong></div>
-        <div class="action-record-cell action-record-subject"><span>Assunto</span><strong>${escapeHtml(item.meetingSubject || item.title)}</strong></div>
-        <div class="action-record-cell action-record-plan"><span>Plano de ação</span><strong>${escapeHtml(item.objective || item.title)}</strong></div>
-        <div class="action-record-cell"><span>Solicitante</span><strong>${escapeHtml(requester)}</strong></div>
-        <div class="action-record-cell"><span>Responsável</span><strong>${escapeHtml(owner)}</strong></div>
-        <div class="action-record-cell"><span>Prazo</span><strong>${escapeHtml(formatDate(item.dueDate))}</strong></div>
-        <div class="action-record-cell"><span>Prioridade</span>${statusBadge(item.priority || "medium")}</div>
-        <div class="action-record-cell"><span>Status</span>${actionStatusBadge(item.status || "open")}</div>
-      </article>`;
+    return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution="${escapeHtml(item.meetingExecutionDate || "")}" data-due="${escapeHtml(item.dueDate || "")}" data-priority="${escapeHtml(item.priority || "medium")}" data-status="${escapeHtml(item.status || "open")}">
+      <td data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
+      <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
+      <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
+      <td class="action-plan-cell" data-label="Plano de ação">${escapeHtml(item.objective || item.title)}</td>
+      <td data-label="Solicitante">${escapeHtml(requester)}</td>
+      <td data-label="Responsável">${escapeHtml(owner)}</td>
+      <td data-label="Prazo">${escapeHtml(formatDate(item.dueDate))}</td>
+      <td data-label="Prioridade">${statusBadge(item.priority || "medium")}</td>
+      <td data-label="Status">${actionStatusBadge(item.status || "open")}</td>
+    </tr>`;
   }).join("");
 
   return `
@@ -590,7 +589,7 @@ function actionPlansView(data, context) {
         <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
       </section>
       <section class="table-card action-portfolio-card" data-action-portfolio>
-        ${rows ? `<div class="action-record-list">${rows}</div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
+        ${rows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-plan-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-deadline-column"><col class="action-priority-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Plano de ação</th><th>Solicitante</th><th>Responsável</th><th>Prazo</th><th>Prioridade</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
       </section>
     </section>
   `;
