@@ -873,6 +873,7 @@ function isPastDue(value) {
 
 function buildDashboard(database, user) {
   const actionPlans = getScopedCollection(database, user, "actionPlans");
+  const inProgressActions = actionPlans.filter((item) => item.status === "in_progress");
   const meetings = getScopedCollection(database, user, "meetings");
   const gapaRecords = getScopedCollection(database, user, "gapaRecords");
   const dtoRecords = getScopedCollection(database, user, "dtoRecords");
@@ -924,48 +925,15 @@ function buildDashboard(database, user) {
   return {
     kpis: [
       {
-        label: "Planos ativos",
-        value: actionPlans.filter((item) => item.status !== "done").length,
-        helper: "Frentes em acompanhamento"
-      },
-      {
-        label: "Reuniões agendadas",
-        value: meetings.filter((item) => item.status === "scheduled").length,
-        helper: "Agenda do período"
-      },
-      {
-        label: "GAPAs ativos",
-        value: gapaRecords.filter((item) => item.status !== "done").length,
-        helper: "Registros em andamento"
-      },
-      {
-        label: "DTOs abertos",
-        value: dtoRecords.filter((item) => item.status !== "completed").length,
-        helper: "Diagnósticos em análise"
-      },
-      {
-        label: "Anomalias abertas",
-        value: anomalyReports.filter((item) => item.status !== "resolved").length,
-        helper: "Tratativas pendentes"
-      },
-      {
-        label: "GEROT em aberto",
-        value: gerotRecords.filter((item) => item.status !== "closed").length,
-        helper: "Registros monitorados"
+        label: "Ações em andamento",
+        value: inProgressActions.length,
+        helper: "Ações existentes com status em andamento"
       }
     ],
     charts: {
       actionPlansByStatus: buildProgressSeries([
-        { label: "Abertos", value: actionPlans.filter((item) => item.status === "open").length },
-        { label: "Em andamento", value: actionPlans.filter((item) => item.status === "in_progress").length },
-        { label: "Concluídos", value: actionPlans.filter((item) => item.status === "done").length }
-      ]),
-      meetingsByStatus: buildProgressSeries([
-        { label: "Agendadas", value: meetings.filter((item) => item.status === "scheduled").length },
-        { label: "Realizadas", value: meetings.filter((item) => item.status === "held").length },
-        { label: "Follow-up", value: meetings.filter((item) => item.status === "follow_up").length }
-      ]),
-      moduleLoad
+        { label: "Em andamento", value: inProgressActions.length }
+      ])
     },
     highlights: {
       overdueItems: overdueItems.slice(0, 6),
@@ -978,6 +946,7 @@ function buildDashboard(database, user) {
         })),
       unreadNotifications: notifications.filter((item) => !item.read).length
     },
+    inProgressActions,
     feed: getScopedCollection(database, user, "history")
       .sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)))
       .slice(0, 6)

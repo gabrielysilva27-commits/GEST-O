@@ -264,33 +264,16 @@ function actionStatusBadge(value = "open") {
 }
 
 function dashboardView(data) {
-  const overdueRows = (data.highlights?.overdueItems || []).map((item) => [
+  const inProgressRows = (data.inProgressActions || []).map((item) => [
     escapeHtml(item.title),
-    `<span class="badge info">${escapeHtml(item.module)}</span>`,
     escapeHtml(formatDate(item.dueDate)),
-    statusBadge(item.status || "open")
-  ]);
-
-  const anomalyRows = (data.highlights?.priorityAnomalies || []).map((item) => [
-    escapeHtml(item.title),
-    escapeHtml(item.unitName || "Não definida"),
-    statusBadge(item.severity || "high"),
-    statusBadge(item.status || "open")
+    actionStatusBadge("in_progress")
   ]);
 
   return `
-    ${moduleHeader("Dashboard operacional", "Acompanhe rapidamente o ritmo dos principais módulos da operação.")}
+    ${moduleHeader("Dashboard operacional", "Acompanhe somente as ações que estão em andamento.")}
     ${metricCards(data.kpis || [])}
-    <div class="charts-grid">
-      ${progressList("Ações", "Leitura do andamento por status.", data.charts?.actionPlansByStatus || [], (item) => `${item.value} registros`)}
-      ${progressList("Reuniões", "Agenda e desdobramentos do período.", data.charts?.meetingsByStatus || [], (item) => `${item.value} registros`)}
-      ${progressList("Carga por módulo", "Volume atual nos módulos mais operacionais.", data.charts?.moduleLoad || [], (item) => `${item.value} registros`)}
-      ${timelineCard("Histórico recente", "Últimos movimentos relevantes registrados na plataforma.", data.feed || [])}
-    </div>
-    <div class="split-layout">
-      ${tableCard("Prazos em foco", "Itens vencidos ou que pedem atenção imediata.", ["Registro", "Módulo", "Prazo", "Status"], overdueRows)}
-      ${tableCard("Anomalias prioritárias", "Relatos com severidade alta ou crítica ainda em aberto.", ["Relato", "Unidade", "Severidade", "Status"], anomalyRows)}
-    </div>
+    ${tableCard("Ações em andamento", "Ações existentes com status em andamento.", ["Ação", "Prazo", "Status"], inProgressRows)}
   `;
 }
 
