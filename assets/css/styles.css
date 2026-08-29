@@ -561,15 +561,14 @@ button {
   font-size: 0.72rem;
 }
 
-.action-date-column,
-.action-deadline-column {
+.action-date-column {
   width: 7%;
 }
 
 .action-meeting-column,
 .action-requester-column,
 .action-owner-column {
-  width: 11%;
+  width: 12%;
 }
 
 .action-subject-column {
@@ -577,7 +576,7 @@ button {
 }
 
 .action-plan-column {
-  width: 29%;
+  width: 35%;
 }
 
 .action-priority-column {
@@ -585,7 +584,7 @@ button {
 }
 
 .action-status-column {
-  width: 8%;
+  width: 6%;
 }
 
 .action-table th,
