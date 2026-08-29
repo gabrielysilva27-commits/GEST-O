@@ -1,4 +1,4 @@
-import { api, ApiError } from "./api.js?v=20260828-10";
+import { api, ApiError } from "./api.js?v=20260828-11";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260828-14";
 
@@ -8,6 +8,13 @@ const elements = {
   workspace: document.querySelector("#workspace"),
   loginForm: document.querySelector("#login-form"),
   loginError: document.querySelector("#login-error"),
+  passwordResetForm: document.querySelector("#password-reset-form"),
+  passwordResetError: document.querySelector("#password-reset-error"),
+  openPasswordReset: document.querySelector("#open-password-reset"),
+  returnLoginButton: document.querySelector("#return-login-button"),
+  loginPanelTitle: document.querySelector("#login-panel-title"),
+  loginPanelDescription: document.querySelector("#login-panel-description"),
+  loginCard: document.querySelector(".login-card"),
   navList: document.querySelector("#nav-list"),
   footerNavList: document.querySelector("#footer-nav-list"),
   pageTitle: document.querySelector("#page-title"),
@@ -66,11 +73,32 @@ function setLoggedOutUi() {
   document.body.classList.remove("app-authenticated");
   document.body.classList.add("app-logged-out");
   elements.loginForm.reset();
+  elements.passwordResetForm.reset();
+  setLoginMode("login");
   elements.loginError.hidden = true;
   elements.loginError.textContent = "";
   elements.sidebar.classList.remove("is-open");
   state.isSidebarOpen = false;
   window.scrollTo(0, 0);
+}
+
+function setLoginMode(mode) {
+  const isReset = mode === "reset";
+  elements.loginForm.hidden = isReset;
+  elements.passwordResetForm.hidden = !isReset;
+  elements.loginCard.classList.toggle("is-reset", isReset);
+  elements.loginPanelTitle.textContent = isReset ? "Redefinir senha" : "Acesse sua conta";
+  elements.loginPanelDescription.textContent = isReset
+    ? "Confirme sua senha atual e crie uma nova senha de acesso."
+    : "Entre para continuar o acompanhamento da sua operação.";
+  elements.loginError.hidden = true;
+  elements.loginError.textContent = "";
+  elements.passwordResetError.hidden = true;
+  elements.passwordResetError.textContent = "";
+
+  if (isReset) {
+    elements.passwordResetForm.querySelector("input[name='username']").focus();
+  }
 }
 
 function setLoggedInUi() {
@@ -245,6 +273,32 @@ async function handleLogin(event) {
     const message = error instanceof ApiError ? error.message : "Falha ao autenticar.";
     elements.loginError.hidden = false;
     elements.loginError.textContent = message;
+  }
+}
+
+async function handlePasswordReset(event) {
+  event.preventDefault();
+  elements.passwordResetError.hidden = true;
+  elements.passwordResetError.textContent = "";
+
+  const payload = Object.fromEntries(new FormData(elements.passwordResetForm).entries());
+  if (payload.newPassword !== payload.confirmPassword) {
+    elements.passwordResetError.hidden = false;
+    elements.passwordResetError.textContent = "A confirmação deve ser igual à nova senha.";
+    return;
+  }
+
+  try {
+    await api.resetPassword(payload);
+    const username = payload.username.trim();
+    setLoginMode("login");
+    elements.loginForm.querySelector("input[name='username']").value = username;
+    elements.loginError.hidden = false;
+    elements.loginError.textContent = "Senha atualizada. Entre com sua nova senha.";
+  } catch (error) {
+    const message = error instanceof ApiError ? error.message : "Não foi possível atualizar a senha.";
+    elements.passwordResetError.hidden = false;
+    elements.passwordResetError.textContent = message;
   }
 }
 
@@ -567,6 +621,9 @@ async function syncRoute() {
 
 function wireEvents() {
   elements.loginForm.addEventListener("submit", handleLogin);
+  elements.passwordResetForm.addEventListener("submit", handlePasswordReset);
+  elements.openPasswordReset.addEventListener("click", () => setLoginMode("reset"));
+  elements.returnLoginButton.addEventListener("click", () => setLoginMode("login"));
   elements.logoutButton.addEventListener("click", handleLogout);
   elements.navList.addEventListener("click", handleDynamicClick);
   elements.footerNavList.addEventListener("click", handleDynamicClick);

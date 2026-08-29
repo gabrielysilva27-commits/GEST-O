@@ -2029,6 +2029,37 @@ function patchPath(database, user, path, body = {}) {
   throw new ApiError("Endpoint não encontrado.", 404);
 }
 
+async function resetPassword(credentials) {
+  const username = credentials?.username?.trim();
+  const currentPassword = credentials?.currentPassword?.trim();
+  const newPassword = credentials?.newPassword?.trim();
+
+  if (!username || !currentPassword || !newPassword) {
+    throw new ApiError("Informe usuário, senha atual e nova senha.", 400);
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiError("A nova senha deve ter ao menos 8 caracteres.", 400);
+  }
+
+  if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+    throw new ApiError("A nova senha deve conter letras e números.", 400);
+  }
+
+  const database = loadDatabase();
+  const userRecord = getUserByUsername(database, username);
+  const currentPasswordHash = await sha256(currentPassword);
+  if (!userRecord || currentPasswordHash !== userRecord.passwordHash) {
+    throw new ApiError("Não foi possível validar as credenciais informadas.", 401);
+  }
+
+  userRecord.passwordHash = await sha256(newPassword);
+  userRecord.updatedAt = nowIso();
+  database.sessions = arrayValue(database.sessions).filter((session) => toInt(session.userId) !== toInt(userRecord.id));
+  saveDatabase(database);
+  return { success: true };
+}
+
 export const api = {
   async login(credentials) {
     const database = loadDatabase();
@@ -2064,6 +2095,10 @@ export const api = {
       user,
       lookups: buildLookups(database, user)
     };
+  },
+
+  async resetPassword(credentials) {
+    return resetPassword(credentials);
   },
 
   async me(token) {

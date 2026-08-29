@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260828-9">
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260828-10">
 </head>
 <body>
   <div id="loginRoot" class="login-shell" aria-labelledby="login-title">
@@ -20,7 +20,6 @@
       <div class="login-showcase">
         <div class="login-showcase-inner">
           <div class="brand-lockup">
-            <span class="eyebrow">Plataforma operacional</span>
             <img class="login-brand-logo" src="assets/lead-logo-clean.png" alt="LEAD Gest&atilde;o">
             <p class="brand-kicker">Movimento, performance e gest&atilde;o.</p>
           </div>
@@ -38,9 +37,9 @@
         <div class="login-panel-shell">
           <div class="login-card">
             <div class="login-card-copy">
-              <span class="eyebrow eyebrow-subtle">Ambiente privado</span>
-              <h2>Acesse sua conta</h2>
-              <p>Entre para continuar o acompanhamento da sua opera&ccedil;&atilde;o.</p>
+              <span class="eyebrow eyebrow-subtle">Acesso restrito</span>
+              <h2 id="login-panel-title">Acesse sua conta</h2>
+              <p id="login-panel-description">Entre para continuar o acompanhamento da sua opera&ccedil;&atilde;o.</p>
             </div>
 
             <form id="login-form" class="auth-form" novalidate>
@@ -58,9 +57,33 @@
               <p id="login-error" class="form-message" role="alert" hidden></p>
             </form>
 
-            <div class="login-meta">
-              <span class="meta-chip">Acesso restrito</span>
-              <p class="module-copy">Seus dados permanecem salvos neste navegador ap&oacute;s o login.</p>
+            <form id="password-reset-form" class="auth-form password-reset-form" novalidate hidden>
+              <label class="field">
+                <span>Nome de usu&aacute;rio</span>
+                <input type="text" name="username" autocomplete="username" required placeholder="Digite seu usu&aacute;rio">
+              </label>
+              <label class="field">
+                <span>Senha atual</span>
+                <input type="password" name="currentPassword" autocomplete="current-password" required placeholder="Digite sua senha atual">
+              </label>
+              <label class="field">
+                <span>Nova senha</span>
+                <input type="password" name="newPassword" autocomplete="new-password" required placeholder="M&iacute;nimo de 8 caracteres">
+              </label>
+              <label class="field">
+                <span>Confirmar nova senha</span>
+                <input type="password" name="confirmPassword" autocomplete="new-password" required placeholder="Repita a nova senha">
+              </label>
+              <div class="login-form-actions">
+                <button class="button primary" type="submit">Atualizar senha</button>
+                <button id="return-login-button" class="button ghost" type="button">Voltar</button>
+              </div>
+              <p id="password-reset-error" class="form-message" role="alert" hidden></p>
+            </form>
+
+            <div class="login-support">
+              <button id="open-password-reset" type="button">Redefinir senha</button>
+              <p>Use sua senha atual para definir uma nova senha de acesso.</p>
             </div>
           </div>
         </div>
@@ -137,6 +160,6 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="assets/js/app.js?v=20260828-14"></script>
+  <script type="module" src="assets/js/app.js?v=20260828-15"></script>
 </body>
 </html>
