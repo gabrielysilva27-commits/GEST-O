@@ -254,6 +254,15 @@ function statusBadge(value) {
   return `<span class="badge ${badgeClass(value)}">${escapeHtml(formatValueLabel(value))}</span>`;
 }
 
+function actionStatusBadge(value = "open") {
+  const labels = {
+    open: "Parado",
+    in_progress: "Em andamento",
+    done: "Concluído"
+  };
+  return `<span class="badge ${badgeClass(value)}">${escapeHtml(labels[value] || formatValueLabel(value))}</span>`;
+}
+
 function dashboardView(data) {
   const overdueRows = (data.highlights?.overdueItems || []).map((item) => [
     escapeHtml(item.title),
@@ -546,9 +555,18 @@ function actionPlansView(data, context) {
     const actionText = [item.title, item.objective, item.meetingSubject].filter(Boolean).join(" ");
     const requester = item.requesterName || item.legacyRequesterName || "Não informado";
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
-    return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution="${escapeHtml(item.meetingExecutionDate || "")}" data-due="${escapeHtml(item.dueDate || "")}" data-priority="${escapeHtml(item.priority || "medium")}" data-status="${escapeHtml(item.status || "open")}">
-      <td><strong>${escapeHtml(item.title)}</strong></td><td>${escapeHtml(item.meetingTitle || "Não vinculada")}</td><td><span class="badge info">${escapeHtml(item.meetingSubject || item.title)}</span></td><td>${escapeHtml(requester)}</td><td>${escapeHtml(owner)}</td><td>${escapeHtml(formatDate(item.meetingExecutionDate))}</td><td>${escapeHtml(formatDate(item.dueDate))}</td><td>${statusBadge(item.priority || "medium")}</td><td>${statusBadge(item.status || "open")}</td>
-    </tr>`;
+    return `
+      <article class="action-record" data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution="${escapeHtml(item.meetingExecutionDate || "")}" data-due="${escapeHtml(item.dueDate || "")}" data-priority="${escapeHtml(item.priority || "medium")}" data-status="${escapeHtml(item.status || "open")}">
+        <div class="action-record-cell action-record-date"><span>Data</span><strong>${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</strong></div>
+        <div class="action-record-cell action-record-meeting"><span>Reunião</span><strong>${escapeHtml(item.meetingTitle || "Não vinculada")}</strong></div>
+        <div class="action-record-cell action-record-subject"><span>Assunto</span><strong>${escapeHtml(item.meetingSubject || item.title)}</strong></div>
+        <div class="action-record-cell action-record-plan"><span>Plano de ação</span><strong>${escapeHtml(item.objective || item.title)}</strong></div>
+        <div class="action-record-cell"><span>Solicitante</span><strong>${escapeHtml(requester)}</strong></div>
+        <div class="action-record-cell"><span>Responsável</span><strong>${escapeHtml(owner)}</strong></div>
+        <div class="action-record-cell"><span>Prazo</span><strong>${escapeHtml(formatDate(item.dueDate))}</strong></div>
+        <div class="action-record-cell"><span>Prioridade</span>${statusBadge(item.priority || "medium")}</div>
+        <div class="action-record-cell"><span>Status</span>${actionStatusBadge(item.status || "open")}</div>
+      </article>`;
   }).join("");
 
   return `
@@ -565,14 +583,14 @@ function actionPlansView(data, context) {
           <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Todos</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
           <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Todos</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
           <label class="field"><span>Prioridade</span><select data-action-filter="priority"><option value="">Todas</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
-          <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Todos</option><option value="open">Aberto</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
+          <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Todos</option><option value="open">Parado</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
           <label class="field"><span>Data de execução</span><input type="date" data-action-filter="execution"></label>
           <label class="field"><span>Prazo</span><input type="date" data-action-filter="due"></label>
         </div>
         <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
       </section>
       <section class="table-card action-portfolio-card" data-action-portfolio>
-        ${rows ? `<div class="table-scroll"><table><thead><tr><th>Ação</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Data de execução</th><th>Prazo</th><th>Prioridade</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
+        ${rows ? `<div class="action-record-list">${rows}</div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
       </section>
     </section>
   `;
