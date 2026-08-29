@@ -328,6 +328,18 @@ button {
   align-items: center;
 }
 
+.login-theme-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.login-theme-toggle {
+  min-width: auto;
+  padding: 7px 10px;
+  font-size: 0.74rem;
+}
+
 .login-card {
   width: 100%;
   padding: 0;

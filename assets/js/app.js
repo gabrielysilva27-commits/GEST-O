@@ -21,6 +21,7 @@ const elements = {
   navList: document.querySelector("#nav-list"),
   footerNavList: document.querySelector("#footer-nav-list"),
   darkModeToggle: document.querySelector("#dark-mode-toggle"),
+  loginDarkModeToggle: document.querySelector("#login-dark-mode-toggle"),
   pageTitle: document.querySelector("#page-title"),
   pageContent: document.querySelector("#page-content"),
   userName: document.querySelector("#user-name"),
@@ -55,11 +56,13 @@ let passwordResetStep = "request";
 
 function applyTheme(isDark) {
   document.body.classList.toggle("dark-mode", isDark);
-  if (elements.darkModeToggle) {
-    elements.darkModeToggle.setAttribute("aria-pressed", String(isDark));
-    const label = elements.darkModeToggle.querySelector("span:last-child");
-    if (label) label.textContent = isDark ? "Modo claro" : "Modo escuro";
-  }
+  [elements.darkModeToggle, elements.loginDarkModeToggle].forEach((toggle) => {
+    if (toggle) {
+      toggle.setAttribute("aria-pressed", String(isDark));
+      const label = toggle.querySelector("span:last-child");
+      if (label) label.textContent = isDark ? "Modo claro" : "Modo escuro";
+    }
+  });
 }
 
 function toggleDarkMode() {
@@ -780,6 +783,7 @@ function wireEvents() {
   elements.returnLoginButton.addEventListener("click", () => setLoginMode("login"));
   elements.logoutButton.addEventListener("click", handleLogout);
   elements.darkModeToggle.addEventListener("click", toggleDarkMode);
+  elements.loginDarkModeToggle.addEventListener("click", toggleDarkMode);
   elements.navList.addEventListener("click", handleDynamicClick);
   elements.footerNavList.addEventListener("click", handleDynamicClick);
   elements.pageContent.addEventListener("click", handleDynamicClick);
