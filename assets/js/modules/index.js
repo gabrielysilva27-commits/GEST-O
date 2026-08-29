@@ -507,6 +507,22 @@ function actionFilterOptions(items, selector) {
   return values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
 }
 
+function executionMonthKey(value = "") {
+  const match = String(value).match(/^\d{4}-\d{2}/);
+  return match ? match[0] : "";
+}
+
+function executionMonthOptions(items) {
+  const months = [...new Set(items.map((item) => executionMonthKey(item.meetingExecutionDate || item.createdAt)).filter(Boolean))]
+    .sort()
+    .reverse();
+  return months.map((month) => {
+    const label = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" })
+      .format(new Date(`${month}-01T12:00:00`));
+    return `<option value="${escapeHtml(month)}">${escapeHtml(label)}</option>`;
+  }).join("");
+}
+
 function actionCreationForm(meetings, context) {
   const initialMeeting = meetings.find((item) => arrayValue(item.subjects).length > 0) || meetings[0] || null;
   const initialSubjects = arrayValue(initialMeeting?.subjects);
@@ -555,7 +571,7 @@ function actionPlansView(data, context) {
     const actionText = [item.title, item.objective, item.meetingSubject].filter(Boolean).join(" ");
     const requester = item.requesterName || item.legacyRequesterName || "Não informado";
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
-    return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution="${escapeHtml(item.meetingExecutionDate || "")}" data-due="${escapeHtml(item.dueDate || "")}" data-priority="${escapeHtml(item.priority || "medium")}" data-status="${escapeHtml(item.status || "open")}">
+    return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
       <td data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
       <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
       <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
@@ -577,14 +593,12 @@ function actionPlansView(data, context) {
       <section class="action-filter-card">
         <div class="action-filter-heading"><strong>Filtros</strong><button class="button ghost" type="button" data-clear-action-filters>Limpar filtros</button></div>
         <div class="action-filter-grid" data-action-filters>
-          <label class="field"><span>Buscar ação ou assunto</span><input type="search" data-action-filter="text" placeholder="Digite para buscar"></label>
+          <label class="field"><span>Buscar assunto</span><input type="search" data-action-filter="text" placeholder="Assunto ou plano de ação"></label>
           <label class="field"><span>Reunião</span><select data-action-filter="meeting"><option value="">Todas</option>${actionFilterOptions(items, (item) => item.meetingTitle)}</select></label>
           <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Todos</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
           <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Todos</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
-          <label class="field"><span>Prioridade</span><select data-action-filter="priority"><option value="">Todas</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
           <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Todos</option><option value="open">Parado</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
-          <label class="field"><span>Data de execução</span><input type="date" data-action-filter="execution"></label>
-          <label class="field"><span>Prazo</span><input type="date" data-action-filter="due"></label>
+          <label class="field"><span>Data de execução</span><select data-action-filter="executionMonth"><option value="">Todos os meses</option>${executionMonthOptions(items)}</select></label>
         </div>
         <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
       </section>

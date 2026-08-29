@@ -1,6 +1,6 @@
 import { api, ApiError } from "./api.js?v=20260828-10";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260828-12";
+import { views } from "./modules/index.js?v=20260828-13";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -505,10 +505,8 @@ function applyActionFilters() {
       (!filters.meeting || normalizeFilterValue(row.dataset.meeting) === filters.meeting) &&
       (!filters.requester || normalizeFilterValue(row.dataset.requester) === filters.requester) &&
       (!filters.owner || normalizeFilterValue(row.dataset.owner) === filters.owner) &&
-      (!filters.priority || row.dataset.priority === filters.priority) &&
       (!filters.status || row.dataset.status === filters.status) &&
-      (!filters.execution || row.dataset.execution === filters.execution) &&
-      (!filters.due || row.dataset.due === filters.due);
+      (!filters.executionMonth || row.dataset.executionMonth === filters.executionMonth);
     row.hidden = !matches;
     if (matches) {
       visible += 1;
