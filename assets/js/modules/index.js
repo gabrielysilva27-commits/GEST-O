@@ -353,6 +353,13 @@ function usersView(data, context) {
     `<span class="badge info">${escapeHtml(item.roleLabel)}</span>`,
     `<span class="badge ${badgeClass(item.status || "active")}">${escapeHtml(item.status || "active")}</span>`
   ]);
+  const resetRequests = (data.passwordResetRequests || []).filter((item) => item.status === "pending");
+  const resetRows = resetRequests.map((item) => [
+    escapeHtml(item.username),
+    escapeHtml(formatDate(item.createdAt)),
+    escapeHtml(formatDate(item.expiresAt)),
+    `<button class="button secondary" type="button" data-approve-password-reset="${escapeHtml(item.id)}">Validar código</button>`
+  ]);
 
   const roleOptions = context.lookups.roles.map((role) => `
     <option value="${escapeHtml(role.id)}">${escapeHtml(role.label)}</option>
@@ -389,6 +396,7 @@ function usersView(data, context) {
 
   return `
     ${moduleHeader("Usuários e permissões", "Cadastre acessos, senhas iniciais e perfis diretamente pela plataforma.")}
+    ${resetRequests.length > 0 ? tableCard("Recuperações aguardando ADM", "Aprove uma solicitação para liberar o código temporário ao usuário.", ["Usuário", "Solicitado em", "Expira em", "Ação"], resetRows) : ""}
     <div class="split-layout">
       ${tableCard("Usuários ativos", "Lista atual de acessos disponíveis.", ["Nome", "Usuário", "Perfil", "Status"], rows)}
       ${formCard("Novo usuário", "Crie um novo acesso com nome de usuário e senha inicial.", formContent)}

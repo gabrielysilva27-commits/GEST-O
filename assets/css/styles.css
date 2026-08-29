@@ -704,6 +704,17 @@ button {
   line-height: 1.45;
 }
 
+.reset-code-info {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(42, 104, 232, 0.16);
+  border-radius: 8px;
+  background: rgba(42, 104, 232, 0.07);
+  color: var(--primary-strong);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .login-card.is-reset .login-support {
   display: none;
 }

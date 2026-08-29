@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260829-01">
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260829-02">
 </head>
 <body>
   <div id="loginRoot" class="login-shell" aria-labelledby="login-title">
@@ -62,20 +62,23 @@
                 <span>Nome de usu&aacute;rio</span>
                 <input type="text" name="username" autocomplete="username" required placeholder="Digite seu usu&aacute;rio">
               </label>
-              <label class="field">
-                <span>Senha atual</span>
-                <input type="password" name="currentPassword" autocomplete="current-password" required placeholder="Digite sua senha atual">
-              </label>
-              <label class="field">
-                <span>Nova senha</span>
-                <input type="password" name="newPassword" autocomplete="new-password" required placeholder="M&iacute;nimo de 8 caracteres">
-              </label>
-              <label class="field">
-                <span>Confirmar nova senha</span>
-                <input type="password" name="confirmPassword" autocomplete="new-password" required placeholder="Repita a nova senha">
-              </label>
+              <p id="password-reset-code-info" class="form-message reset-code-info" role="status" hidden></p>
+              <div class="password-reset-verify" hidden>
+                <label class="field">
+                  <span>C&oacute;digo tempor&aacute;rio</span>
+                  <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Digite o c&oacute;digo de 6 d&iacute;gitos">
+                </label>
+                <label class="field">
+                  <span>Nova senha</span>
+                  <input type="password" name="newPassword" autocomplete="new-password" placeholder="M&iacute;nimo de 8 caracteres">
+                </label>
+                <label class="field">
+                  <span>Confirmar nova senha</span>
+                  <input type="password" name="confirmPassword" autocomplete="new-password" placeholder="Repita a nova senha">
+                </label>
+              </div>
               <div class="login-form-actions">
-                <button class="button primary" type="submit">Atualizar senha</button>
+                <button id="password-reset-submit" class="button primary" type="submit">Solicitar c&oacute;digo</button>
                 <button id="return-login-button" class="button ghost" type="button">Voltar</button>
               </div>
               <p id="password-reset-error" class="form-message" role="alert" hidden></p>
@@ -83,7 +86,7 @@
 
             <div class="login-support">
               <button id="open-password-reset" type="button">Esqueci minha senha</button>
-              <p>Recupere o acesso usando sua senha atual para criar uma nova.</p>
+              <p>Solicite um c&oacute;digo tempor&aacute;rio, validado pelo administrador.</p>
             </div>
           </div>
         </div>

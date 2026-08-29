@@ -1,4 +1,4 @@
-import { api, ApiError } from "./api.js?v=20260828-11";
+import { api, ApiError } from "./api.js?v=20260829-02";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260828-14";
 
@@ -10,6 +10,9 @@ const elements = {
   loginError: document.querySelector("#login-error"),
   passwordResetForm: document.querySelector("#password-reset-form"),
   passwordResetError: document.querySelector("#password-reset-error"),
+  passwordResetCodeInfo: document.querySelector("#password-reset-code-info"),
+  passwordResetVerify: document.querySelector(".password-reset-verify"),
+  passwordResetSubmit: document.querySelector("#password-reset-submit"),
   openPasswordReset: document.querySelector("#open-password-reset"),
   returnLoginButton: document.querySelector("#return-login-button"),
   loginPanelTitle: document.querySelector("#login-panel-title"),
@@ -47,6 +50,7 @@ const formRoutes = {
 
 let meetingTimerInterval = null;
 let meetingTimerStartedAt = null;
+let passwordResetStep = "request";
 
 function showToast(message, tone = "success") {
   const node = document.createElement("div");
@@ -89,12 +93,18 @@ function setLoginMode(mode) {
   elements.loginCard.classList.toggle("is-reset", isReset);
   elements.loginPanelTitle.textContent = isReset ? "Redefinir senha" : "Acesse sua conta";
   elements.loginPanelDescription.textContent = isReset
-    ? "Confirme sua senha atual e crie uma nova senha de acesso."
+    ? "Solicite um código temporário, validado pelo administrador."
     : "Entre para continuar o acompanhamento da sua operação.";
   elements.loginError.hidden = true;
   elements.loginError.textContent = "";
   elements.passwordResetError.hidden = true;
   elements.passwordResetError.textContent = "";
+  passwordResetStep = "request";
+  elements.passwordResetForm.reset();
+  elements.passwordResetVerify.hidden = true;
+  elements.passwordResetCodeInfo.hidden = true;
+  elements.passwordResetCodeInfo.textContent = "";
+  elements.passwordResetSubmit.textContent = "Solicitar código";
 
   if (isReset) {
     elements.passwordResetForm.querySelector("input[name='username']").focus();
@@ -282,6 +292,30 @@ async function handlePasswordReset(event) {
   elements.passwordResetError.textContent = "";
 
   const payload = Object.fromEntries(new FormData(elements.passwordResetForm).entries());
+
+  if (passwordResetStep === "request") {
+    if (!payload.username?.trim()) {
+      elements.passwordResetError.hidden = false;
+      elements.passwordResetError.textContent = "Informe seu nome de usuário para continuar.";
+      return;
+    }
+
+    try {
+      const response = await api.requestPasswordReset({ username: payload.username });
+      passwordResetStep = "verify";
+      elements.passwordResetVerify.hidden = false;
+      elements.passwordResetCodeInfo.hidden = false;
+      elements.passwordResetCodeInfo.textContent = response.message;
+      elements.passwordResetSubmit.textContent = "Atualizar senha";
+      elements.passwordResetForm.querySelector("input[name='code']").focus();
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Não foi possível solicitar o código temporário.";
+      elements.passwordResetError.hidden = false;
+      elements.passwordResetError.textContent = message;
+    }
+    return;
+  }
+
   if (payload.newPassword !== payload.confirmPassword) {
     elements.passwordResetError.hidden = false;
     elements.passwordResetError.textContent = "A confirmação deve ser igual à nova senha.";
@@ -522,6 +556,17 @@ async function handleDynamicClick(event) {
       showToast("Notificação marcada como lida.");
     } catch (error) {
       handleError(error, "Não foi possível atualizar a notificação.");
+    }
+  }
+
+  const approveResetButton = event.target.closest("[data-approve-password-reset]");
+  if (approveResetButton) {
+    try {
+      const response = await api.patch(state.token, `/password-reset-requests/${approveResetButton.dataset.approvePasswordReset}/approve`);
+      showToast(`Solicitação aprovada. Código: ${response.code}`);
+      await loadView("users");
+    } catch (error) {
+      handleError(error, "Não foi possível aprovar a solicitação.");
     }
   }
 }

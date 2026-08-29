@@ -368,7 +368,8 @@ const INITIAL_DATABASE = {
   gerotRecords: [],
   notifications: [],
   history: [],
-  sessions: []
+    sessions: [],
+    passwordResetRequests: []
 };
 
 export class ApiError extends Error {
@@ -541,7 +542,8 @@ function sanitizeDatabase(database) {
     gerotRecords: arrayValue(database.gerotRecords),
     notifications: arrayValue(database.notifications),
     history: arrayValue(database.history),
-    sessions: arrayValue(database.sessions)
+      sessions: arrayValue(database.sessions),
+      passwordResetRequests: arrayValue(database.passwordResetRequests)
   };
 
   ensureMeetingTemplates(sanitized);
@@ -1890,9 +1892,17 @@ function listPath(database, user, path) {
   switch (path) {
     case "/users":
       ensurePermission(user, "users.read");
-      return {
-        items: getScopedCollection(database, user, "users").map((record) => getUserProfile(database, record))
-      };
+      {
+        const response = {
+          items: getScopedCollection(database, user, "users").map((record) => getUserProfile(database, record))
+        };
+        if (user.role === "admin") {
+          response.passwordResetRequests = arrayValue(database.passwordResetRequests)
+            .filter((request) => request.status !== "used")
+            .map(({ id, username, status, createdAt, expiresAt }) => ({ id, username, status, createdAt, expiresAt }));
+        }
+        return response;
+      }
     case "/administration/meetings":
       ensurePermission(user, "administration.view");
       return {
@@ -2003,6 +2013,11 @@ function createPath(database, user, path, body) {
 }
 
 function patchPath(database, user, path, body = {}) {
+  const approveResetMatch = path.match(/^\/password-reset-requests\/([^/]+)\/approve$/);
+  if (approveResetMatch) {
+    return approvePasswordReset(database, user, approveResetMatch[1]);
+  }
+
   const notificationMatch = path.match(/^\/notifications\/(\d+)\/read$/);
   if (notificationMatch) {
     ensurePermission(user, "notifications.view");
@@ -2029,13 +2044,74 @@ function patchPath(database, user, path, body = {}) {
   throw new ApiError("Endpoint não encontrado.", 404);
 }
 
+function createTemporaryCode() {
+  const values = new Uint32Array(1);
+  crypto.getRandomValues(values);
+  return String(values[0] % 1000000).padStart(6, "0");
+}
+
+async function requestPasswordReset(credentials) {
+  const username = credentials?.username?.trim();
+  if (!username) {
+    throw new ApiError("Informe seu nome de usuário para continuar.", 400);
+  }
+
+  const database = loadDatabase();
+  const userRecord = getUserByUsername(database, username);
+  const activeRequest = arrayValue(database.passwordResetRequests).find(
+    (item) => item.username.toLowerCase() === username.toLowerCase() && ["pending", "approved"].includes(item.status)
+  );
+  if (!userRecord) {
+    return { success: true, message: "Se o usuário existir, a solicitação será encaminhada para validação do ADM." };
+  }
+  if (activeRequest && new Date(activeRequest.expiresAt).getTime() > Date.now()) {
+    return { success: true, message: "Solicitação já registrada. Aguarde a validação do ADM." };
+  }
+
+  const now = new Date();
+  database.passwordResetRequests = arrayValue(database.passwordResetRequests).filter(
+    (item) => !(item.username.toLowerCase() === username.toLowerCase() && item.status !== "used")
+  );
+  database.passwordResetRequests.push({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    username: userRecord.username,
+    code: createTemporaryCode(),
+    status: "pending",
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 10 * 60 * 1000).toISOString()
+  });
+  saveDatabase(database);
+  return { success: true, message: "Solicitação registrada. O ADM precisa aprovar o código antes da troca de senha." };
+}
+
+function approvePasswordReset(database, user, requestId) {
+  ensurePermission(user, "users.manage");
+  if (user.role !== "admin") {
+    throw new ApiError("Somente um usuário com perfil Administrador pode validar o código.", 403);
+  }
+
+  const request = arrayValue(database.passwordResetRequests).find((item) => String(item.id) === String(requestId));
+  if (!request || request.status !== "pending") {
+    throw new ApiError("Solicitação não encontrada ou já processada.", 404);
+  }
+  if (new Date(request.expiresAt).getTime() < Date.now()) {
+    request.status = "expired";
+    throw new ApiError("A solicitação expirou. O usuário deve solicitar um novo código.", 400);
+  }
+
+  request.status = "approved";
+  request.approvedAt = nowIso();
+  request.approvedBy = user.id;
+  return { success: true, code: request.code };
+}
+
 async function resetPassword(credentials) {
   const username = credentials?.username?.trim();
-  const currentPassword = credentials?.currentPassword?.trim();
+  const code = credentials?.code?.trim();
   const newPassword = credentials?.newPassword?.trim();
 
-  if (!username || !currentPassword || !newPassword) {
-    throw new ApiError("Informe usuário, senha atual e nova senha.", 400);
+  if (!username || !code || !newPassword) {
+    throw new ApiError("Informe usuário, código temporário e nova senha.", 400);
   }
 
   if (newPassword.length < 8) {
@@ -2048,19 +2124,32 @@ async function resetPassword(credentials) {
 
   const database = loadDatabase();
   const userRecord = getUserByUsername(database, username);
-  const currentPasswordHash = await sha256(currentPassword);
-  if (!userRecord || currentPasswordHash !== userRecord.passwordHash) {
-    throw new ApiError("Não foi possível validar as credenciais informadas.", 401);
+  const request = arrayValue(database.passwordResetRequests).find(
+    (item) => item.username.toLowerCase() === username.toLowerCase() && item.code === code
+  );
+  if (!userRecord || !request || request.status !== "approved") {
+    throw new ApiError("Código temporário inválido ou ainda não aprovado pelo ADM.", 401);
+  }
+  if (new Date(request.expiresAt).getTime() < Date.now()) {
+    request.status = "expired";
+    saveDatabase(database);
+    throw new ApiError("O código temporário expirou. Solicite um novo código.", 401);
   }
 
   userRecord.passwordHash = await sha256(newPassword);
   userRecord.updatedAt = nowIso();
+  request.status = "used";
+  request.usedAt = nowIso();
   database.sessions = arrayValue(database.sessions).filter((session) => toInt(session.userId) !== toInt(userRecord.id));
   saveDatabase(database);
   return { success: true };
 }
 
 export const api = {
+  async requestPasswordReset(credentials) {
+    return requestPasswordReset(credentials);
+  },
+
   async login(credentials) {
     const database = loadDatabase();
     if (!credentials?.username?.trim() || !credentials?.password?.trim()) {
