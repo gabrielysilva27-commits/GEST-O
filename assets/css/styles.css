@@ -1261,6 +1261,24 @@ tbody td {
   grid-column: 1 / -1;
 }
 
+.attachment-field {
+  grid-column: 1 / -1;
+  padding: 10px;
+  border: 1px dashed rgba(42, 104, 232, 0.28);
+  border-radius: 8px;
+  background: rgba(42, 104, 232, 0.035);
+}
+
+.attachment-field input[type="file"] {
+  padding: 8px;
+  background: #ffffff;
+}
+
+.attachment-field small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
 .chart-card ul,
 .timeline ol {
   list-style: none;

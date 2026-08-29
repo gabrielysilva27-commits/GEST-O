@@ -666,6 +666,11 @@ function meetingsView(data, context) {
             </select>
           </label>
         </div>
+        <label class="field full attachment-field">
+          <span>Documento da ação (PDF ou foto)</span>
+          <input type="file" name="attachment" accept="application/pdf,image/jpeg,image/png" data-action-field>
+          <small>Formatos aceitos: PDF, JPG, JPEG ou PNG. Limite de 5 MB.</small>
+        </label>
         <div class="form-actions">
           <button class="button primary" type="submit" data-save-meeting-action ${initialSubjects.length === 0 ? "disabled" : ""}>Salvar ação</button>
           <button class="button secondary" type="button" data-close-meeting>Encerrar reunião</button>

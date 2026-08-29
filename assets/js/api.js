@@ -1295,6 +1295,23 @@ function createMeetingAction(database, user, payload) {
     throw new ApiError("O assunto selecionado não pertence à reunião.", 400);
   }
 
+  let attachment = null;
+  if (payload.attachment) {
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+    if (!allowedTypes.includes(payload.attachment.type)) {
+      throw new ApiError("O documento deve ser PDF, JPG, JPEG ou PNG.", 400);
+    }
+    if (toInt(payload.attachment.size) > 5 * 1024 * 1024 || typeof payload.attachment.data !== "string") {
+      throw new ApiError("O documento deve ter no máximo 5 MB.", 400);
+    }
+    attachment = {
+      name: String(payload.attachment.name || "documento"),
+      type: payload.attachment.type,
+      size: toInt(payload.attachment.size),
+      data: payload.attachment.data
+    };
+  }
+
   const fallbackUnitId = arrayValue(user.unitIds)[0] || meeting.unitId || 0;
   const unit = fallbackUnitId ? getUnit(database, fallbackUnitId) : null;
   const unitId = unit ? toInt(unit.id) : toInt(fallbackUnitId);
@@ -1318,6 +1335,7 @@ function createMeetingAction(database, user, payload) {
     meetingTitle: meeting.title,
     meetingSubject: subject,
     meetingExecutionDate: payload.executionDate || "",
+    attachment,
     source: "meetings",
     createdAt: nowIso(),
     updatedAt: nowIso()

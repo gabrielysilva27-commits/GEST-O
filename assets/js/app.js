@@ -170,6 +170,15 @@ function getFormData(form) {
   return payload;
 }
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(new Error("Não foi possível ler o documento selecionado.")));
+    reader.readAsDataURL(file);
+  });
+}
+
 function formatDuration(ms) {
   const totalSeconds = Math.floor(ms / 1000);
   const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
@@ -378,6 +387,19 @@ async function handleDynamicSubmit(event) {
 
   try {
     const payload = getFormData(form);
+    if (formName === "meetingActions" && payload.attachment instanceof File && payload.attachment.size > 0) {
+      if (payload.attachment.size > 5 * 1024 * 1024) {
+        throw new ApiError("O documento deve ter no máximo 5 MB.", 400);
+      }
+      payload.attachment = {
+        name: payload.attachment.name,
+        type: payload.attachment.type,
+        size: payload.attachment.size,
+        data: await fileToDataUrl(payload.attachment)
+      };
+    } else if (formName === "meetingActions") {
+      delete payload.attachment;
+    }
     await api.create(state.token, path, payload);
     showToast("Registro criado com sucesso.");
 
