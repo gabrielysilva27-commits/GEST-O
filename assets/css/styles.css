@@ -83,6 +83,10 @@ body.app-logged-out .login-shell {
   min-height: 100vh;
 }
 
+body.app-logged-out {
+  overflow: hidden;
+}
+
 button,
 input,
 select,
@@ -120,17 +124,20 @@ button {
   display: grid;
   place-items: center;
   padding: 16px;
+  height: 100vh;
+  height: 100dvh;
 }
 
 .login-stage {
-  width: min(100%, 960px);
+  width: min(100%, 1160px);
+  height: min(540px, calc(100dvh - 32px));
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
+  grid-template-columns: minmax(0, 1.45fr) minmax(350px, 0.8fr);
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 18px 44px rgba(6, 23, 52, 0.1);
+  box-shadow: 0 22px 52px rgba(6, 23, 52, 0.11);
 }
 
 .login-showcase,
@@ -141,8 +148,8 @@ button {
 .login-showcase {
   display: grid;
   align-items: center;
-  min-height: 480px;
-  padding: clamp(30px, 5vw, 54px);
+  min-height: 0;
+  padding: clamp(34px, 5vw, 64px);
   background:
     radial-gradient(circle at 88% 8%, rgba(92, 147, 255, 0.18), transparent 26%),
     linear-gradient(155deg, #f8fbff 0%, #edf4ff 100%);
@@ -167,7 +174,7 @@ button {
   z-index: 1;
   display: grid;
   align-content: center;
-  gap: 26px;
+  gap: 20px;
 }
 
 .brand-lockup,
@@ -186,11 +193,12 @@ button {
 }
 
 .brand-lockup {
-  max-width: 310px;
+  max-width: 360px;
+  gap: 10px;
 }
 
 .login-brand-logo {
-  width: min(100%, 270px);
+  width: min(100%, 300px);
   height: auto;
   filter: drop-shadow(0 16px 36px rgba(16, 59, 145, 0.12));
 }
@@ -198,9 +206,9 @@ button {
 .brand-kicker {
   margin: 0;
   color: var(--primary-strong);
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -220,10 +228,11 @@ button {
 }
 
 .login-showcase h1 {
-  max-width: 12ch;
-  font-size: clamp(2.2rem, 3.6vw, 3.55rem);
-  line-height: 1.08;
-  letter-spacing: 0;
+  max-width: 16ch;
+  font-size: clamp(2.25rem, 3.4vw, 3.45rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.045em;
 }
 
 .login-copy,
@@ -260,8 +269,10 @@ button {
 }
 
 .login-copy {
-  max-width: 42ch;
-  font-size: 0.92rem;
+  max-width: 52ch;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.65;
 }
 
 .eyebrow,
@@ -288,8 +299,10 @@ button {
 }
 
 .login-panel {
-  padding: 24px;
-  background: #ffffff;
+  display: grid;
+  align-items: center;
+  padding: clamp(26px, 3.2vw, 42px);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .login-panel::before {
@@ -312,20 +325,22 @@ button {
 
 .login-card {
   width: 100%;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(249, 251, 255, 0.88));
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
 .login-card-copy {
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .login-card-copy h2 {
-  font-size: clamp(1.55rem, 2vw, 2rem);
-  line-height: 1.08;
+  font-size: clamp(1.45rem, 1.8vw, 1.8rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
 }
 
 .auth-form,
@@ -594,8 +609,8 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 20px;
+  padding-top: 18px;
   border-top: 1px solid var(--line);
 }
 
@@ -1348,7 +1363,18 @@ tbody td {
 }
 
 @media (max-width: 720px) {
+  body.app-logged-out {
+    overflow: auto;
+  }
+
+  .login-shell {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
   .login-stage {
+    height: auto;
     grid-template-columns: 1fr;
   }
 
