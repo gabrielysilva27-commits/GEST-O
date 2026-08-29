@@ -1692,3 +1692,151 @@ tbody td {
     scroll-behavior: auto !important;
   }
 }
+
+/* Dark mode */
+body.dark-mode {
+  --bg: #0d1728;
+  --bg-soft: #111e32;
+  --bg-deep: #182943;
+  --surface: rgba(20, 34, 56, 0.9);
+  --surface-strong: rgba(24, 40, 65, 0.96);
+  --surface-elevated: #1b2d49;
+  --line: rgba(173, 197, 232, 0.16);
+  --line-strong: rgba(173, 197, 232, 0.27);
+  --text: #e8f0fc;
+  --text-muted: #aabbd4;
+  --text-soft: #8195b4;
+  --primary: #75a8ff;
+  --primary-strong: #b9d2ff;
+  --primary-soft: rgba(117, 168, 255, 0.18);
+  --navy: #edf4ff;
+  --navy-deep: #d6e5fb;
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.24);
+  --shadow-strong: 0 22px 60px rgba(0, 0, 0, 0.36);
+  color-scheme: dark;
+  background: #0d1728;
+}
+
+body.dark-mode::before {
+  background-image:
+    linear-gradient(rgba(148, 180, 231, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 180, 231, 0.06) 1px, transparent 1px);
+  opacity: 0.2;
+}
+
+body.dark-mode .workspace-shell,
+body.dark-mode .login-shell {
+  background: linear-gradient(145deg, #0d1728, #14243b);
+}
+
+body.dark-mode .sidebar,
+body.dark-mode .login-panel,
+body.dark-mode .login-card,
+body.dark-mode .highlight-card,
+body.dark-mode .topbar,
+body.dark-mode .metric-card,
+body.dark-mode .chart-card,
+body.dark-mode .panel-card,
+body.dark-mode .table-card,
+body.dark-mode .timeline,
+body.dark-mode .empty-state,
+body.dark-mode .status-banner,
+body.dark-mode .user-chip,
+body.dark-mode .action-filter-card,
+body.dark-mode .meeting-history-toolbar {
+  border-color: var(--line);
+  background: linear-gradient(180deg, rgba(27, 46, 75, 0.95), rgba(18, 32, 53, 0.95));
+  box-shadow: var(--shadow-soft);
+}
+
+body.dark-mode .topbar {
+  background: linear-gradient(135deg, rgba(27, 46, 75, 0.96), rgba(18, 32, 53, 0.94));
+}
+
+body.dark-mode .nav-list button,
+body.dark-mode .sidebar-logout {
+  color: #b7c8e0;
+}
+
+body.dark-mode .nav-list button:hover,
+body.dark-mode .sidebar-logout:hover {
+  color: #eaf2ff;
+  background: rgba(117, 168, 255, 0.12);
+}
+
+body.dark-mode .nav-list button.active {
+  color: #d5e5ff;
+  background: rgba(117, 168, 255, 0.18);
+}
+
+body.dark-mode .nav-icon-frame,
+body.dark-mode .sidebar-user .avatar {
+  background: rgba(117, 168, 255, 0.14);
+  color: #9fc2ff;
+}
+
+body.dark-mode .sidebar-footer {
+  border-top-color: var(--line);
+}
+
+body.dark-mode .field input,
+body.dark-mode .field select,
+body.dark-mode .field textarea,
+body.dark-mode .search-field input,
+body.dark-mode .attachment-field input[type="file"] {
+  border-color: var(--line-strong);
+  background: #14243b;
+  color: var(--text);
+}
+
+body.dark-mode .field input:focus,
+body.dark-mode .field select:focus,
+body.dark-mode .field textarea:focus,
+body.dark-mode .search-field input:focus {
+  border-color: #75a8ff;
+  background: #1b2d49;
+}
+
+body.dark-mode .button.ghost,
+body.dark-mode .button.secondary {
+  border-color: var(--line-strong);
+  background: rgba(117, 168, 255, 0.1);
+  color: #d5e5ff;
+}
+
+body.dark-mode .button.ghost:hover,
+body.dark-mode .button.secondary:hover {
+  background: rgba(117, 168, 255, 0.2);
+}
+
+body.dark-mode table th {
+  background: rgba(117, 168, 255, 0.1);
+  color: #bfd3f1;
+}
+
+body.dark-mode table td {
+  border-bottom-color: var(--line);
+  color: #c3d1e5;
+}
+
+body.dark-mode .empty-state,
+body.dark-mode .status-banner {
+  color: var(--text);
+}
+
+body.dark-mode .attachment-field {
+  border-color: rgba(117, 168, 255, 0.35);
+  background: rgba(117, 168, 255, 0.07);
+}
+
+body.dark-mode .theme-toggle-icon {
+  color: #9fc2ff;
+}
+
+body.dark-mode .login-showcase {
+  background: linear-gradient(150deg, #10274a, #07152b);
+}
+
+body.dark-mode .login-showcase::before {
+  opacity: 0.18;
+}
