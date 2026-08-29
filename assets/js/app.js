@@ -235,6 +235,10 @@ async function loadView(viewId) {
     state.actionWorkspace = "list";
   }
 
+  if (viewId !== "meetings") {
+    state.meetingWorkspace = "active";
+  }
+
   state.currentView = viewId;
   renderNavigation();
   elements.pageTitle.textContent = view.title;
@@ -553,6 +557,35 @@ async function handleDynamicClick(event) {
     return;
   }
 
+  const showHistoryButton = event.target.closest("[data-show-meeting-history]");
+  if (showHistoryButton) {
+    state.meetingWorkspace = "history";
+    await loadView("meetings");
+    return;
+  }
+
+  const showActiveMeetingsButton = event.target.closest("[data-show-active-meetings]");
+  if (showActiveMeetingsButton) {
+    state.meetingWorkspace = "active";
+    await loadView("meetings");
+    return;
+  }
+
+  const clearMeetingHistoryButton = event.target.closest("[data-meeting-history-clear]");
+  if (clearMeetingHistoryButton) {
+    elements.pageContent.querySelectorAll("[data-meeting-history-filter]").forEach((field) => { field.value = ""; });
+    elements.pageContent.dataset.meetingHistoryPeriod = "all";
+    applyMeetingHistoryFilters();
+    return;
+  }
+
+  const meetingHistoryPeriodButton = event.target.closest("[data-meeting-history-period]");
+  if (meetingHistoryPeriodButton) {
+    elements.pageContent.dataset.meetingHistoryPeriod = meetingHistoryPeriodButton.dataset.meetingHistoryPeriod;
+    applyMeetingHistoryFilters();
+    return;
+  }
+
   const deleteMeetingButton = event.target.closest("[data-delete-meeting]");
   if (deleteMeetingButton) {
     if (!window.confirm("Excluir esta reunião cadastrada?")) {
@@ -601,6 +634,10 @@ function handleDynamicChange(event) {
 
   if (event.target.matches("[data-action-filter]")) {
     applyActionFilters();
+  }
+
+  if (event.target.matches("[data-meeting-history-filter]")) {
+    applyMeetingHistoryFilters();
   }
 }
 
@@ -651,9 +688,43 @@ function clearActionFilters() {
   applyActionFilters();
 }
 
+function applyMeetingHistoryFilters() {
+  const rows = [...elements.pageContent.querySelectorAll("[data-meeting-history-row]")];
+  if (rows.length === 0 && !elements.pageContent.querySelector("[data-meeting-history-result]")) {
+    return;
+  }
+
+  const text = normalizeFilterValue(elements.pageContent.querySelector('[data-meeting-history-filter="text"]')?.value);
+  const date = elements.pageContent.querySelector('[data-meeting-history-filter="date"]')?.value || "";
+  const period = elements.pageContent.dataset.meetingHistoryPeriod || "all";
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  let visible = 0;
+
+  rows.forEach((row) => {
+    const rowDate = row.dataset.date ? new Date(`${row.dataset.date}T00:00:00`) : null;
+    const matches =
+      (!text || normalizeFilterValue(`${row.dataset.title} ${row.dataset.subjects}`).includes(text)) &&
+      (!date || row.dataset.date === date) &&
+      (period !== "month" || (rowDate && rowDate >= monthStart));
+    row.hidden = !matches;
+    if (matches) visible += 1;
+  });
+
+  const output = elements.pageContent.querySelector("[data-meeting-history-result]");
+  if (output) {
+    output.textContent = `${visible} ${visible === 1 ? "reunião executada encontrada" : "reuniões executadas encontradas"}`;
+  }
+}
+
 function handleDynamicInput(event) {
   if (event.target.matches("[data-action-filter]")) {
     applyActionFilters();
+  }
+
+  if (event.target.matches("[data-meeting-history-filter]")) {
+    applyMeetingHistoryFilters();
   }
 }
 

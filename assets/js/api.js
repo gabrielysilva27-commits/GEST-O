@@ -1921,6 +1921,13 @@ function listPath(database, user, path) {
           return String(left.title).localeCompare(String(right.title), "pt-BR");
         })
       };
+    case "/meetings/history":
+      ensurePermission(user, "meetings.read");
+      return {
+        items: getScopedCollection(database, user, "meetings")
+          .filter((item) => item.status === "held" && item.lastExecutionDate)
+          .sort((left, right) => String(right.lastExecutionDate).localeCompare(String(left.lastExecutionDate)))
+      };
     case "/gapa":
       ensurePermission(user, "gapa.read");
       return {

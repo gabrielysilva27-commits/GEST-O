@@ -5,6 +5,7 @@ export const state = {
   user: null,
   lookups: null,
   currentView: "dashboard",
+  meetingWorkspace: "active",
   actionWorkspace: "list",
   dataCache: {},
   isSidebarOpen: false

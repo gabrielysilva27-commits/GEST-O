@@ -599,7 +599,37 @@ function actionPlansView(data, context) {
   `;
 }
 
+function meetingHistoryView(data, context) {
+  const meetings = data.history || [];
+  const rows = meetings.map((item) => `<tr data-meeting-history-row data-title="${escapeHtml(item.title)}" data-subjects="${escapeHtml(arrayValue(item.subjects).join(" "))}" data-date="${escapeHtml(item.lastExecutionDate || "")}">
+    <td data-label="Reunião">${escapeHtml(item.title)}</td>
+    <td data-label="Assuntos">${escapeHtml(arrayValue(item.subjects).join(", ") || "Nenhum assunto")}</td>
+    <td data-label="Data de execução">${escapeHtml(formatDate(item.lastExecutionDate))}</td>
+    <td data-label="Status">${statusBadge("held")}</td>
+  </tr>`).join("");
+
+  return `
+    ${moduleHeader("Histórico de reuniões", "Consulte as reuniões executadas e os dados registrados no encerramento.")}
+    <section class="meeting-history-toolbar">
+      <label class="field"><span>Pesquisar reunião</span><input type="search" data-meeting-history-filter="text" placeholder="Nome ou assunto"></label>
+      <label class="field"><span>Data da execução</span><input type="date" data-meeting-history-filter="date"></label>
+      <div class="meeting-history-actions">
+        <button class="button secondary" type="button" data-meeting-history-period="all">Todas</button>
+        <button class="button ghost" type="button" data-meeting-history-period="month">Este mês</button>
+        <button class="button ghost" type="button" data-meeting-history-clear>Limpar filtros</button>
+        <button class="button ghost" type="button" data-show-active-meetings>Voltar para reuniões</button>
+      </div>
+      <p class="action-filter-result" data-meeting-history-result>${meetings.length} reuniões executadas</p>
+    </section>
+    ${tableCard("Reuniões executadas", "Os campos abaixo refletem os dados registrados durante a execução.", ["Reunião", "Assuntos", "Data de execução", "Status"], rows)}
+  `;
+}
+
 function meetingsView(data, context) {
+  if (context.meetingWorkspace === "history") {
+    return meetingHistoryView(data, context);
+  }
+
   const meetings = data.items || [];
   const initialMeeting = meetings.find((item) => arrayValue(item.subjects).length > 0) || meetings[0] || null;
   const initialSubjects = arrayValue(initialMeeting?.subjects);
@@ -684,6 +714,7 @@ function meetingsView(data, context) {
 
   return `
     ${moduleHeader("Reuniões", "Conduza a reunião, selecione o assunto e abra ações diretamente em Ações.")}
+    <div class="meeting-view-actions"><button class="button secondary" type="button" data-show-meeting-history>Histórico de reuniões</button></div>
     <div class="single-layout meeting-workspace">
       ${formCard("Conduzir reunião", "A data de execução permanece na tela enquanto você abre quantas ações forem necessárias.", formContent)}
     </div>
@@ -986,7 +1017,13 @@ export const views = {
   },
   meetings: {
     title: "Reuniões",
-    load: (api, token) => api.list(token, "/meetings"),
+    load: async (api, token) => {
+      const [active, history] = await Promise.all([
+        api.list(token, "/meetings"),
+        api.list(token, "/meetings/history")
+      ]);
+      return { ...active, history: history.items || [] };
+    },
     render: (data, context) => meetingsView(data, context)
   },
   gapa: {
