@@ -552,9 +552,8 @@ function meetingsView(data, context) {
           <label class="field">
             <span>Prioridade</span>
             <select name="priority" data-action-field>
-              <option value="medium">Média</option>
               <option value="high">Alta</option>
-              <option value="critical">Crítica</option>
+              <option value="medium">Média</option>
               <option value="low">Baixa</option>
             </select>
           </label>
