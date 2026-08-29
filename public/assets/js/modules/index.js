@@ -209,9 +209,9 @@ function getLookupName(lookups, type, id) {
   return item ? item.name : "Não definido";
 }
 
-function getUserLabel(lookups, id) {
+function getUserLabel(lookups, id, fallbackName = "") {
   const user = (lookups?.users || []).find((entry) => String(entry.id) === String(id));
-  return user ? `${user.name} · @${user.username}` : "Não definido";
+  return user ? `${user.name} · @${user.username}` : fallbackName || "Não definido";
 }
 
 function dependencyNotice(title, message) {
@@ -446,7 +446,7 @@ const actionPlansConfig = {
       ? `<span class="badge info">${escapeHtml(item.meetingSubject)}</span>`
       : "<span class=\"badge\">Direta</span>",
     (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
-    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
+    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName)),
     (item) => escapeHtml(formatDate(item.dueDate)),
     (item) => statusBadge(item.priority || "medium"),
     (item) => statusBadge(item.status || "open")

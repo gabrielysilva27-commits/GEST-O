@@ -1,5 +1,8 @@
+import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-8";
+
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
+const IMPORTED_ACTION_HISTORY_VERSION = 1;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -323,6 +326,7 @@ const INITIAL_DATABASE = {
     seededAt: "2026-08-26T00:00:00.000Z",
     lastExport: null,
     deletedMeetingTemplateIds: [],
+    importedActionHistoryVersion: 0,
     storageVersion: 2
   },
   sequence: {
@@ -441,6 +445,65 @@ function ensureMeetingTemplates(database) {
   });
 }
 
+function ensureImportedActionHistory(database) {
+  const importedVersion = toInt(database.meta?.importedActionHistoryVersion, 0);
+  if (importedVersion >= IMPORTED_ACTION_HISTORY_VERSION) {
+    return;
+  }
+
+  database.actionPlans = arrayValue(database.actionPlans);
+  database.sequence.actionPlans = Math.max(
+    toInt(database.sequence?.actionPlans, 0),
+    ...database.actionPlans.map((item) => toInt(item.id))
+  );
+
+  const importedRows = new Set(
+    database.actionPlans
+      .filter((item) => item.source === "legacy_excel")
+      .map((item) => toInt(item.legacySourceRow))
+  );
+
+  IMPORTED_ACTION_HISTORY.forEach((item) => {
+    if (importedRows.has(toInt(item.sourceRow))) {
+      return;
+    }
+
+    const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
+    if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
+      return;
+    }
+
+    database.sequence.actionPlans += 1;
+    database.actionPlans.push({
+      id: database.sequence.actionPlans,
+      title: item.meetingSubject,
+      objective: item.objective,
+      status: item.status,
+      priority: item.priority,
+      companyId: 0,
+      unitId: 0,
+      ownerId: 0,
+      requesterId: 0,
+      requesterName: item.requesterName,
+      legacyOwnerName: item.ownerName,
+      createdBy: 1,
+      dueDate: item.dueDate || item.openedAt,
+      meetingId: toInt(meeting.id),
+      meetingTitle: meeting.title,
+      meetingSubject: item.meetingSubject,
+      meetingExecutionDate: item.executionDate || item.openedAt,
+      source: "legacy_excel",
+      sourceLabel: "AÇÕES.xlsx",
+      legacySourceRow: toInt(item.sourceRow),
+      legacyStatus: item.sourceStatus,
+      createdAt: `${item.openedAt || "2026-01-01"}T12:00:00.000Z`,
+      updatedAt: `${item.openedAt || "2026-01-01"}T12:00:00.000Z`
+    });
+  });
+
+  database.meta.importedActionHistoryVersion = IMPORTED_ACTION_HISTORY_VERSION;
+}
+
 async function sha256(value) {
   const bytes = new TextEncoder().encode(String(value));
   const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
@@ -458,6 +521,7 @@ function sanitizeDatabase(database) {
       seededAt: database.meta.seededAt || INITIAL_DATABASE.meta.seededAt,
       lastExport: database.meta.lastExport || null,
       deletedMeetingTemplateIds: arrayValue(database.meta.deletedMeetingTemplateIds),
+      importedActionHistoryVersion: toInt(database.meta.importedActionHistoryVersion, 0),
       storageVersion: INITIAL_DATABASE.meta.storageVersion
     },
     sequence: {
@@ -489,6 +553,7 @@ function sanitizeDatabase(database) {
   };
 
   ensureMeetingTemplates(sanitized);
+  ensureImportedActionHistory(sanitized);
   return sanitized;
 }
 
@@ -497,6 +562,8 @@ function loadDatabase() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       const seeded = clone(INITIAL_DATABASE);
+      ensureMeetingTemplates(seeded);
+      ensureImportedActionHistory(seeded);
       saveDatabase(seeded);
       return seeded;
     }
