@@ -111,9 +111,21 @@
           </button>
         </div>
 
-        <nav>
+        <nav class="sidebar-navigation" aria-label="Módulos da plataforma">
           <ul id="nav-list" class="nav-list"></ul>
         </nav>
+
+        <footer class="sidebar-footer">
+          <div class="sidebar-user">
+            <div id="user-avatar" class="avatar">LG</div>
+            <strong id="user-name">Usuário</strong>
+          </div>
+          <ul id="footer-nav-list" class="nav-list footer-nav-list"></ul>
+          <button id="logout-button" class="sidebar-logout" type="button">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M3 5v14a2 2 0 0 0 2 2h10"></path></svg>
+            <span>Sair</span>
+          </button>
+        </footer>
       </aside>
 
       <div class="workspace-main">
@@ -123,7 +135,6 @@
               Menu
             </button>
             <div>
-              <p class="eyebrow">Central LEAD</p>
               <h1 id="page-title">Dashboard</h1>
             </div>
           </div>
@@ -137,15 +148,6 @@
               <strong id="notification-badge" class="counter">0</strong>
             </button>
 
-            <div class="user-chip">
-              <div id="user-avatar" class="avatar">LG</div>
-              <div>
-                <strong id="user-name">Usuário</strong>
-                <p id="user-role">Perfil</p>
-              </div>
-            </div>
-
-            <button id="logout-button" class="button ghost" type="button">Sair</button>
           </div>
         </header>
 
@@ -159,6 +161,6 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="assets/js/app.js?v=20260828-4"></script>
+  <script type="module" src="assets/js/app.js?v=20260828-5"></script>
 </body>
 </html>

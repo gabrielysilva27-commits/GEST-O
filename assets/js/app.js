@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260828-4";
+import { api, ApiError } from "./api.js?v=20260828-5";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260828-4";
+import { views } from "./modules/index.js?v=20260828-5";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -9,10 +9,10 @@ const elements = {
   loginForm: document.querySelector("#login-form"),
   loginError: document.querySelector("#login-error"),
   navList: document.querySelector("#nav-list"),
+  footerNavList: document.querySelector("#footer-nav-list"),
   pageTitle: document.querySelector("#page-title"),
   pageContent: document.querySelector("#page-content"),
   userName: document.querySelector("#user-name"),
-  userRole: document.querySelector("#user-role"),
   userAvatar: document.querySelector("#user-avatar"),
   logoutButton: document.querySelector("#logout-button"),
   toastRegion: document.querySelector("#toast-region"),
@@ -88,19 +88,34 @@ function getAllowedViews() {
 
 function renderNavigation() {
   const items = getAllowedViews();
-  elements.navList.innerHTML = items.map((item) => `
+  const iconPaths = {
+    dashboard: '<path d="M4 13h6V4H4v9zM14 20h6v-7h-6v7zM4 20h6v-3H4v3zM14 10h6V4h-6v6z"></path>',
+    audit: '<path d="M5 3h11l3 3v15H5z"></path><path d="M16 3v4h4M8 12h8M8 16h6"></path>',
+    actionPlans: '<path d="M5 12l4 4L19 6"></path><path d="M21 12a9 9 0 1 1-5-8.2"></path>',
+    meetings: '<path d="M7 3v4M17 3v4M4 9h16M5 5h14v15H5z"></path><path d="M8 13h3M13 13h3"></path>',
+    gapa: '<path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="8"></circle>',
+    dto: '<path d="M6 3h9l3 3v15H6z"></path><path d="M9 12h6M9 16h4M15 3v4h4"></path>',
+    anomalyReports: '<path d="M12 3l9 17H3z"></path><path d="M12 9v4M12 17h.01"></path>',
+    gerot: '<path d="M4 7h16M7 3v4M17 3v4M6 11h12v9H6z"></path><path d="M9 14h6"></path>',
+    users: '<circle cx="9" cy="8" r="3"></circle><path d="M3 20c.5-4 2.5-6 6-6s5.5 2 6 6M17 11a3 3 0 1 0-1-5.8M18 14c2 1 3 3 3 6"></path>',
+    notifications: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path>',
+    history: '<path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5M12 7v5l3 2"></path>',
+    administration: '<path d="M12 3v18M3 12h18"></path><path d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"></path><circle cx="12" cy="12" r="3"></circle>'
+  };
+  const button = (item) => `
     <li>
       <button type="button" data-view="${item.id}" class="${state.currentView === item.id ? "active" : ""}">
-        ${item.label}
+        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[item.id] || iconPaths.dashboard}</svg>
+        <span>${item.label}</span>
       </button>
-    </li>
-  `).join("");
+    </li>`;
+  elements.navList.innerHTML = items.filter((item) => item.id !== "administration").map(button).join("");
+  elements.footerNavList.innerHTML = items.filter((item) => item.id === "administration").map(button).join("");
 }
 
 function refreshUserHeader() {
   const initials = state.user.avatar || (state.user.name || "LG").slice(0, 2).toUpperCase();
   elements.userName.textContent = state.user.name;
-  elements.userRole.textContent = `${state.user.roleLabel} · @${state.user.username}`;
   elements.userAvatar.textContent = initials;
 }
 
@@ -467,6 +482,7 @@ function wireEvents() {
   elements.loginForm.addEventListener("submit", handleLogin);
   elements.logoutButton.addEventListener("click", handleLogout);
   elements.navList.addEventListener("click", handleDynamicClick);
+  elements.footerNavList.addEventListener("click", handleDynamicClick);
   elements.pageContent.addEventListener("click", handleDynamicClick);
   elements.pageContent.addEventListener("change", handleDynamicChange);
   elements.pageContent.addEventListener("submit", handleDynamicSubmit);
