@@ -52,6 +52,20 @@ function Convert-LegacyStatus([string]$Value) {
   return "open"
 }
 
+function Convert-DeadlineFromDuration([string]$OpenedAt, [string]$Duration) {
+  if (-not $OpenedAt) {
+    return ""
+  }
+
+  $daysMatch = [regex]::Match($Duration, "\d+")
+  if (-not $daysMatch.Success) {
+    return $OpenedAt
+  }
+
+  $openedDate = [DateTime]::ParseExact($OpenedAt, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+  return $openedDate.AddDays([int]$daysMatch.Value).ToString("yyyy-MM-dd")
+}
+
 $meetingMap = @{
   "mpr armazem" = @{ Title = "MPR Armazém_Controle"; TemplateId = 2 }
   "rps armazem" = @{ Title = "RPS Armazém_Controle"; TemplateId = 3 }
@@ -141,10 +155,9 @@ try {
     }
 
     $openedAt = Convert-ExcelDate $data[$row, 1]
-    $dueDate = Convert-ExcelDate $data[$row, 8]
-    if (-not $dueDate) {
-      $dueDate = $openedAt
-    }
+    # The legacy "Fim" column has stale years. The operational date is Data,
+    # and Prazo contains the duration that defines the action deadline.
+    $dueDate = Convert-DeadlineFromDuration $openedAt ([string]$data[$row, 9])
 
     $planText = ([string]$data[$row, 6]).Trim()
     $comments = ([string]$data[$row, 10]).Trim()

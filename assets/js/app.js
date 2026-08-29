@@ -1,4 +1,4 @@
-import { api, ApiError } from "./api.js?v=20260828-9";
+import { api, ApiError } from "./api.js?v=20260828-10";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260828-9";
 

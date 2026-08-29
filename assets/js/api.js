@@ -1,8 +1,8 @@
-import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-9";
+import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
-const IMPORTED_ACTION_HISTORY_VERSION = 1;
+const IMPORTED_ACTION_HISTORY_VERSION = 2;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -452,22 +452,14 @@ function ensureImportedActionHistory(database) {
   }
 
   database.actionPlans = arrayValue(database.actionPlans);
+  // Replace only spreadsheet history; manually created actions remain intact.
+  database.actionPlans = database.actionPlans.filter((item) => item.source !== "legacy_excel");
   database.sequence.actionPlans = Math.max(
     toInt(database.sequence?.actionPlans, 0),
     ...database.actionPlans.map((item) => toInt(item.id))
   );
 
-  const importedRows = new Set(
-    database.actionPlans
-      .filter((item) => item.source === "legacy_excel")
-      .map((item) => toInt(item.legacySourceRow))
-  );
-
   IMPORTED_ACTION_HISTORY.forEach((item) => {
-    if (importedRows.has(toInt(item.sourceRow))) {
-      return;
-    }
-
     const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
     if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
       return;

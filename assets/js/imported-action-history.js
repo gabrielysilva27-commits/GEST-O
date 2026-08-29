@@ -11,7 +11,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-02-14",
-        "dueDate":  "2025-03-01",
+        "dueDate":  "2026-02-15",
         "executionDate":  "2026-02-14",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -26,7 +26,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-02-14",
-        "dueDate":  "2025-03-01",
+        "dueDate":  "2026-02-15",
         "executionDate":  "2026-02-14",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -41,7 +41,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-03",
-        "dueDate":  "2026-04-02",
+        "dueDate":  "2026-03-04",
         "executionDate":  "2026-03-03",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -56,7 +56,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-03",
-        "dueDate":  "2026-04-02",
+        "dueDate":  "2026-03-04",
         "executionDate":  "2026-03-03",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -71,7 +71,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-04",
-        "dueDate":  "2025-03-10",
+        "dueDate":  "2026-03-05",
         "executionDate":  "2026-03-04",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -86,7 +86,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-04",
-        "dueDate":  "2025-03-10",
+        "dueDate":  "2026-03-05",
         "executionDate":  "2026-03-04",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -101,7 +101,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-04",
-        "dueDate":  "2025-03-10",
+        "dueDate":  "2026-03-05",
         "executionDate":  "2026-03-04",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -116,7 +116,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-04",
-        "dueDate":  "2025-03-10",
+        "dueDate":  "2026-03-05",
         "executionDate":  "2026-03-04",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -131,7 +131,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-12",
-        "dueDate":  "2025-04-11",
+        "dueDate":  "2026-03-13",
         "executionDate":  "2026-03-12",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -146,7 +146,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-12",
-        "dueDate":  "2025-04-11",
+        "dueDate":  "2026-03-13",
         "executionDate":  "2026-03-12",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -161,7 +161,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-03-27",
-        "dueDate":  "2025-04-01",
+        "dueDate":  "2026-03-28",
         "executionDate":  "2026-03-27",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -176,7 +176,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-04-06",
-        "dueDate":  "2026-05-06",
+        "dueDate":  "2026-04-07",
         "executionDate":  "2026-04-06",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -191,7 +191,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-04-10",
-        "dueDate":  "2025-04-14",
+        "dueDate":  "2026-04-11",
         "executionDate":  "2026-04-10",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -206,7 +206,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-04-10",
-        "dueDate":  "2025-04-14",
+        "dueDate":  "2026-04-11",
         "executionDate":  "2026-04-10",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -221,7 +221,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-04-10",
-        "dueDate":  "2025-04-14",
+        "dueDate":  "2026-04-11",
         "executionDate":  "2026-04-10",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -236,7 +236,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-04-24",
-        "dueDate":  "2025-04-29",
+        "dueDate":  "2026-04-25",
         "executionDate":  "2026-04-24",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -251,7 +251,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-04-24",
-        "dueDate":  "2025-04-29",
+        "dueDate":  "2026-04-25",
         "executionDate":  "2026-04-24",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -266,7 +266,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-04-29",
-        "dueDate":  "2025-05-05",
+        "dueDate":  "2026-04-30",
         "executionDate":  "2026-04-29",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -281,7 +281,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-05",
-        "dueDate":  "2025-05-12",
+        "dueDate":  "2026-05-06",
         "executionDate":  "2026-05-05",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -296,7 +296,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-05",
-        "dueDate":  "2025-05-12",
+        "dueDate":  "2026-05-06",
         "executionDate":  "2026-05-05",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -311,7 +311,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-05",
-        "dueDate":  "2025-06-03",
+        "dueDate":  "2026-05-06",
         "executionDate":  "2026-05-05",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -326,7 +326,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-05",
-        "dueDate":  "2025-06-03",
+        "dueDate":  "2026-05-06",
         "executionDate":  "2026-05-05",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -341,7 +341,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-05",
-        "dueDate":  "2025-06-03",
+        "dueDate":  "2026-05-06",
         "executionDate":  "2026-05-05",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -356,7 +356,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-11",
-        "dueDate":  "2026-05-18",
+        "dueDate":  "2026-05-12",
         "executionDate":  "2026-05-11",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -371,7 +371,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-12",
-        "dueDate":  "2025-05-19",
+        "dueDate":  "2026-05-13",
         "executionDate":  "2026-05-12",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -386,7 +386,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-12",
-        "dueDate":  "2025-05-19",
+        "dueDate":  "2026-05-13",
         "executionDate":  "2026-05-12",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -401,7 +401,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-12",
-        "dueDate":  "2025-05-19",
+        "dueDate":  "2026-05-13",
         "executionDate":  "2026-05-12",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -416,7 +416,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-05-12",
-        "dueDate":  "2025-05-19",
+        "dueDate":  "2026-05-13",
         "executionDate":  "2026-05-12",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -431,7 +431,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-06-05",
-        "dueDate":  "2025-07-05",
+        "dueDate":  "2026-06-06",
         "executionDate":  "2026-06-05",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -446,7 +446,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-06-05",
-        "dueDate":  "2025-07-05",
+        "dueDate":  "2026-06-06",
         "executionDate":  "2026-06-05",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -476,7 +476,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-07-12",
-        "dueDate":  "2026-08-12",
+        "dueDate":  "2026-07-13",
         "executionDate":  "2026-07-12",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -491,7 +491,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-07-27",
-        "dueDate":  "2026-08-27",
+        "dueDate":  "2026-07-28",
         "executionDate":  "2026-07-27",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -506,7 +506,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-07-31",
-        "dueDate":  "2026-08-31",
+        "dueDate":  "2026-08-01",
         "executionDate":  "2026-07-31",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -521,7 +521,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-07-31",
-        "dueDate":  "2026-08-31",
+        "dueDate":  "2026-08-01",
         "executionDate":  "2026-07-31",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -536,7 +536,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-08-01",
-        "dueDate":  "2026-09-01",
+        "dueDate":  "2026-08-02",
         "executionDate":  "2026-08-01",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -551,7 +551,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-08-13",
-        "dueDate":  "2025-09-13",
+        "dueDate":  "2026-08-14",
         "executionDate":  "2026-08-13",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -566,7 +566,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-08-13",
-        "dueDate":  "2025-09-13",
+        "dueDate":  "2026-08-14",
         "executionDate":  "2026-08-13",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -581,7 +581,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-08-13",
-        "dueDate":  "2025-09-13",
+        "dueDate":  "2026-08-14",
         "executionDate":  "2026-08-13",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -596,7 +596,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-08-13",
-        "dueDate":  "2025-09-13",
+        "dueDate":  "2026-08-14",
         "executionDate":  "2026-08-13",
         "sourceStatus":  "CONCLUÍDO"
     },
@@ -611,7 +611,7 @@ export const IMPORTED_ACTION_HISTORY = [
         "status":  "done",
         "priority":  "medium",
         "openedAt":  "2026-08-13",
-        "dueDate":  "2025-09-13",
+        "dueDate":  "2026-08-14",
         "executionDate":  "2026-08-13",
         "sourceStatus":  "CONCLUÍDO"
     }
