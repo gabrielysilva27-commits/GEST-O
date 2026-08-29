@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260828-5";
+import { api, ApiError } from "./api.js?v=20260828-6";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260828-5";
+import { views } from "./modules/index.js?v=20260828-6";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -105,7 +105,7 @@ function renderNavigation() {
   const button = (item) => `
     <li>
       <button type="button" data-view="${item.id}" class="${state.currentView === item.id ? "active" : ""}">
-        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[item.id] || iconPaths.dashboard}</svg>
+        <span class="nav-icon-frame"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[item.id] || iconPaths.dashboard}</svg></span>
         <span>${item.label}</span>
       </button>
     </li>`;
