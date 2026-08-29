@@ -567,6 +567,9 @@ function actionPlansView(data, context) {
     const actionText = [item.title, item.objective, item.meetingSubject].filter(Boolean).join(" ");
     const requester = item.requesterName || item.legacyRequesterName || "Não informado";
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
+    const attachment = item.attachment?.data
+      ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
+      : `<span class="text-muted">Sem anexo</span>`;
     return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
       <td data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
       <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
@@ -576,6 +579,7 @@ function actionPlansView(data, context) {
       <td data-label="Responsável">${escapeHtml(owner)}</td>
       <td data-label="Prioridade">${statusBadge(item.priority || "medium")}</td>
       <td data-label="Status">${actionStatusBadge(item.status || "open")}</td>
+      <td data-label="Anexo">${attachment}</td>
     </tr>`;
   }).join("");
 
@@ -598,7 +602,7 @@ function actionPlansView(data, context) {
         <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
       </section>
       <section class="table-card action-portfolio-card" data-action-portfolio>
-        ${rows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-plan-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-priority-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Plano de ação</th><th>Solicitante</th><th>Responsável</th><th>Prioridade</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
+        ${rows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-plan-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-priority-column"><col class="action-status-column"><col class="action-attachment-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Plano de ação</th><th>Solicitante</th><th>Responsável</th><th>Prioridade</th><th>Status</th><th>Anexo</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
       </section>
     </section>
   `;
