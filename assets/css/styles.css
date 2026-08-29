@@ -120,6 +120,10 @@ button {
   display: none !important;
 }
 
+.login-card [hidden] {
+  display: none !important;
+}
+
 .login-shell {
   display: grid;
   place-items: center;
@@ -130,7 +134,8 @@ button {
 
 .login-stage {
   width: min(100%, 1160px);
-  height: min(540px, calc(100dvh - 32px));
+  min-height: min(580px, calc(100dvh - 32px));
+  height: auto;
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(350px, 0.8fr);
   overflow: hidden;
@@ -149,7 +154,7 @@ button {
   display: grid;
   align-items: center;
   min-height: 0;
-  padding: clamp(30px, 4vw, 46px) clamp(36px, 5vw, 64px);
+  padding: clamp(30px, 4vw, 42px) clamp(36px, 5vw, 64px);
   background:
     radial-gradient(circle at 88% 8%, rgba(92, 147, 255, 0.18), transparent 26%),
     linear-gradient(155deg, #f8fbff 0%, #edf4ff 100%);
@@ -174,7 +179,7 @@ button {
   z-index: 1;
   display: grid;
   align-content: start;
-  gap: 16px;
+  gap: 20px;
 }
 
 .brand-lockup,
@@ -198,7 +203,7 @@ button {
 }
 
 .login-brand-logo {
-  width: min(100%, 270px);
+  width: min(100%, 228px);
   height: auto;
   filter: drop-shadow(0 16px 36px rgba(16, 59, 145, 0.12));
 }
@@ -228,10 +233,10 @@ button {
 }
 
 .login-showcase h1 {
-  max-width: 16ch;
-  font-size: clamp(2.1rem, 3.2vw, 3.2rem);
+  max-width: 18ch;
+  font-size: clamp(2rem, 2.8vw, 2.8rem);
   font-weight: 600;
-  line-height: 1.12;
+  line-height: 1.1;
   letter-spacing: -0.045em;
 }
 
@@ -670,17 +675,18 @@ button {
 
 .login-support {
   display: grid;
-  gap: 6px;
-  margin-top: 20px;
-  padding-top: 16px;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 18px;
   border-top: 1px solid var(--line);
 }
 
 .login-support button {
   justify-self: start;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  padding: 8px 11px;
+  border: 1px solid rgba(22, 66, 154, 0.1);
+  border-radius: 8px;
+  background: rgba(22, 66, 154, 0.06);
   color: var(--primary-strong);
   font-size: 0.78rem;
   font-weight: 700;
@@ -688,6 +694,7 @@ button {
 
 .login-support button:hover {
   color: var(--primary);
+  background: rgba(22, 66, 154, 0.1);
 }
 
 .login-support p {
