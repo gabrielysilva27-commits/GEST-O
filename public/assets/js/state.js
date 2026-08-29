@@ -5,6 +5,7 @@ export const state = {
   user: null,
   lookups: null,
   currentView: "dashboard",
+  actionWorkspace: "list",
   dataCache: {},
   isSidebarOpen: false
 };

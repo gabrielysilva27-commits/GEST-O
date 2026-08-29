@@ -1,4 +1,4 @@
-import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-8";
+import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-9";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
@@ -100,7 +100,7 @@ const NAVIGATION = [
   { id: "dashboard", label: "Dashboard", permission: "dashboard.view" },
   { id: "audit", label: "Painel de auditoria", permission: "audit.view" },
   { id: "administration", label: "Administração", permission: "administration.view" },
-  { id: "actionPlans", label: "Planos de ação", permission: "actionPlans.read" },
+  { id: "actionPlans", label: "Ações", permission: "actionPlans.read" },
   { id: "meetings", label: "Reuniões", permission: "meetings.read" },
   { id: "gapa", label: "GAPA", permission: "gapa.read" },
   { id: "dto", label: "DTO - Diagnóstico de tarefa operacional", permission: "dto.read" },
@@ -890,7 +890,7 @@ function buildDashboard(database, user) {
       .filter((item) => item.status !== "done" && isPastDue(item.dueDate))
       .map((item) => ({
         title: item.title,
-        module: "Planos de ação",
+        module: "Ações",
         dueDate: item.dueDate,
         status: item.status
       })),
@@ -921,7 +921,7 @@ function buildDashboard(database, user) {
   ].sort((left, right) => String(left.dueDate).localeCompare(String(right.dueDate)));
 
   const moduleLoad = buildProgressSeries([
-    { label: "Planos de ação", value: actionPlans.length },
+    { label: "Ações", value: actionPlans.length },
     { label: "GAPA", value: gapaRecords.length },
     { label: "DTO", value: dtoRecords.length },
     { label: "GEROT", value: gerotRecords.length }
@@ -1180,11 +1180,11 @@ function createActionPlan(database, user, payload) {
     actorId: user.id,
     companyId: record.companyId,
     unitId: record.unitId,
-    description: `Plano de ação '${record.title}' criado.`
+    description: `Ação '${record.title}' criada.`
   });
   addNotification(database, {
     userId: record.ownerId,
-    title: "Novo plano de ação",
+    title: "Nova ação",
     message: record.title,
     level: "info",
     link: "actionPlans"

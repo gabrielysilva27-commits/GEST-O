@@ -2,7 +2,7 @@ const MODULE_LABELS = {
   dashboard: "Dashboard",
   audit: "Painel de auditoria",
   administration: "Administração",
-  actionPlans: "Planos de ação",
+  actionPlans: "Ações",
   meetings: "Reuniões",
   gapa: "GAPA",
   dto: "DTO - Diagnóstico de tarefa operacional",
@@ -273,7 +273,7 @@ function dashboardView(data) {
     ${moduleHeader("Dashboard operacional", "Acompanhe rapidamente o ritmo dos principais módulos da operação.")}
     ${metricCards(data.kpis || [])}
     <div class="charts-grid">
-      ${progressList("Planos de ação", "Leitura do andamento por status.", data.charts?.actionPlansByStatus || [], (item) => `${item.value} registros`)}
+      ${progressList("Ações", "Leitura do andamento por status.", data.charts?.actionPlansByStatus || [], (item) => `${item.value} registros`)}
       ${progressList("Reuniões", "Agenda e desdobramentos do período.", data.charts?.meetingsByStatus || [], (item) => `${item.value} registros`)}
       ${progressList("Carga por módulo", "Volume atual nos módulos mais operacionais.", data.charts?.moduleLoad || [], (item) => `${item.value} registros`)}
       ${timelineCard("Histórico recente", "Últimos movimentos relevantes registrados na plataforma.", data.feed || [])}
@@ -491,6 +491,93 @@ const actionPlansConfig = {
   }
 };
 
+function actionFilterOptions(items, selector) {
+  const values = [...new Set(items.map(selector).filter(Boolean))].sort((left, right) =>
+    String(left).localeCompare(String(right), "pt-BR")
+  );
+  return values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+}
+
+function actionCreationForm(meetings, context) {
+  const initialMeeting = meetings.find((item) => arrayValue(item.subjects).length > 0) || meetings[0] || null;
+  const initialSubjects = arrayValue(initialMeeting?.subjects);
+  const meetingOptions = meetings.map((item) => {
+    const selected = initialMeeting && String(item.id) === String(initialMeeting.id) ? "selected" : "";
+    return `<option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" ${selected}>${escapeHtml(item.title)}</option>`;
+  }).join("");
+
+  return `
+    <form class="stack meeting-action-form action-create-form" data-form="meetingActions">
+      <div class="form-grid">
+        <label class="field"><span>Reunião</span><select name="meetingId" data-meeting-select required>${meetingOptions}</select></label>
+        <label class="field"><span>Data de execução</span><input type="date" name="executionDate" required></label>
+        <label class="field"><span>Solicitante</span><input value="${escapeHtml(context.user?.name || "")}" disabled></label>
+        <label class="field"><span>Assunto</span><select name="subject" data-meeting-subject ${initialSubjects.length ? "" : "disabled"} required>${initialSubjects.length ? valueOptions(initialSubjects) : "<option value=\"\">Nenhum assunto cadastrado</option>"}</select></label>
+        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-action-field><option value="">Selecionar</option>${optionList(context.lookups?.users || [])}</select></label>
+        <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field></label>
+        <label class="field"><span>Prioridade</span><select name="priority" data-action-field><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
+      </div>
+      <div class="form-actions">
+        <button class="button primary" type="submit" data-save-meeting-action ${initialSubjects.length ? "" : "disabled"}>Salvar ação</button>
+        <button class="button secondary" type="button" data-close-action-form>Cancelar</button>
+      </div>
+    </form>
+  `;
+}
+
+function actionPlansView(data, context) {
+  const items = data.items || [];
+  const meetings = data.meetings?.items || [];
+  const canCreate = userCan(context, "meetings.manage") && userCan(context, "actionPlans.manage");
+
+  if (context.actionWorkspace === "create") {
+    return `
+      <section class="action-subview">
+        <header class="action-workspace-header">
+          <div><p class="eyebrow">Ações</p><h2>Nova ação</h2><p>Vincule a ação à reunião e selecione um assunto cadastrado.</p></div>
+          <button class="button secondary" type="button" data-close-action-form>Voltar para ações</button>
+        </header>
+        ${formCard("Dados da ação", "O solicitante é preenchido conforme o usuário conectado.", canCreate ? actionCreationForm(meetings, context) : dependencyNotice("Acesso somente para consulta", "Seu perfil não pode abrir novas ações."))}
+      </section>
+    `;
+  }
+
+  const rows = items.map((item) => {
+    const actionText = [item.title, item.objective, item.meetingSubject].filter(Boolean).join(" ");
+    const requester = item.requesterName || item.legacyRequesterName || "Não informado";
+    const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
+    return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution="${escapeHtml(item.meetingExecutionDate || "")}" data-due="${escapeHtml(item.dueDate || "")}" data-priority="${escapeHtml(item.priority || "medium")}" data-status="${escapeHtml(item.status || "open")}">
+      <td><strong>${escapeHtml(item.title)}</strong></td><td>${escapeHtml(item.meetingTitle || "Não vinculada")}</td><td><span class="badge info">${escapeHtml(item.meetingSubject || item.title)}</span></td><td>${escapeHtml(requester)}</td><td>${escapeHtml(owner)}</td><td>${escapeHtml(formatDate(item.meetingExecutionDate))}</td><td>${escapeHtml(formatDate(item.dueDate))}</td><td>${statusBadge(item.priority || "medium")}</td><td>${statusBadge(item.status || "open")}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+    <section class="action-workspace">
+      <header class="action-workspace-header">
+        <div><p class="eyebrow">Acompanhamento operacional</p><h2>Carteira de ações</h2><p>Consulte, filtre e acompanhe as ações vinculadas às reuniões.</p></div>
+        ${canCreate ? '<button class="button primary" type="button" data-open-action-form>Nova ação</button>' : ""}
+      </header>
+      <section class="action-filter-card">
+        <div class="action-filter-heading"><strong>Filtros</strong><button class="button ghost" type="button" data-clear-action-filters>Limpar filtros</button></div>
+        <div class="action-filter-grid" data-action-filters>
+          <label class="field"><span>Buscar ação ou assunto</span><input type="search" data-action-filter="text" placeholder="Digite para buscar"></label>
+          <label class="field"><span>Reunião</span><select data-action-filter="meeting"><option value="">Todas</option>${actionFilterOptions(items, (item) => item.meetingTitle)}</select></label>
+          <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Todos</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
+          <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Todos</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
+          <label class="field"><span>Prioridade</span><select data-action-filter="priority"><option value="">Todas</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
+          <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Todos</option><option value="open">Aberto</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
+          <label class="field"><span>Data de execução</span><input type="date" data-action-filter="execution"></label>
+          <label class="field"><span>Prazo</span><input type="date" data-action-filter="due"></label>
+        </div>
+        <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
+      </section>
+      <section class="table-card action-portfolio-card" data-action-portfolio>
+        ${rows ? `<div class="table-scroll"><table><thead><tr><th>Ação</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Data de execução</th><th>Prazo</th><th>Prioridade</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
+      </section>
+    </section>
+  `;
+}
+
 function meetingsView(data, context) {
   const meetings = data.items || [];
   const initialMeeting = meetings.find((item) => arrayValue(item.subjects).length > 0) || meetings[0] || null;
@@ -570,7 +657,7 @@ function meetingsView(data, context) {
       );
 
   return `
-    ${moduleHeader("Reuniões", "Conduza a reunião, selecione o assunto e abra ações diretamente em Planos de ação.")}
+    ${moduleHeader("Reuniões", "Conduza a reunião, selecione o assunto e abra ações diretamente em Ações.")}
     <div class="single-layout meeting-workspace">
       ${formCard("Conduzir reunião", "A data de execução permanece na tela enquanto você abre quantas ações forem necessárias.", formContent)}
     </div>
@@ -861,9 +948,15 @@ export const views = {
     render: (data, context) => administrationView(data, context)
   },
   actionPlans: {
-    title: "Planos de ação",
-    load: (api, token) => api.list(token, "/action-plans"),
-    render: (data, context) => operationsView(actionPlansConfig, data, context)
+    title: "Ações",
+    load: async (api, token) => {
+      const [actions, meetings] = await Promise.all([
+        api.list(token, "/action-plans"),
+        api.list(token, "/meetings")
+      ]);
+      return { ...actions, meetings };
+    },
+    render: (data, context) => actionPlansView(data, context)
   },
   meetings: {
     title: "Reuniões",

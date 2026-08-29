@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260828-8";
+import { api, ApiError } from "./api.js?v=20260828-9";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260828-8";
+import { views } from "./modules/index.js?v=20260828-9";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -184,6 +184,10 @@ async function loadView(viewId) {
     stopMeetingTimer();
   }
 
+  if (viewId !== "actionPlans") {
+    state.actionWorkspace = "list";
+  }
+
   state.currentView = viewId;
   renderNavigation();
   elements.pageTitle.textContent = view.title;
@@ -290,6 +294,12 @@ async function handleDynamicSubmit(event) {
     showToast("Registro criado com sucesso.");
 
     if (formName === "meetingActions") {
+      if (state.currentView === "actionPlans") {
+        state.actionWorkspace = "list";
+        await refreshBootstrap();
+        await loadView("actionPlans");
+        return;
+      }
       form.querySelectorAll("[data-action-field]").forEach((field) => {
         if (field.tagName === "SELECT") {
           field.selectedIndex = 0;
@@ -413,6 +423,26 @@ async function handleDynamicClick(event) {
     return;
   }
 
+  const openActionFormButton = event.target.closest("[data-open-action-form]");
+  if (openActionFormButton) {
+    state.actionWorkspace = "create";
+    await loadView("actionPlans");
+    return;
+  }
+
+  const closeActionFormButton = event.target.closest("[data-close-action-form]");
+  if (closeActionFormButton) {
+    state.actionWorkspace = "list";
+    await loadView("actionPlans");
+    return;
+  }
+
+  const clearActionFiltersButton = event.target.closest("[data-clear-action-filters]");
+  if (clearActionFiltersButton) {
+    clearActionFilters();
+    return;
+  }
+
   const deleteMeetingButton = event.target.closest("[data-delete-meeting]");
   if (deleteMeetingButton) {
     if (!window.confirm("Excluir esta reunião cadastrada?")) {
@@ -446,6 +476,65 @@ function handleDynamicChange(event) {
   const meetingSelect = event.target.closest("[data-meeting-select]");
   if (meetingSelect) {
     syncMeetingSubjectOptions(meetingSelect);
+  }
+
+  if (event.target.matches("[data-action-filter]")) {
+    applyActionFilters();
+  }
+}
+
+function normalizeFilterValue(value = "") {
+  return String(value).trim().toLocaleLowerCase("pt-BR");
+}
+
+function applyActionFilters() {
+  const filterRoot = elements.pageContent.querySelector("[data-action-filters]");
+  if (!filterRoot) {
+    return;
+  }
+
+  const filters = Object.fromEntries(
+    [...filterRoot.querySelectorAll("[data-action-filter]")].map((field) => [field.dataset.actionFilter, normalizeFilterValue(field.value)])
+  );
+  const rows = [...elements.pageContent.querySelectorAll("[data-action-row]")];
+  let visible = 0;
+
+  rows.forEach((row) => {
+    const matches =
+      (!filters.text || normalizeFilterValue(row.dataset.actionText).includes(filters.text)) &&
+      (!filters.meeting || normalizeFilterValue(row.dataset.meeting) === filters.meeting) &&
+      (!filters.requester || normalizeFilterValue(row.dataset.requester) === filters.requester) &&
+      (!filters.owner || normalizeFilterValue(row.dataset.owner) === filters.owner) &&
+      (!filters.priority || row.dataset.priority === filters.priority) &&
+      (!filters.status || row.dataset.status === filters.status) &&
+      (!filters.execution || row.dataset.execution === filters.execution) &&
+      (!filters.due || row.dataset.due === filters.due);
+    row.hidden = !matches;
+    if (matches) {
+      visible += 1;
+    }
+  });
+
+  const output = elements.pageContent.querySelector("[data-action-filter-result]");
+  if (output) {
+    output.textContent = `${visible} ${visible === 1 ? "ação encontrada" : "ações encontradas"}`;
+  }
+}
+
+function clearActionFilters() {
+  const filterRoot = elements.pageContent.querySelector("[data-action-filters]");
+  if (!filterRoot) {
+    return;
+  }
+  filterRoot.querySelectorAll("[data-action-filter]").forEach((field) => {
+    field.value = "";
+  });
+  applyActionFilters();
+}
+
+function handleDynamicInput(event) {
+  if (event.target.matches("[data-action-filter]")) {
+    applyActionFilters();
   }
 }
 
@@ -485,6 +574,7 @@ function wireEvents() {
   elements.footerNavList.addEventListener("click", handleDynamicClick);
   elements.pageContent.addEventListener("click", handleDynamicClick);
   elements.pageContent.addEventListener("change", handleDynamicChange);
+  elements.pageContent.addEventListener("input", handleDynamicInput);
   elements.pageContent.addEventListener("submit", handleDynamicSubmit);
   elements.notificationLink.addEventListener("click", () => {
     window.location.hash = "notifications";
