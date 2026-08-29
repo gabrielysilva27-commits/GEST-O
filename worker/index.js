@@ -83,12 +83,12 @@ async function fetchFromRepository(pathname, request) {
 
   return fetch(upstreamUrl, {
     headers: {
-      "user-agent": "lead-gestao-worker"
+      "user-agent": "lead-gestao-worker",
+      "cache-control": "no-cache"
     },
-    cf: {
-      cacheTtl: pathname.endsWith(".html") ? 0 : 3600,
-      cacheEverything: !pathname.endsWith(".html")
-    }
+    // GitHub main is the publication source. Revalidate it on every request so
+    // a deploy never mixes a new stylesheet with an older HTML or script file.
+    cache: "no-store"
   });
 }
 
