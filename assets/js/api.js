@@ -813,6 +813,20 @@ function buildLookups(database, user) {
         unitIds: profile.unitIds
       };
     }),
+    responsibleUsers: database.users
+      .filter((record) => (record.status || "active") === "active")
+      .map((record) => {
+        const profile = getUserProfile(database, record);
+        return {
+          id: profile.id,
+          name: profile.name,
+          username: profile.username,
+          role: profile.role,
+          roleLabel: profile.roleLabel,
+          companyId: profile.companyId,
+          unitIds: profile.unitIds
+        };
+      }),
     companies: getScopedCollection(database, user, "companies").map((record) => ({
       id: toInt(record.id),
       name: record.name,

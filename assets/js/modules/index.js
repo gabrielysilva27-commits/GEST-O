@@ -469,7 +469,7 @@ const actionPlansConfig = {
           </label>
           <label class="field">
           <span>Responsável</span>
-            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
+            <select name="ownerId" required>${optionList(context.lookups.responsibleUsers || context.lookups.users)}</select>
           </label>
           <label class="field">
             <span>Prioridade</span>
@@ -529,7 +529,7 @@ function actionCreationForm(meetings, context) {
         <label class="field"><span>Data de execução</span><input type="date" name="executionDate" required></label>
         <label class="field"><span>Solicitante</span><input value="${escapeHtml(context.user?.name || "")}" disabled></label>
         <label class="field"><span>Assunto</span><select name="subject" data-meeting-subject ${initialSubjects.length ? "" : "disabled"} required>${initialSubjects.length ? valueOptions(initialSubjects) : "<option value=\"\">Nenhum assunto cadastrado</option>"}</select></label>
-        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-action-field><option value="">Selecionar</option>${optionList(context.lookups?.users || [])}</select></label>
+        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-action-field><option value="">Selecionar</option>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
         <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field></label>
         <label class="field"><span>Prioridade</span><select name="priority" data-action-field><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
       </div>
@@ -650,7 +650,7 @@ function meetingsView(data, context) {
       </option>
     `;
   }).join("");
-  const ownerOptions = `<option value="">Selecionar</option>${optionList(context.lookups?.users || [])}`;
+  const ownerOptions = `<option value="">Selecionar</option>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}`;
   const disabledSubject = initialSubjects.length === 0 ? "disabled" : "";
 
   const formContent = userCan(context, "meetings.manage") && userCan(context, "actionPlans.manage")
