@@ -1355,8 +1355,8 @@ function createMeetingAction(database, user, payload) {
   ensurePermission(user, "meetings.manage");
   ensurePermission(user, "actionPlans.manage");
 
-  if (!payload?.meetingId || !payload?.subject?.trim()) {
-    throw new ApiError("Reunião e assunto são obrigatórios.", 400);
+  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.actionPlan?.trim()) {
+    throw new ApiError("Reunião, assunto e plano de ação são obrigatórios.", 400);
   }
 
   const meeting = database.meetings.find((item) => toInt(item.id) === toInt(payload.meetingId));
@@ -1396,7 +1396,7 @@ function createMeetingAction(database, user, payload) {
   const record = {
     id: nextId(database, "actionPlans"),
     title: subject,
-    objective: `Ação aberta na reunião ${meeting.title}. Solicitante: ${user.name}.`,
+    objective: payload.actionPlan.trim(),
     status: "open",
     priority: payload.priority || "medium",
     companyId,

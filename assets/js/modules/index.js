@@ -472,7 +472,7 @@ const actionPlansConfig = {
     return `
       <form class="stack" data-form="actionPlans">
         <label class="field">
-          <span>Título do plano</span>
+          <span>Plano de ação</span>
           <input name="title" required>
         </label>
         <label class="field">
@@ -546,6 +546,7 @@ function actionCreationForm(meetings, context) {
         <label class="field"><span>Data de execução</span><input type="date" name="executionDate" required></label>
         <label class="field"><span>Solicitante</span><input value="${escapeHtml(context.user?.name || "")}" disabled></label>
         <label class="field"><span>Assunto</span><select name="subject" data-meeting-subject ${initialSubjects.length ? "" : "disabled"} required>${initialSubjects.length ? valueOptions(initialSubjects) : "<option value=\"\">Nenhum assunto cadastrado</option>"}</select></label>
+        <label class="field full"><span>Plano de ação</span><textarea name="actionPlan" placeholder="Descreva o plano de ação definido na reunião" required></textarea></label>
         <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-action-field><option value="">Selecionar</option>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
         <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field></label>
         <label class="field"><span>Prioridade</span><select name="priority" data-action-field><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
@@ -702,6 +703,10 @@ function meetingsView(data, context) {
                 ? valueOptions(initialSubjects)
                 : "<option value=\"\">Nenhum assunto cadastrado</option>"}
             </select>
+          </label>
+          <label class="field full">
+            <span>Plano de ação</span>
+            <textarea name="actionPlan" data-action-field placeholder="Descreva o plano de ação definido na reunião" required></textarea>
           </label>
           <label class="field">
             <span>Responsável pela ação</span>
