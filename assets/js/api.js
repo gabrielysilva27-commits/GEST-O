@@ -138,6 +138,19 @@ const SEEDED_USERS = [
     avatar: "MA",
     title: "Usuário da plataforma",
     createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 4,
+    name: "JOSÉ ALVES TEIXEIRA FILHO",
+    username: "José",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "f10c90456d3c3a91a43197c74f6ca48c28ffc7a707a5d7f84437176757b48e79",
+    avatar: "JA",
+    title: "Usuário da plataforma",
+    createdAt: "2026-08-31T00:00:00.000Z"
   }
 ];
 
@@ -358,7 +371,7 @@ const INITIAL_DATABASE = {
     storageVersion: 2
   },
   sequence: {
-    users: 3,
+    users: 4,
     companies: 0,
     units: 0,
     actionPlans: 0,
