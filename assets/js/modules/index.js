@@ -57,6 +57,23 @@ function optionList(items, selectedValue = "", labelKey = "name") {
     .join("");
 }
 
+function meetingResponsibleOptionList(items, selectedValue = "") {
+  return items
+    .map((item) => {
+      const parts = String(item.name || item.label || item.username || "").trim().split(/\s+/).filter(Boolean);
+      const formatPart = (part) => {
+        const normalized = part.toLocaleLowerCase("pt-BR");
+        return normalized.charAt(0).toLocaleUpperCase("pt-BR") + normalized.slice(1);
+      };
+      const label = parts.length > 1
+        ? `${formatPart(parts[0])} ${formatPart(parts[parts.length - 1])}`
+        : formatPart(parts[0]) || item.id;
+      const selected = String(item.id) === String(selectedValue) ? "selected" : "";
+      return `<option value="${escapeHtml(item.id)}" ${selected}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+}
+
 function jsonAttribute(value) {
   return escapeHtml(JSON.stringify(value || []));
 }
@@ -650,7 +667,7 @@ function meetingsView(data, context) {
       </option>
     `;
   }).join("");
-  const ownerOptions = `<option value="">Selecionar</option>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}`;
+  const ownerOptions = `<option value="">Selecionar</option>${meetingResponsibleOptionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}`;
   const disabledSubject = initialSubjects.length === 0 ? "disabled" : "";
 
   const formContent = userCan(context, "meetings.manage") && userCan(context, "actionPlans.manage")

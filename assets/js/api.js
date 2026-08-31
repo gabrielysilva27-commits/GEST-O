@@ -116,7 +116,7 @@ const SEEDED_USERS = [
   {
     id: 2,
     name: "IAGO DE OLIVEIRA RODRIGUES",
-    username: "13943716759",
+    username: "Iago",
     role: "admin",
     companyId: 0,
     unitIds: [],
@@ -129,7 +129,7 @@ const SEEDED_USERS = [
   {
     id: 3,
     name: "MARCOS ANTONIO BARBOSA FERREIRA JUNIOR",
-    username: "11534261702",
+    username: "Marcos",
     role: "admin",
     companyId: 0,
     unitIds: [],
@@ -576,7 +576,17 @@ function sanitizeDatabase(database) {
   };
 
   SEEDED_USERS.forEach((seededUser) => {
-    if (!sanitized.users.some((item) => String(item.username || "").trim() === seededUser.username)) {
+    const existingUser = sanitized.users.find((item) =>
+      toInt(item.id) === toInt(seededUser.id)
+      || String(item.name || "").trim().toLowerCase() === seededUser.name.toLowerCase()
+    );
+    if (existingUser) {
+      existingUser.name = seededUser.name;
+      existingUser.username = seededUser.username;
+      existingUser.passwordHash = seededUser.passwordHash;
+      existingUser.role = seededUser.role;
+      existingUser.status = seededUser.status;
+    } else {
       sanitized.users.push(clone(seededUser));
     }
   });
