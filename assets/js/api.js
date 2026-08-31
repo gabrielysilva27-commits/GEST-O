@@ -112,6 +112,34 @@ const NAVIGATION = [
 ];
 
 const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42";
+const SEEDED_USERS = [
+  {
+    id: 2,
+    name: "IAGO DE OLIVEIRA RODRIGUES",
+    username: "13943716759",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "41ba8b3cc4ec12b94cf489c54fd3370d5f88465d9a02876e1d2556445637e6aa",
+    avatar: "IO",
+    title: "Usuário da plataforma",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 3,
+    name: "MARCOS ANTONIO BARBOSA FERREIRA JUNIOR",
+    username: "11534261702",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "37031ece6c39fb93a4af9dfc153daef36e5f4da7b34949d0cfbb1fcb623fa5ef",
+    avatar: "MA",
+    title: "Usuário da plataforma",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  }
+];
 
 const MEETING_TEMPLATES = [
   {
@@ -330,7 +358,7 @@ const INITIAL_DATABASE = {
     storageVersion: 2
   },
   sequence: {
-    users: 1,
+    users: 3,
     companies: 0,
     units: 0,
     actionPlans: 0,
@@ -356,7 +384,8 @@ const INITIAL_DATABASE = {
       avatar: "GA",
       title: "Administradora da plataforma",
       createdAt: "2026-08-01T09:00:00.000Z"
-    }
+    },
+    ...SEEDED_USERS
   ],
   companies: [],
   units: [],
@@ -546,6 +575,15 @@ function sanitizeDatabase(database) {
       passwordResetRequests: arrayValue(database.passwordResetRequests)
   };
 
+  SEEDED_USERS.forEach((seededUser) => {
+    if (!sanitized.users.some((item) => String(item.username || "").trim() === seededUser.username)) {
+      sanitized.users.push(clone(seededUser));
+    }
+  });
+  sanitized.sequence.users = Math.max(
+    toInt(sanitized.sequence.users, 0),
+    ...sanitized.users.map((item) => toInt(item.id, 0))
+  );
   ensureMeetingTemplates(sanitized);
   ensureImportedActionHistory(sanitized);
   return sanitized;
