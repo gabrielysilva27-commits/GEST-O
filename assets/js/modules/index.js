@@ -850,6 +850,7 @@ function administrationView(data, context) {
       ${tableCard("Reuniões cadastradas", "Cadastros disponíveis para condução de reuniões.", ["Reunião", "Assuntos", "Última execução", "Origem", "Ação"], rows, "administration-meetings")}
       <div class="administration-form">${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}</div>
     </div>
+    <div class="administration-user-actions"><button class="button secondary" type="button" data-export="users">Exportar usuários</button></div>
     ${tableCard("Usuários cadastrados", "Informações de todos os usuários ativos e seus perfis de acesso.", ["Nome", "Usuário", "Perfil", "Status", "Empresa", "Unidades"], userRows, "administration-users")}
   `;
 }

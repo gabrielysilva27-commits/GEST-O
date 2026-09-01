@@ -2433,6 +2433,21 @@ export const api = {
 
   async exportCsv(token, entity) {
     const { database, user } = getAuthContext(token);
+    if (entity === "users") {
+      ensureGabrielyAdministration(user);
+      return toCsv(database.users.map((record) => {
+        const profile = getUserProfile(database, record);
+        return {
+          nome: profile.name,
+          usuario: profile.username,
+          perfil: profile.roleLabel,
+          status: profile.status,
+          empresa: profile.companyName || "",
+          unidades: profile.unitNames.join(", "),
+          criadoEm: record.createdAt || ""
+        };
+      }));
+    }
     ensurePermission(user, "reports.export");
 
     const map = {
