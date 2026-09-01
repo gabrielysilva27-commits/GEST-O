@@ -1215,6 +1215,74 @@ button {
   grid-template-columns: minmax(0, 1.12fr) minmax(340px, 0.88fr);
 }
 
+.administration-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.administration-summary article {
+  display: grid;
+  gap: 3px;
+  min-height: 104px;
+  padding: 15px 16px;
+  border: 1px solid rgba(17, 57, 128, 0.09);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(234, 242, 255, 0.82));
+  box-shadow: var(--shadow-soft);
+}
+
+.administration-summary span,
+.administration-summary small {
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+.administration-summary span {
+  font-size: 0.75rem;
+}
+
+.administration-summary strong {
+  color: var(--primary-strong);
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  line-height: 1.1;
+}
+
+.administration-summary small {
+  font-size: 0.68rem;
+}
+
+.administration-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.52fr);
+  align-items: start;
+}
+
+.administration-form {
+  position: sticky;
+  top: 12px;
+}
+
+.administration-meetings table {
+  min-width: 600px;
+}
+
+.administration-meetings th:last-child,
+.administration-meetings td:last-child {
+  width: 1%;
+  padding-left: 16px;
+  white-space: nowrap;
+}
+
+.administration-users table {
+  min-width: 760px;
+}
+
+.administration-users td:nth-child(1),
+.administration-users td:nth-child(2) {
+  font-weight: 700;
+}
+
 .single-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1526,8 +1594,13 @@ tbody td {
 @media (max-width: 1080px) {
   .stats-grid,
   .charts-grid,
-  .split-layout {
+  .split-layout,
+  .administration-layout {
     grid-template-columns: 1fr;
+  }
+
+  .administration-form {
+    position: static;
   }
 
   .action-filter-grid,
@@ -1604,6 +1677,14 @@ tbody td {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .administration-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .administration-summary article {
+    min-height: 0;
   }
 
   .login-showcase h1 {
@@ -1784,6 +1865,11 @@ body.dark-mode .meeting-history-toolbar {
   border-color: var(--line);
   background: linear-gradient(180deg, rgba(27, 46, 75, 0.95), rgba(18, 32, 53, 0.95));
   box-shadow: var(--shadow-soft);
+}
+
+body.dark-mode .administration-summary article {
+  border-color: var(--line);
+  background: linear-gradient(180deg, rgba(27, 46, 75, 0.95), rgba(18, 32, 53, 0.95));
 }
 
 body.dark-mode .topbar {

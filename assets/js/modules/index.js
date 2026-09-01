@@ -155,9 +155,9 @@ function progressList(title, description, items, formatter = (item) => item.valu
   `;
 }
 
-function tableCard(title, description, headers, rows) {
+function tableCard(title, description, headers, rows, className = "") {
   return `
-    <section class="table-card">
+    <section class="table-card ${escapeHtml(className)}">
       <h2>${escapeHtml(title)}</h2>
       <p>${escapeHtml(description)}</p>
       ${rows.length === 0 ? `
@@ -757,6 +757,8 @@ function meetingsView(data, context) {
 function administrationView(data, context) {
   const meetings = data.items || [];
   const users = data.users || [];
+  const activeUsers = users.filter((item) => item.status === "active").length;
+  const subjects = meetings.reduce((total, item) => total + arrayValue(item.subjects).length, 0);
   const rows = meetings.map((item) => [
     escapeHtml(item.title),
     escapeHtml(arrayValue(item.subjects).length),
@@ -782,19 +784,36 @@ function administrationView(data, context) {
   const userRows = users.map((item) => [
     escapeHtml(item.name),
     escapeHtml(item.username),
-    escapeHtml(item.roleLabel),
-    escapeHtml(item.status),
+    `<span class="badge info">${escapeHtml(item.roleLabel)}</span>`,
+    `<span class="badge ${badgeClass(item.status || "active")}">${escapeHtml(item.status || "active")}</span>`,
     escapeHtml(item.companyName || "Não definida"),
     escapeHtml(item.unitNames?.join(", ") || "Não definidas")
   ]);
 
   return `
     ${moduleHeader("Administração", "Gerencie as reuniões cadastradas e os assuntos disponíveis no módulo Reuniões.")}
+    <section class="administration-summary" aria-label="Resumo da administração">
+      <article>
+        <span>Reuniões</span>
+        <strong>${escapeHtml(meetings.length)}</strong>
+        <small>cadastros disponíveis</small>
+      </article>
+      <article>
+        <span>Assuntos</span>
+        <strong>${escapeHtml(subjects)}</strong>
+        <small>pautas configuradas</small>
+      </article>
+      <article>
+        <span>Usuários ativos</span>
+        <strong>${escapeHtml(activeUsers)}</strong>
+        <small>acessos liberados</small>
+      </article>
+    </section>
     <div class="split-layout administration-layout">
-      ${tableCard("Reuniões cadastradas", "Cadastros disponíveis para condução de reuniões.", ["Reunião", "Assuntos", "Última execução", "Origem", "Ação"], rows)}
-      ${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}
+      ${tableCard("Reuniões cadastradas", "Cadastros disponíveis para condução de reuniões.", ["Reunião", "Assuntos", "Última execução", "Origem", "Ação"], rows, "administration-meetings")}
+      <div class="administration-form">${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}</div>
     </div>
-    ${tableCard("Usuários cadastrados", "Informações de todos os usuários ativos e seus perfis de acesso.", ["Nome", "Usuário", "Perfil", "Status", "Empresa", "Unidades"], userRows)}
+    ${tableCard("Usuários cadastrados", "Informações de todos os usuários ativos e seus perfis de acesso.", ["Nome", "Usuário", "Perfil", "Status", "Empresa", "Unidades"], userRows, "administration-users")}
   `;
 }
 
