@@ -57,17 +57,21 @@ function optionList(items, selectedValue = "", labelKey = "name") {
     .join("");
 }
 
+function responsibleDisplayName(item) {
+  const parts = String(item?.name || item?.label || item?.username || "").trim().split(/\s+/).filter(Boolean);
+  const formatPart = (part) => {
+    const normalized = part.toLocaleLowerCase("pt-BR");
+    return normalized.charAt(0).toLocaleUpperCase("pt-BR") + normalized.slice(1);
+  };
+  return parts.length > 1
+    ? `${formatPart(parts[0])} ${formatPart(parts[parts.length - 1])}`
+    : formatPart(parts[0]) || item?.id || "Não definido";
+}
+
 function meetingResponsibleOptionList(items, selectedValue = "") {
   return items
     .map((item) => {
-      const parts = String(item.name || item.label || item.username || "").trim().split(/\s+/).filter(Boolean);
-      const formatPart = (part) => {
-        const normalized = part.toLocaleLowerCase("pt-BR");
-        return normalized.charAt(0).toLocaleUpperCase("pt-BR") + normalized.slice(1);
-      };
-      const label = parts.length > 1
-        ? `${formatPart(parts[0])} ${formatPart(parts[parts.length - 1])}`
-        : formatPart(parts[0]) || item.id;
+      const label = responsibleDisplayName(item);
       const selected = String(item.id) === String(selectedValue) ? "selected" : "";
       return `<option value="${escapeHtml(item.id)}" ${selected}>${escapeHtml(label)}</option>`;
     })
@@ -228,7 +232,7 @@ function getLookupName(lookups, type, id) {
 
 function getUserLabel(lookups, id, fallbackName = "") {
   const user = (lookups?.users || []).find((entry) => String(entry.id) === String(id));
-  return user ? `${user.name} · @${user.username}` : fallbackName || "Não definido";
+  return user ? responsibleDisplayName(user) : fallbackName || "Não definido";
 }
 
 function dependencyNotice(title, message) {
@@ -486,7 +490,7 @@ const actionPlansConfig = {
           </label>
           <label class="field">
           <span>Responsável</span>
-            <select name="ownerId" required>${optionList(context.lookups.responsibleUsers || context.lookups.users)}</select>
+            <select name="ownerId" required>${meetingResponsibleOptionList(context.lookups.responsibleUsers || context.lookups.users)}</select>
           </label>
           <label class="field">
             <span>Prioridade</span>
@@ -547,7 +551,7 @@ function actionCreationForm(meetings, context) {
         <label class="field"><span>Solicitante</span><input value="${escapeHtml(context.user?.name || "")}" disabled></label>
         <label class="field"><span>Assunto</span><select name="subject" data-meeting-subject ${initialSubjects.length ? "" : "disabled"} required>${initialSubjects.length ? valueOptions(initialSubjects) : "<option value=\"\">Nenhum assunto cadastrado</option>"}</select></label>
         <label class="field full"><span>Plano de ação</span><textarea name="actionPlan" placeholder="Descreva o plano de ação definido na reunião" required></textarea></label>
-        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-meeting-owner disabled>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
+        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-meeting-owner disabled>${meetingResponsibleOptionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
         <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field></label>
         <label class="field"><span>Prioridade</span><select name="priority" data-action-field><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
       </div>

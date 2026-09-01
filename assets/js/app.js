@@ -1,6 +1,6 @@
 import { api, ApiError } from "./api.js?v=20260831-14";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260831-04";
+import { views } from "./modules/index.js?v=20260831-05";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
