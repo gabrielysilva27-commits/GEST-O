@@ -536,7 +536,7 @@ function actionCreationForm(meetings, context) {
   const initialSubjects = arrayValue(initialMeeting?.subjects);
   const meetingOptions = meetings.map((item) => {
     const selected = initialMeeting && String(item.id) === String(initialMeeting.id) ? "selected" : "";
-    return `<option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" ${selected}>${escapeHtml(item.title)}</option>`;
+    return `<option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" data-owner-id="${escapeHtml(item.ownerId)}" ${selected}>${escapeHtml(item.title)}</option>`;
   }).join("");
 
   return `
@@ -547,7 +547,7 @@ function actionCreationForm(meetings, context) {
         <label class="field"><span>Solicitante</span><input value="${escapeHtml(context.user?.name || "")}" disabled></label>
         <label class="field"><span>Assunto</span><select name="subject" data-meeting-subject ${initialSubjects.length ? "" : "disabled"} required>${initialSubjects.length ? valueOptions(initialSubjects) : "<option value=\"\">Nenhum assunto cadastrado</option>"}</select></label>
         <label class="field full"><span>Plano de ação</span><textarea name="actionPlan" placeholder="Descreva o plano de ação definido na reunião" required></textarea></label>
-        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-action-field><option value="">Selecionar</option>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
+        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-meeting-owner disabled>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
         <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field></label>
         <label class="field"><span>Prioridade</span><select name="priority" data-action-field><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
       </div>
@@ -663,7 +663,7 @@ function meetingsView(data, context) {
   const meetingOptions = meetings.map((item) => {
     const selected = initialMeeting && String(item.id) === String(initialMeeting.id) ? "selected" : "";
     return `
-      <option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" ${selected}>
+      <option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" data-owner-id="${escapeHtml(item.ownerId)}" ${selected}>
         ${escapeHtml(item.title)}
       </option>
     `;
@@ -710,7 +710,7 @@ function meetingsView(data, context) {
           </label>
           <label class="field">
             <span>Responsável pela ação</span>
-            <select name="ownerId" data-action-field>${ownerOptions}</select>
+            <select name="ownerId" data-meeting-owner disabled>${ownerOptions}</select>
           </label>
         </div>
         <div class="form-grid">

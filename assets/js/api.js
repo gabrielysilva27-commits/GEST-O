@@ -338,6 +338,25 @@ const MEETING_TEMPLATES = [
     id: 23,
     title: "RPP_SPO + DPO",
     subjects: ["GC", "GOD", "GG/TST", "GG", "GAF", "GNS/SNS", "GVs"]
+  },
+  {
+    id: 24,
+    title: "Team Room God",
+    subjects: [
+      "TRI", "RELATOS", "TELEMETRIA (FROTA)", "VOLUME DE VENDAS", "OTIF", "CDP",
+      "IV CRÍTICO ERRO PÓS CARREGAMENTO (EXTERNO)", "IV CRÍTICO ERRO PÓS CARREGAMENTO (INTERNO - BLITZ)",
+      "QUEBRAS", "DIF. DE ESTOQUE PA/AG", "EFC", "OCUPAÇÃO DE ESTOQUE",
+      "IV CRÍTICO - ADERÊNCIA A MATRIZ DE PRIORIZAÇÃO", "RONDA DE QUALIDADE", "TML", "JORNADA LÍQUIDA", "DQI",
+      "IV CRÍTICO - ATRASOS", "DEVOLUÇÃO PDV", "DEVOLUÇÃO HL", "CHAMADOS", "DISPONIBILIDADE DA FROTA",
+      "SOCORRO EM ROTA", "AVARIAS", "IV CRÍTICO - ADERÊNCIA AOS CHECKLISTS", "Aderência ao BEES",
+      "BLITZ DE SEGURANÇA DOS CAMINHÕES", "GSA", "CHECKLIST PALETEIRA", "ESCOLINHA DE TELEMETRIA",
+      "PRESTAÇÃO DE CONTA", "RETORNO DE ROTA", "LIBERAÇÃO DOS MAPAS (20:40)", "ADIANTAMENTO DA ESCALA (12:00)",
+      "DISPONIBILIZAR 5 EMPILHADEIRAS", "LAVAGEM DE EMPILHADEIRAS", "MANUTENÇÃO DE PALETEIRAS", "RETRABALHO DE PALLETS",
+      "ILUMINAÇÃO NO ARMAZÉM", "CONTAGEM PA (07:00)", "CONTAGEM AG (07:00)", "RECONTAGEM PA (ATÉ 2X)",
+      "RECONTAGEM AG (ATÉ 2X)", "FECHAMENTO DA GRADE (10:00)", "ENTRADA DE NOTAS (07:30)", "ERRO DE CARREGAMENTO",
+      "CARROS NÃO RETORNANDO DA PORTARIA", "ENVIO RECLAMAÇÕES NO PRAZO", "CAMINHÃO SIMULADO", "FIDELIZAÇÃO FROTA - ENTREGA",
+      "FIDELIZAÇÃO - PUXADA", "BLITZ DE CARREGAMENTO", "ATRASOS", "MANUTENÇÃO DE CARRETAS"
+    ]
   }
 ];
 
@@ -353,7 +372,7 @@ function buildMeetingTemplateRecord(template, id = template.id) {
     ownerId: 1,
     scheduledAt: "",
     lastExecutionDate: "",
-    subjects: [...template.subjects],
+    subjects: sortAlphabetically(template.subjects),
     importedFrom: "TOR DPO Revendas_2023.xlsx",
     createdBy: 1,
     createdAt: "2026-08-28T00:00:00.000Z",
@@ -436,6 +455,11 @@ function arrayValue(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function sortAlphabetically(values) {
+  return Array.from(new Set(arrayValue(values).map((item) => String(item).trim()).filter(Boolean)))
+    .sort((left, right) => left.localeCompare(right, "pt-BR"));
+}
+
 function getRolePermissions(role) {
   return [...(ROLE_PERMISSIONS[role] || [])];
 }
@@ -477,7 +501,7 @@ function ensureMeetingTemplates(database) {
 
     if (existing) {
       existing.templateId = existing.templateId || template.id;
-      existing.subjects = Array.from(new Set([...arrayValue(existing.subjects), ...template.subjects]));
+      existing.subjects = sortAlphabetically([...arrayValue(existing.subjects), ...template.subjects]);
       existing.importedFrom = existing.importedFrom || "TOR DPO Revendas_2023.xlsx";
       existing.updatedAt = existing.updatedAt || "2026-08-28T00:00:00.000Z";
       return;
@@ -485,6 +509,28 @@ function ensureMeetingTemplates(database) {
 
     database.sequence.meetings += 1;
     database.meetings.push(buildMeetingTemplateRecord(template, database.sequence.meetings));
+  });
+}
+
+function normalizeMeetingData(database) {
+  database.meetings = arrayValue(database.meetings);
+  database.actionPlans = arrayValue(database.actionPlans);
+
+  database.meetings.forEach((meeting) => {
+    meeting.subjects = sortAlphabetically(meeting.subjects);
+  });
+  database.meetings.sort((left, right) => String(left.title).localeCompare(String(right.title), "pt-BR"));
+
+  const meetingsById = new Map(database.meetings.map((meeting) => [toInt(meeting.id), meeting]));
+  database.actionPlans.forEach((action) => {
+    const meeting = meetingsById.get(toInt(action.meetingId));
+    if (!meeting) {
+      return;
+    }
+
+    action.meetingTitle = meeting.title;
+    action.ownerId = toInt(meeting.ownerId);
+    delete action.legacyOwnerName;
   });
 }
 
@@ -609,6 +655,7 @@ function sanitizeDatabase(database) {
   );
   ensureMeetingTemplates(sanitized);
   ensureImportedActionHistory(sanitized);
+  normalizeMeetingData(sanitized);
   return sanitized;
 }
 
@@ -619,6 +666,7 @@ function loadDatabase() {
       const seeded = clone(INITIAL_DATABASE);
       ensureMeetingTemplates(seeded);
       ensureImportedActionHistory(seeded);
+      normalizeMeetingData(seeded);
       saveDatabase(seeded);
       return seeded;
     }
@@ -802,17 +850,13 @@ function ensurePermission(user, permission) {
 
 function parseSubjects(value) {
   if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
+    return sortAlphabetically(value);
   }
 
-  return String(value || "")
+  return sortAlphabetically(String(value || "")
     .split(/\r?\n|;/)
     .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function meetingSortOrder(record) {
-  return record.templateId ? toInt(record.templateId, 9999) : 9999;
+    .filter(Boolean));
 }
 
 function ensureGabrielyAdministration(user) {
@@ -1401,7 +1445,7 @@ function createMeetingAction(database, user, payload) {
     priority: payload.priority || "medium",
     companyId,
     unitId,
-    ownerId: toInt(payload.ownerId || 0),
+    ownerId: toInt(meeting.ownerId),
     requesterId: toInt(user.id),
     requesterName: user.name,
     createdBy: toInt(user.id),
@@ -1968,14 +2012,9 @@ function listPath(database, user, path) {
     case "/administration/meetings":
       ensurePermission(user, "administration.view");
       return {
-        items: arrayValue(database.meetings).sort((left, right) => {
-          const leftOrder = meetingSortOrder(left);
-          const rightOrder = meetingSortOrder(right);
-          if (leftOrder !== rightOrder) {
-            return leftOrder - rightOrder;
-          }
-          return String(left.title).localeCompare(String(right.title), "pt-BR");
-        })
+        items: arrayValue(database.meetings).sort((left, right) =>
+          String(left.title).localeCompare(String(right.title), "pt-BR")
+        )
       };
     case "/action-plans":
       ensurePermission(user, "actionPlans.read");
@@ -1987,14 +2026,9 @@ function listPath(database, user, path) {
     case "/meetings":
       ensurePermission(user, "meetings.read");
       return {
-        items: getScopedCollection(database, user, "meetings").sort((left, right) => {
-          const leftOrder = meetingSortOrder(left);
-          const rightOrder = meetingSortOrder(right);
-          if (leftOrder !== rightOrder) {
-            return leftOrder - rightOrder;
-          }
-          return String(left.title).localeCompare(String(right.title), "pt-BR");
-        })
+        items: getScopedCollection(database, user, "meetings").sort((left, right) =>
+          String(left.title).localeCompare(String(right.title), "pt-BR")
+        )
       };
     case "/meetings/history":
       ensurePermission(user, "meetings.read");

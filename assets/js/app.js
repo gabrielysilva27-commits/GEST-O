@@ -1,4 +1,4 @@
-import { api, ApiError } from "./api.js?v=20260829-02";
+import { api, ApiError } from "./api.js?v=20260831-13";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260831-04";
 
@@ -274,6 +274,7 @@ async function loadView(viewId) {
     const data = await view.load(api, state.token);
     state.dataCache[viewId] = data;
     elements.pageContent.innerHTML = view.render(data, state);
+    elements.pageContent.querySelectorAll("[data-meeting-select]").forEach(syncMeetingSubjectOptions);
 
     if (viewId === "notifications") {
       elements.notificationBadge.textContent = String(data.unreadCount || 0);
@@ -464,6 +465,10 @@ function syncMeetingSubjectOptions(meetingSelect) {
   const form = meetingSelect.closest("form");
   const subjectSelect = form?.querySelector("[data-meeting-subject]");
   const submitButton = form?.querySelector("[data-save-meeting-action]");
+  const ownerSelect = form?.querySelector("[data-meeting-owner]");
+  if (ownerSelect) {
+    ownerSelect.value = meetingSelect.selectedOptions[0]?.dataset.ownerId || "";
+  }
   if (!subjectSelect) {
     return;
   }
