@@ -55,7 +55,6 @@ const NAVIGATION = [
   { id: "dto", label: "DTO - Diagnóstico de tarefa operacional", permission: "dto.read" },
   { id: "anomalyReports", label: "Relato de anomalia", permission: "anomalyReports.read" },
   { id: "gerot", label: "GEROT", permission: "gerot.read" },
-  { id: "notifications", label: "Notificações", permission: "notifications.view" },
   { id: "history", label: "Histórico", permission: "history.view" }
 ];
 
