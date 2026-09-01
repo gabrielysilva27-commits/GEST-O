@@ -1,8 +1,9 @@
 import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
+import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260831-01";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
-const IMPORTED_ACTION_HISTORY_VERSION = 2;
+const IMPORTED_ACTION_HISTORY_VERSION = 3;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -150,6 +151,123 @@ const SEEDED_USERS = [
     passwordHash: "f10c90456d3c3a91a43197c74f6ca48c28ffc7a707a5d7f84437176757b48e79",
     avatar: "JA",
     title: "Usuário da plataforma",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 5,
+    name: "CHRISTOFEE DOS SANTOS SILVA ARAUJO",
+    username: "Christofee",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161",
+    avatar: "CA",
+    title: "Christofee Araujo",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 6,
+    name: "DIEGO DA SILVA TEIXEIRA",
+    username: "Diego",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d",
+    avatar: "DT",
+    title: "Diego Teixeira",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 7,
+    name: "GUILHERME OLIVEIRA DE SOUZA",
+    username: "Guilherme",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "8b4dba09e6408be9f3a4d636453964b1777bd29091029b7fc21789435d70d520",
+    avatar: "GS",
+    title: "Guilherme Souza",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 8,
+    name: "JOSEPH MARCOS SALES LACERDA",
+    username: "Joseph",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "5efa7f9b686b58f4754b94df0c02cdf6327a4303157aaab7e4b04499b9b1c05a",
+    avatar: "JL",
+    title: "Joseph Lacerda",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 9,
+    name: "LEANDRO DA SILVA",
+    username: "Leandro",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "1d88b9cc30ce83730a7ffdfe0f929a07679749c0052c39cef4c81725b030f77d",
+    avatar: "LS",
+    title: "Leandro Silva",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 10,
+    name: "LUCIANO GOMES SARDINHA",
+    username: "Luciano",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "c16c79644323b58acf459c2d8d97c0f2c02c2fc07106e35b81270dbe64df775d",
+    avatar: "LS",
+    title: "Luciano Sardinha",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 11,
+    name: "MAURICIO DO NASCIMENTO FILHO",
+    username: "Mauricio",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "9e95dff76afe977e4075c83d893d0cc2ced1581be9ff33bce77ccdfe32f71417",
+    avatar: "MF",
+    title: "Mauricio Filho",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 12,
+    name: "MICHAEL FERNANDES AZEVEDO",
+    username: "Michael",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "a6dfd5104fc9f3554871aad3c6b72e9d59dcff3c47cfb5468daf473ea950d8b5",
+    avatar: "MA",
+    title: "Michael Azevedo",
+    createdAt: "2026-08-31T00:00:00.000Z"
+  },
+  {
+    id: 13,
+    name: "NATHAN MARTINS CAPITAO",
+    username: "Nathan",
+    role: "admin",
+    companyId: 0,
+    unitIds: [],
+    status: "active",
+    passwordHash: "d58d5749ddb5c635cb9cf9b227a7d6bdd7ef0a0158f63169da2a8d05cc1115e7",
+    avatar: "NC",
+    title: "Nathan Capitao",
     createdAt: "2026-08-31T00:00:00.000Z"
   }
 ];
@@ -390,7 +508,7 @@ const INITIAL_DATABASE = {
     storageVersion: 2
   },
   sequence: {
-    users: 4,
+    users: 13,
     companies: 0,
     units: 0,
     actionPlans: 0,
@@ -548,7 +666,7 @@ function ensureImportedActionHistory(database) {
     ...database.actionPlans.map((item) => toInt(item.id))
   );
 
-  IMPORTED_ACTION_HISTORY.forEach((item) => {
+  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS].forEach((item) => {
     const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
     if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
       return;

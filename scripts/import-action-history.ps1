@@ -1,7 +1,7 @@
 ﻿param(
   [string]$SourcePath = "",
-  [string]$ReportPath = "C:\Users\gabri\Downloads\AÇÕES_IGNORADAS_RELATORIO.xlsx",
-  [string]$OutputPath = "assets\js\imported-action-history.js"
+  [string]$ReportPath = "C:\Users\gabri\Downloads\ACOES_NAO_INSERIDAS_POR_REQUISITOS.xlsx",
+  [string]$OutputPath = "assets\js\imported-action-history-additions.js"
 )
 
 $ErrorActionPreference = "Stop"
@@ -70,6 +70,7 @@ $meetingMap = @{
   "mpr armazem" = @{ Title = "MPR Armazém_Controle"; TemplateId = 2 }
   "rps armazem" = @{ Title = "RPS Armazém_Controle"; TemplateId = 3 }
   "team room distribuicao" = @{ Title = "Team Room Distribuição"; TemplateId = 10 }
+  "team room god" = @{ Title = "Team Room God"; TemplateId = 24 }
 }
 
 $subjectsByMeeting = @{
@@ -89,6 +90,21 @@ $subjectsByMeeting = @{
   "Team Room Distribuição" = @(
     "Relatos e Excessos", "Jornada Líquida (TML/ TR/ TI)", "Tracking / Apontamentos Zerados",
     "Devolução PDV", "Rating", "IV Crítico"
+  )
+  "Team Room God" = @(
+    "TRI", "RELATOS", "TELEMETRIA (FROTA)", "VOLUME DE VENDAS", "OTIF", "CDP",
+    "IV CRÍTICO ERRO PÓS CARREGAMENTO (EXTERNO)", "IV CRÍTICO ERRO PÓS CARREGAMENTO (INTERNO - BLITZ)",
+    "QUEBRAS", "DIF. DE ESTOQUE PA/AG", "EFC", "OCUPAÇÃO DE ESTOQUE",
+    "IV CRÍTICO - ADERÊNCIA A MATRIZ DE PRIORIZAÇÃO", "RONDA DE QUALIDADE", "TML", "JORNADA LÍQUIDA", "DQI",
+    "IV CRÍTICO - ATRASOS", "DEVOLUÇÃO PDV", "DEVOLUÇÃO HL", "CHAMADOS", "DISPONIBILIDADE DA FROTA",
+    "SOCORRO EM ROTA", "AVARIAS", "IV CRÍTICO - ADERÊNCIA AOS CHECKLISTS", "Aderência ao BEES",
+    "BLITZ DE SEGURANÇA DOS CAMINHÕES", "GSA", "CHECKLIST PALETEIRA", "ESCOLINHA DE TELEMETRIA",
+    "PRESTAÇÃO DE CONTA", "RETORNO DE ROTA", "LIBERAÇÃO DOS MAPAS (20:40)", "ADIANTAMENTO DA ESCALA (12:00)",
+    "DISPONIBILIZAR 5 EMPILHADEIRAS", "LAVAGEM DE EMPILHADEIRAS", "MANUTENÇÃO DE PALETEIRAS", "RETRABALHO DE PALLETS",
+    "ILUMINAÇÃO NO ARMAZÉM", "CONTAGEM PA (07:00)", "CONTAGEM AG (07:00)", "RECONTAGEM PA (ATÉ 2X)",
+    "RECONTAGEM AG (ATÉ 2X)", "FECHAMENTO DA GRADE (10:00)", "ENTRADA DE NOTAS (07:30)", "ERRO DE CARREGAMENTO",
+    "CARROS NÃO RETORNANDO DA PORTARIA", "ENVIO RECLAMAÇÕES NO PRAZO", "CAMINHÃO SIMULADO", "FIDELIZAÇÃO FROTA - ENTREGA",
+    "FIDELIZAÇÃO - PUXADA", "BLITZ DE CARREGAMENTO", "ATRASOS", "MANUTENÇÃO DE CARRETAS"
   )
 }
 
@@ -181,7 +197,7 @@ try {
   }
 
   $json = $imported | ConvertTo-Json -Depth 5
-  $module = "// Generated from AÇÕES.xlsx. Do not edit manually.`nexport const IMPORTED_ACTION_HISTORY = $json;`n"
+  $module = "// Generated from ACOES_IGNORADAS_RELATORIO_ATUALIZADO.xlsx. Do not edit manually.`nexport const IMPORTED_ACTION_HISTORY_ADDITIONS = $json;`n"
   [System.IO.File]::WriteAllText((Join-Path (Get-Location) $OutputPath), $module, [System.Text.UTF8Encoding]::new($false))
 
   $reportData = [Array]::CreateInstance([object], [int[]]@([int]($ignored.Count + 1), [int]$headers.Count))
