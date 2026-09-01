@@ -1089,6 +1089,7 @@ function gerotGoalLabel(row) {
 function gerotWarehouseView(data) {
   const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
   const allRows = arrayValue(data.rows);
+  const indicatorCount = allRows.filter((row) => !row.calculationInput).length;
   const rowsById = new Map(allRows.map((row) => [row.id, row]));
   const renderedMemoryRows = new Set();
   const orderedRows = allRows.filter((row) => !row.calculationInput).flatMap((row) => {
@@ -1108,11 +1109,14 @@ function gerotWarehouseView(data) {
     return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}</tr>`;
   }).join("");
   const canEdit = Boolean(data.canEdit);
+  const ytdSummary = data.calculatedYtd ? "Acumulado recalculado a partir das memórias preenchidas." : "Acumulado inicial espelhado da planilha de referência.";
   return `
     ${moduleHeader("GEROT", "Quadro geral de indicadores operacionais. O primeiro painel disponível é o Armazém; as demais áreas serão incluídas no mesmo formato.")}
-    <section class="gerot-toolbar"><div><span class="badge info">${escapeHtml(data.area || "ARMAZÉM")}</span><strong>GEROT ${escapeHtml(data.year || 2026)}</strong><small>${data.calculatedYtd ? "Acumulado recalculado a partir das memórias preenchidas." : "Acumulado inicial espelhado da planilha de referência."}</small></div>${canEdit ? `<div><button class="button secondary" type="button" data-gerot-edit>Editar mês</button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : "<span class=\"text-muted\">Visualização disponível. A edição é exclusiva do setor Armazém.</span>"}</section>
-    <p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Metas avaliadas conforme direção ou faixa definida na planilha.</span></p>
-    <section class="table-card gerot-card"><div class="table-scroll"><table class="gerot-table"><thead><tr><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Unidade</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section>
+    <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong data-gerot-title>ARMAZÉM · GEROT ${escapeHtml(data.year || 2026)}</strong><small data-gerot-summary data-gerot-default-summary="${escapeHtml(ytdSummary)}">${escapeHtml(ytdSummary)}</small></div><div class="gerot-toolbar-actions"><label class="gerot-area-field"><span>Área</span><select data-gerot-area aria-label="Selecionar área do GEROT"><option>GERAL</option><option selected>ARMAZÉM</option><option>ENTREGA</option><option>CONTROLE</option><option>PLANEJAMENTO</option></select></label>${canEdit ? `<div class="gerot-editor-actions"><button class="button secondary" type="button" data-gerot-edit>Editar mês</button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : ""}</div></section>
+    <section class="gerot-summary-strip" data-gerot-details><span><strong>${indicatorCount}</strong> indicadores</span><span><strong>${escapeHtml(data.year || 2026)}</strong> competência</span><span>Visualização para todos os usuários</span>${!canEdit ? "<span>Edição exclusiva: Armazém e Gabriely</span>" : ""}</section>
+    <section data-gerot-details><p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Metas avaliadas conforme direção ou faixa definida na planilha.</span></p>
+    <section class="table-card gerot-card"><div class="table-scroll"><table class="gerot-table"><thead><tr><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Unidade</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section></section>
+    <section class="empty-state gerot-unavailable" data-gerot-unavailable hidden><strong data-gerot-unavailable-title>GEROT ainda não disponível</strong><p data-gerot-unavailable-copy>A planilha desta área será incluída assim que for importada.</p></section>
   `;
 }
 

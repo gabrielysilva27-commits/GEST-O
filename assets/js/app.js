@@ -1,6 +1,6 @@
 import { api, ApiError } from "./api.js?v=20260901-07";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260901-06";
+import { views } from "./modules/index.js?v=20260901-07";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -701,6 +701,34 @@ async function handleDynamicClick(event) {
 }
 
 function handleDynamicChange(event) {
+  const gerotArea = event.target.closest("[data-gerot-area]");
+  if (gerotArea) {
+    const area = gerotArea.value;
+    const available = area === "ARMAZÉM";
+    elements.pageContent.querySelectorAll("[data-gerot-details]").forEach((section) => { section.hidden = !available; });
+    const unavailable = elements.pageContent.querySelector("[data-gerot-unavailable]");
+    if (unavailable) unavailable.hidden = available;
+    const editorActions = elements.pageContent.querySelector(".gerot-editor-actions");
+    if (editorActions) editorActions.hidden = !available;
+    if (!available) {
+      elements.pageContent.querySelector(".gerot-card")?.classList.remove("is-editing");
+      elements.pageContent.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = true; });
+      const editButton = elements.pageContent.querySelector("[data-gerot-edit]");
+      const saveButton = elements.pageContent.querySelector("[data-gerot-save]");
+      if (editButton) editButton.hidden = false;
+      if (saveButton) saveButton.hidden = true;
+    }
+    const title = elements.pageContent.querySelector("[data-gerot-title]");
+    const summary = elements.pageContent.querySelector("[data-gerot-summary]");
+    if (title) title.textContent = `${area} · GEROT 2026`;
+    if (summary) summary.textContent = available ? summary.dataset.gerotDefaultSummary : `Aguardando importação da planilha de ${area}.`;
+    const unavailableTitle = elements.pageContent.querySelector("[data-gerot-unavailable-title]");
+    const unavailableCopy = elements.pageContent.querySelector("[data-gerot-unavailable-copy]");
+    if (unavailableTitle) unavailableTitle.textContent = `GEROT ${area} ainda não disponível`;
+    if (unavailableCopy) unavailableCopy.textContent = area === "GERAL" ? "A visão geral será consolidada automaticamente quando as áreas forem importadas." : "A planilha desta área será incluída assim que for importada.";
+    return;
+  }
+
   const meetingSelect = event.target.closest("[data-meeting-select]");
   if (meetingSelect) {
     syncMeetingSubjectOptions(meetingSelect);

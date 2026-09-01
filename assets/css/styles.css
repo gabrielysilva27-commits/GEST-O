@@ -1825,13 +1825,23 @@ tbody td {
   margin-bottom: 9px;
 }
 
+.gerot-consultation { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.gerot-title-block { min-width: 235px; }
 .gerot-toolbar strong { display: block; margin-top: 3px; font-size: .82rem; letter-spacing: .01em; }
 .gerot-toolbar small { color: var(--text-muted); display: block; margin-top: 2px; font-size: .69rem; }
+.gerot-toolbar-actions, .gerot-editor-actions { display: flex; align-items: end; gap: 6px; }
+.gerot-area-field { display: grid; gap: 2px; color: var(--text-muted); font-size: .6rem; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+.gerot-area-field select { min-width: 150px; padding: 5px 25px 5px 7px; border: 1px solid var(--line-strong); border-radius: 4px; color: var(--text); background: var(--surface-elevated); font: 700 .68rem/1.1 inherit; letter-spacing: .02em; }
+.gerot-editor-actions .button { width: auto; min-height: 30px; padding: 5px 9px; font-size: .68rem; }
+.gerot-summary-strip { display: flex; flex-wrap: wrap; gap: 14px; padding: 0 2px 8px; color: var(--text-muted); font-size: .66rem; }
+.gerot-summary-strip span { white-space: nowrap; }
+.gerot-summary-strip strong { color: var(--text); font-variant-numeric: tabular-nums; }
 .gerot-legend { flex-wrap: wrap; color: var(--text-muted); font-size: .69rem; margin: 0 0 8px; }
 .gerot-card { padding: 0; }
+.gerot-card .table-scroll { max-height: 66vh; overflow: auto; border-radius: inherit; }
 .gerot-table { min-width: 1470px; width: 100%; table-layout: fixed; font-size: .65rem; line-height: 1.15; }
 .gerot-table th, .gerot-table td { padding: 5px; }
-.gerot-table th { font-size: .59rem; letter-spacing: .035em; }
+.gerot-table th { position: sticky; top: 0; z-index: 2; font-size: .59rem; letter-spacing: .035em; }
 .gerot-table th:nth-child(1) { width: 42px; }
 .gerot-table th:nth-child(2) { width: 190px; }
 .gerot-table th:nth-child(3) { width: 98px; }
@@ -1850,6 +1860,16 @@ tbody td {
 .gerot-card:not(.is-editing) .gerot-memory-row { display: none; }
 .gerot-card:not(.is-editing) .gerot-value input { display: none; }
 .gerot-card.is-editing .gerot-result { display: none; }
+.gerot-unavailable { margin-top: 10px; padding: 26px; text-align: center; }
+.gerot-unavailable strong { display: block; font-size: .82rem; }
+.gerot-unavailable p { margin: 5px 0 0; color: var(--text-muted); font-size: .72rem; }
+
+@media (max-width: 680px) {
+  .gerot-toolbar-actions { width: 100%; justify-content: space-between; }
+  .gerot-area-field select { min-width: 138px; }
+  .gerot-editor-actions { flex: 1; justify-content: end; }
+  .gerot-summary-strip { gap: 7px 12px; }
+}
 
 /* Dark mode */
 body.dark-mode {
