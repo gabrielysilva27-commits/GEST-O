@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260831-14";
+import { api, ApiError } from "./api.js?v=20260901-01";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260831-05";
+import { views } from "./modules/index.js?v=20260901-01";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -274,7 +274,6 @@ async function loadView(viewId) {
     const data = await view.load(api, state.token);
     state.dataCache[viewId] = data;
     elements.pageContent.innerHTML = view.render(data, state);
-    elements.pageContent.querySelectorAll("[data-meeting-select]").forEach(syncMeetingSubjectOptions);
 
     if (viewId === "notifications") {
       elements.notificationBadge.textContent = String(data.unreadCount || 0);
@@ -465,10 +464,6 @@ function syncMeetingSubjectOptions(meetingSelect) {
   const form = meetingSelect.closest("form");
   const subjectSelect = form?.querySelector("[data-meeting-subject]");
   const submitButton = form?.querySelector("[data-save-meeting-action]");
-  const ownerSelect = form?.querySelector("[data-meeting-owner]");
-  if (ownerSelect) {
-    ownerSelect.value = meetingSelect.selectedOptions[0]?.dataset.ownerId || "";
-  }
   if (!subjectSelect) {
     return;
   }
@@ -623,6 +618,19 @@ async function handleDynamicClick(event) {
       await loadView("administration");
     } catch (error) {
       handleError(error, "Não foi possível excluir a reunião.");
+    }
+    return;
+  }
+
+  const completeActionButton = event.target.closest("[data-complete-action]");
+  if (completeActionButton) {
+    try {
+      await api.patch(state.token, `/action-plans/${completeActionButton.dataset.completeAction}/complete`);
+      showToast("Ação concluída com sucesso.");
+      await refreshBootstrap();
+      await loadView("actionPlans");
+    } catch (error) {
+      handleError(error, "Não foi possível concluir a ação.");
     }
     return;
   }

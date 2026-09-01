@@ -57,21 +57,17 @@ function optionList(items, selectedValue = "", labelKey = "name") {
     .join("");
 }
 
-function responsibleDisplayName(item) {
-  const parts = String(item?.name || item?.label || item?.username || "").trim().split(/\s+/).filter(Boolean);
-  const formatPart = (part) => {
-    const normalized = part.toLocaleLowerCase("pt-BR");
-    return normalized.charAt(0).toLocaleUpperCase("pt-BR") + normalized.slice(1);
-  };
-  return parts.length > 1
-    ? `${formatPart(parts[0])} ${formatPart(parts[parts.length - 1])}`
-    : formatPart(parts[0]) || item?.id || "Não definido";
-}
-
 function meetingResponsibleOptionList(items, selectedValue = "") {
   return items
     .map((item) => {
-      const label = responsibleDisplayName(item);
+      const parts = String(item.name || item.label || item.username || "").trim().split(/\s+/).filter(Boolean);
+      const formatPart = (part) => {
+        const normalized = part.toLocaleLowerCase("pt-BR");
+        return normalized.charAt(0).toLocaleUpperCase("pt-BR") + normalized.slice(1);
+      };
+      const label = parts.length > 1
+        ? `${formatPart(parts[0])} ${formatPart(parts[parts.length - 1])}`
+        : formatPart(parts[0]) || item.id;
       const selected = String(item.id) === String(selectedValue) ? "selected" : "";
       return `<option value="${escapeHtml(item.id)}" ${selected}>${escapeHtml(label)}</option>`;
     })
@@ -232,7 +228,7 @@ function getLookupName(lookups, type, id) {
 
 function getUserLabel(lookups, id, fallbackName = "") {
   const user = (lookups?.users || []).find((entry) => String(entry.id) === String(id));
-  return user ? responsibleDisplayName(user) : fallbackName || "Não definido";
+  return user ? `${user.name} · @${user.username}` : fallbackName || "Não definido";
 }
 
 function dependencyNotice(title, message) {
@@ -490,7 +486,7 @@ const actionPlansConfig = {
           </label>
           <label class="field">
           <span>Responsável</span>
-            <select name="ownerId" required>${meetingResponsibleOptionList(context.lookups.responsibleUsers || context.lookups.users)}</select>
+            <select name="ownerId" required>${optionList(context.lookups.responsibleUsers || context.lookups.users)}</select>
           </label>
           <label class="field">
             <span>Prioridade</span>
@@ -540,7 +536,7 @@ function actionCreationForm(meetings, context) {
   const initialSubjects = arrayValue(initialMeeting?.subjects);
   const meetingOptions = meetings.map((item) => {
     const selected = initialMeeting && String(item.id) === String(initialMeeting.id) ? "selected" : "";
-    return `<option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" data-owner-id="${escapeHtml(item.ownerId)}" ${selected}>${escapeHtml(item.title)}</option>`;
+    return `<option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" ${selected}>${escapeHtml(item.title)}</option>`;
   }).join("");
 
   return `
@@ -551,7 +547,7 @@ function actionCreationForm(meetings, context) {
         <label class="field"><span>Solicitante</span><input value="${escapeHtml(context.user?.name || "")}" disabled></label>
         <label class="field"><span>Assunto</span><select name="subject" data-meeting-subject ${initialSubjects.length ? "" : "disabled"} required>${initialSubjects.length ? valueOptions(initialSubjects) : "<option value=\"\">Nenhum assunto cadastrado</option>"}</select></label>
         <label class="field full"><span>Plano de ação</span><textarea name="actionPlan" placeholder="Descreva o plano de ação definido na reunião" required></textarea></label>
-        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-meeting-owner disabled>${meetingResponsibleOptionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
+        <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-action-field required><option value="">Selecionar</option>${optionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
         <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field></label>
         <label class="field"><span>Prioridade</span><select name="priority" data-action-field><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
       </div>
@@ -589,6 +585,8 @@ function actionPlansView(data, context) {
     const actionText = [item.title, item.objective, item.meetingSubject].filter(Boolean).join(" ");
     const requester = item.requesterName || item.legacyRequesterName || "Não informado";
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
+    const canComplete = toInt(item.ownerId) === toInt(context.user?.id) && item.status !== "done";
+    const statusCell = `${actionStatusBadge(item.status || "open")}${canComplete ? ` <button class="button secondary action-complete-button" type="button" data-complete-action="${escapeHtml(item.id)}">Concluir</button>` : ""}`;
     const attachment = item.attachment?.data
       ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
       : `<span class="text-muted">Sem anexo</span>`;
@@ -600,7 +598,7 @@ function actionPlansView(data, context) {
       <td data-label="Solicitante">${escapeHtml(requester)}</td>
       <td data-label="Responsável">${escapeHtml(owner)}</td>
       <td data-label="Prioridade">${statusBadge(item.priority || "medium")}</td>
-      <td data-label="Status">${actionStatusBadge(item.status || "open")}</td>
+      <td data-label="Status">${statusCell}</td>
       <td data-label="Anexo">${attachment}</td>
     </tr>`;
   }).join("");
@@ -667,7 +665,7 @@ function meetingsView(data, context) {
   const meetingOptions = meetings.map((item) => {
     const selected = initialMeeting && String(item.id) === String(initialMeeting.id) ? "selected" : "";
     return `
-      <option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" data-owner-id="${escapeHtml(item.ownerId)}" ${selected}>
+      <option value="${escapeHtml(item.id)}" data-subjects="${jsonAttribute(item.subjects)}" ${selected}>
         ${escapeHtml(item.title)}
       </option>
     `;
@@ -714,7 +712,7 @@ function meetingsView(data, context) {
           </label>
           <label class="field">
             <span>Responsável pela ação</span>
-            <select name="ownerId" data-meeting-owner disabled>${ownerOptions}</select>
+            <select name="ownerId" data-action-field required>${ownerOptions}</select>
           </label>
         </div>
         <div class="form-grid">
@@ -758,6 +756,7 @@ function meetingsView(data, context) {
 
 function administrationView(data, context) {
   const meetings = data.items || [];
+  const users = data.users || [];
   const rows = meetings.map((item) => [
     escapeHtml(item.title),
     escapeHtml(arrayValue(item.subjects).length),
@@ -780,6 +779,14 @@ function administrationView(data, context) {
       </form>
     `
     : dependencyNotice("Acesso restrito", "Este módulo é exclusivo da administração.");
+  const userRows = users.map((item) => [
+    escapeHtml(item.name),
+    escapeHtml(item.username),
+    escapeHtml(item.roleLabel),
+    escapeHtml(item.status),
+    escapeHtml(item.companyName || "Não definida"),
+    escapeHtml(item.unitNames?.join(", ") || "Não definidas")
+  ]);
 
   return `
     ${moduleHeader("Administração", "Gerencie as reuniões cadastradas e os assuntos disponíveis no módulo Reuniões.")}
@@ -787,6 +794,7 @@ function administrationView(data, context) {
       ${tableCard("Reuniões cadastradas", "Cadastros disponíveis para condução de reuniões.", ["Reunião", "Assuntos", "Última execução", "Origem", "Ação"], rows)}
       ${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}
     </div>
+    ${tableCard("Usuários cadastrados", "Informações de todos os usuários ativos e seus perfis de acesso.", ["Nome", "Usuário", "Perfil", "Status", "Empresa", "Unidades"], userRows)}
   `;
 }
 

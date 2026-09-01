@@ -1,9 +1,8 @@
 import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
-import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260831-01";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
-const IMPORTED_ACTION_HISTORY_VERSION = 3;
+const IMPORTED_ACTION_HISTORY_VERSION = 2;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -151,123 +150,6 @@ const SEEDED_USERS = [
     passwordHash: "f10c90456d3c3a91a43197c74f6ca48c28ffc7a707a5d7f84437176757b48e79",
     avatar: "JA",
     title: "Usuário da plataforma",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 5,
-    name: "CHRISTOFEE DOS SANTOS SILVA ARAUJO",
-    username: "Christofee",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161",
-    avatar: "CA",
-    title: "Christofee Araujo",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 6,
-    name: "DIEGO DA SILVA TEIXEIRA",
-    username: "Diego",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d",
-    avatar: "DT",
-    title: "Diego Teixeira",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 7,
-    name: "GUILHERME OLIVEIRA DE SOUZA",
-    username: "Guilherme",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "8b4dba09e6408be9f3a4d636453964b1777bd29091029b7fc21789435d70d520",
-    avatar: "GS",
-    title: "Guilherme Souza",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 8,
-    name: "JOSEPH MARCOS SALES LACERDA",
-    username: "Joseph",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "5efa7f9b686b58f4754b94df0c02cdf6327a4303157aaab7e4b04499b9b1c05a",
-    avatar: "JL",
-    title: "Joseph Lacerda",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 9,
-    name: "LEANDRO DA SILVA",
-    username: "Leandro",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "1d88b9cc30ce83730a7ffdfe0f929a07679749c0052c39cef4c81725b030f77d",
-    avatar: "LS",
-    title: "Leandro Silva",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 10,
-    name: "LUCIANO GOMES SARDINHA",
-    username: "Luciano",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "c16c79644323b58acf459c2d8d97c0f2c02c2fc07106e35b81270dbe64df775d",
-    avatar: "LS",
-    title: "Luciano Sardinha",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 11,
-    name: "MAURICIO DO NASCIMENTO FILHO",
-    username: "Mauricio",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "9e95dff76afe977e4075c83d893d0cc2ced1581be9ff33bce77ccdfe32f71417",
-    avatar: "MF",
-    title: "Mauricio Filho",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 12,
-    name: "MICHAEL FERNANDES AZEVEDO",
-    username: "Michael",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "a6dfd5104fc9f3554871aad3c6b72e9d59dcff3c47cfb5468daf473ea950d8b5",
-    avatar: "MA",
-    title: "Michael Azevedo",
-    createdAt: "2026-08-31T00:00:00.000Z"
-  },
-  {
-    id: 13,
-    name: "NATHAN MARTINS CAPITAO",
-    username: "Nathan",
-    role: "admin",
-    companyId: 0,
-    unitIds: [],
-    status: "active",
-    passwordHash: "d58d5749ddb5c635cb9cf9b227a7d6bdd7ef0a0158f63169da2a8d05cc1115e7",
-    avatar: "NC",
-    title: "Nathan Capitao",
     createdAt: "2026-08-31T00:00:00.000Z"
   }
 ];
@@ -456,25 +338,6 @@ const MEETING_TEMPLATES = [
     id: 23,
     title: "RPP_SPO + DPO",
     subjects: ["GC", "GOD", "GG/TST", "GG", "GAF", "GNS/SNS", "GVs"]
-  },
-  {
-    id: 24,
-    title: "Team Room God",
-    subjects: [
-      "TRI", "RELATOS", "TELEMETRIA (FROTA)", "VOLUME DE VENDAS", "OTIF", "CDP",
-      "IV CRÍTICO ERRO PÓS CARREGAMENTO (EXTERNO)", "IV CRÍTICO ERRO PÓS CARREGAMENTO (INTERNO - BLITZ)",
-      "QUEBRAS", "DIF. DE ESTOQUE PA/AG", "EFC", "OCUPAÇÃO DE ESTOQUE",
-      "IV CRÍTICO - ADERÊNCIA A MATRIZ DE PRIORIZAÇÃO", "RONDA DE QUALIDADE", "TML", "JORNADA LÍQUIDA", "DQI",
-      "IV CRÍTICO - ATRASOS", "DEVOLUÇÃO PDV", "DEVOLUÇÃO HL", "CHAMADOS", "DISPONIBILIDADE DA FROTA",
-      "SOCORRO EM ROTA", "AVARIAS", "IV CRÍTICO - ADERÊNCIA AOS CHECKLISTS", "Aderência ao BEES",
-      "BLITZ DE SEGURANÇA DOS CAMINHÕES", "GSA", "CHECKLIST PALETEIRA", "ESCOLINHA DE TELEMETRIA",
-      "PRESTAÇÃO DE CONTA", "RETORNO DE ROTA", "LIBERAÇÃO DOS MAPAS (20:40)", "ADIANTAMENTO DA ESCALA (12:00)",
-      "DISPONIBILIZAR 5 EMPILHADEIRAS", "LAVAGEM DE EMPILHADEIRAS", "MANUTENÇÃO DE PALETEIRAS", "RETRABALHO DE PALLETS",
-      "ILUMINAÇÃO NO ARMAZÉM", "CONTAGEM PA (07:00)", "CONTAGEM AG (07:00)", "RECONTAGEM PA (ATÉ 2X)",
-      "RECONTAGEM AG (ATÉ 2X)", "FECHAMENTO DA GRADE (10:00)", "ENTRADA DE NOTAS (07:30)", "ERRO DE CARREGAMENTO",
-      "CARROS NÃO RETORNANDO DA PORTARIA", "ENVIO RECLAMAÇÕES NO PRAZO", "CAMINHÃO SIMULADO", "FIDELIZAÇÃO FROTA - ENTREGA",
-      "FIDELIZAÇÃO - PUXADA", "BLITZ DE CARREGAMENTO", "ATRASOS", "MANUTENÇÃO DE CARRETAS"
-    ]
   }
 ];
 
@@ -490,7 +353,7 @@ function buildMeetingTemplateRecord(template, id = template.id) {
     ownerId: 1,
     scheduledAt: "",
     lastExecutionDate: "",
-    subjects: sortAlphabetically(template.subjects),
+    subjects: [...template.subjects],
     importedFrom: "TOR DPO Revendas_2023.xlsx",
     createdBy: 1,
     createdAt: "2026-08-28T00:00:00.000Z",
@@ -508,7 +371,7 @@ const INITIAL_DATABASE = {
     storageVersion: 2
   },
   sequence: {
-    users: 13,
+    users: 4,
     companies: 0,
     units: 0,
     actionPlans: 0,
@@ -573,11 +436,6 @@ function arrayValue(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function sortAlphabetically(values) {
-  return Array.from(new Set(arrayValue(values).map((item) => String(item).trim()).filter(Boolean)))
-    .sort((left, right) => left.localeCompare(right, "pt-BR"));
-}
-
 function getRolePermissions(role) {
   return [...(ROLE_PERMISSIONS[role] || [])];
 }
@@ -619,7 +477,7 @@ function ensureMeetingTemplates(database) {
 
     if (existing) {
       existing.templateId = existing.templateId || template.id;
-      existing.subjects = sortAlphabetically([...arrayValue(existing.subjects), ...template.subjects]);
+      existing.subjects = Array.from(new Set([...arrayValue(existing.subjects), ...template.subjects]));
       existing.importedFrom = existing.importedFrom || "TOR DPO Revendas_2023.xlsx";
       existing.updatedAt = existing.updatedAt || "2026-08-28T00:00:00.000Z";
       return;
@@ -627,28 +485,6 @@ function ensureMeetingTemplates(database) {
 
     database.sequence.meetings += 1;
     database.meetings.push(buildMeetingTemplateRecord(template, database.sequence.meetings));
-  });
-}
-
-function normalizeMeetingData(database) {
-  database.meetings = arrayValue(database.meetings);
-  database.actionPlans = arrayValue(database.actionPlans);
-
-  database.meetings.forEach((meeting) => {
-    meeting.subjects = sortAlphabetically(meeting.subjects);
-  });
-  database.meetings.sort((left, right) => String(left.title).localeCompare(String(right.title), "pt-BR"));
-
-  const meetingsById = new Map(database.meetings.map((meeting) => [toInt(meeting.id), meeting]));
-  database.actionPlans.forEach((action) => {
-    const meeting = meetingsById.get(toInt(action.meetingId));
-    if (!meeting) {
-      return;
-    }
-
-    action.meetingTitle = meeting.title;
-    action.ownerId = toInt(meeting.ownerId);
-    delete action.legacyOwnerName;
   });
 }
 
@@ -666,7 +502,7 @@ function ensureImportedActionHistory(database) {
     ...database.actionPlans.map((item) => toInt(item.id))
   );
 
-  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS].forEach((item) => {
+  IMPORTED_ACTION_HISTORY.forEach((item) => {
     const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
     if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
       return;
@@ -773,7 +609,7 @@ function sanitizeDatabase(database) {
   );
   ensureMeetingTemplates(sanitized);
   ensureImportedActionHistory(sanitized);
-  normalizeMeetingData(sanitized);
+  ensureActionOwnerNotifications(sanitized);
   return sanitized;
 }
 
@@ -784,7 +620,6 @@ function loadDatabase() {
       const seeded = clone(INITIAL_DATABASE);
       ensureMeetingTemplates(seeded);
       ensureImportedActionHistory(seeded);
-      normalizeMeetingData(seeded);
       saveDatabase(seeded);
       return seeded;
     }
@@ -968,13 +803,17 @@ function ensurePermission(user, permission) {
 
 function parseSubjects(value) {
   if (Array.isArray(value)) {
-    return sortAlphabetically(value);
+    return value.map((item) => String(item).trim()).filter(Boolean);
   }
 
-  return sortAlphabetically(String(value || "")
+  return String(value || "")
     .split(/\r?\n|;/)
     .map((item) => item.trim())
-    .filter(Boolean));
+    .filter(Boolean);
+}
+
+function meetingSortOrder(record) {
+  return record.templateId ? toInt(record.templateId, 9999) : 9999;
 }
 
 function ensureGabrielyAdministration(user) {
@@ -1051,6 +890,7 @@ function addNotification(database, values) {
   const notification = {
     id: nextId(database, "notifications"),
     userId: toInt(values.userId),
+    actionPlanId: toInt(values.actionPlanId, 0),
     title: values.title,
     message: values.message,
     level: values.level || "info",
@@ -1061,6 +901,23 @@ function addNotification(database, values) {
 
   database.notifications.push(notification);
   return notification;
+}
+
+function ensureActionOwnerNotifications(database) {
+  arrayValue(database.actionPlans).forEach((action) => {
+    const ownerId = toInt(action.ownerId, 0);
+    if (!ownerId || database.notifications.some((item) => toInt(item.actionPlanId, 0) === toInt(action.id))) {
+      return;
+    }
+    addNotification(database, {
+      userId: ownerId,
+      actionPlanId: action.id,
+      title: "Ação sob sua responsabilidade",
+      message: action.title || action.objective || "Uma ação foi atribuída a você.",
+      level: "warning",
+      link: "actionPlans"
+    });
+  });
 }
 
 function resolveCompanyIdForRecord(database, user, companyId, unitId = 0) {
@@ -1384,6 +1241,7 @@ function createActionPlan(database, user, payload) {
   });
   addNotification(database, {
     userId: record.ownerId,
+    actionPlanId: record.id,
     title: "Nova ação",
     message: record.title,
     level: "info",
@@ -1517,8 +1375,8 @@ function createMeetingAction(database, user, payload) {
   ensurePermission(user, "meetings.manage");
   ensurePermission(user, "actionPlans.manage");
 
-  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.actionPlan?.trim()) {
-    throw new ApiError("Reunião, assunto e plano de ação são obrigatórios.", 400);
+  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.actionPlan?.trim() || !payload?.ownerId) {
+    throw new ApiError("Reunião, assunto, plano de ação e responsável são obrigatórios.", 400);
   }
 
   const meeting = database.meetings.find((item) => toInt(item.id) === toInt(payload.meetingId));
@@ -1563,7 +1421,7 @@ function createMeetingAction(database, user, payload) {
     priority: payload.priority || "medium",
     companyId,
     unitId,
-    ownerId: toInt(meeting.ownerId),
+    ownerId: toInt(payload.ownerId || 0),
     requesterId: toInt(user.id),
     requesterName: user.name,
     createdBy: toInt(user.id),
@@ -1595,6 +1453,7 @@ function createMeetingAction(database, user, payload) {
   if (record.ownerId) {
     addNotification(database, {
       userId: record.ownerId,
+      actionPlanId: record.id,
       title: "Nova ação de reunião",
       message: `${meeting.title}: ${record.title}`,
       level: "info",
@@ -2130,9 +1989,15 @@ function listPath(database, user, path) {
     case "/administration/meetings":
       ensurePermission(user, "administration.view");
       return {
-        items: arrayValue(database.meetings).sort((left, right) =>
-          String(left.title).localeCompare(String(right.title), "pt-BR")
-        )
+        users: database.users.map((record) => getUserProfile(database, record)),
+        items: arrayValue(database.meetings).sort((left, right) => {
+          const leftOrder = meetingSortOrder(left);
+          const rightOrder = meetingSortOrder(right);
+          if (leftOrder !== rightOrder) {
+            return leftOrder - rightOrder;
+          }
+          return String(left.title).localeCompare(String(right.title), "pt-BR");
+        })
       };
     case "/action-plans":
       ensurePermission(user, "actionPlans.read");
@@ -2144,9 +2009,14 @@ function listPath(database, user, path) {
     case "/meetings":
       ensurePermission(user, "meetings.read");
       return {
-        items: getScopedCollection(database, user, "meetings").sort((left, right) =>
-          String(left.title).localeCompare(String(right.title), "pt-BR")
-        )
+        items: getScopedCollection(database, user, "meetings").sort((left, right) => {
+          const leftOrder = meetingSortOrder(left);
+          const rightOrder = meetingSortOrder(right);
+          if (leftOrder !== rightOrder) {
+            return leftOrder - rightOrder;
+          }
+          return String(left.title).localeCompare(String(right.title), "pt-BR");
+        })
       };
     case "/meetings/history":
       ensurePermission(user, "meetings.read");
@@ -2233,10 +2103,43 @@ function createPath(database, user, path, body) {
   }
 }
 
+function completeActionPlan(database, user, actionId) {
+  ensurePermission(user, "actionPlans.manage");
+  const action = database.actionPlans.find((item) => toInt(item.id) === toInt(actionId));
+  if (!action || !testCollectionScope("actionPlans", action, user)) {
+    throw new ApiError("Ação não encontrada.", 404);
+  }
+  if (toInt(action.ownerId) !== toInt(user.id)) {
+    throw new ApiError("Somente o responsável pode concluir esta ação.", 403);
+  }
+  if (action.status === "done") {
+    return { item: action };
+  }
+
+  action.status = "done";
+  action.completedAt = nowIso();
+  action.updatedAt = nowIso();
+  addHistoryEntry(database, {
+    module: "actionPlans",
+    action: "completed",
+    entityId: action.id,
+    actorId: user.id,
+    companyId: action.companyId,
+    unitId: action.unitId,
+    description: `Ação '${action.title}' concluída pelo responsável.`
+  });
+  return { item: action };
+}
+
 function patchPath(database, user, path, body = {}) {
   const approveResetMatch = path.match(/^\/password-reset-requests\/([^/]+)\/approve$/);
   if (approveResetMatch) {
     return approvePasswordReset(database, user, approveResetMatch[1]);
+  }
+
+  const completeActionMatch = path.match(/^\/action-plans\/(\d+)\/complete$/);
+  if (completeActionMatch) {
+    return completeActionPlan(database, user, completeActionMatch[1]);
   }
 
   const notificationMatch = path.match(/^\/notifications\/(\d+)\/read$/);
