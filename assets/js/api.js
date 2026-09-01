@@ -4,7 +4,7 @@ import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-add
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
 // A versão também executa a limpeza das notificações geradas pelo arquivo legado.
-const IMPORTED_ACTION_HISTORY_VERSION = 4;
+const IMPORTED_ACTION_HISTORY_VERSION = 5;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -448,6 +448,16 @@ function ensureImportedActionHistory(database) {
   }
 
   database.actionPlans = arrayValue(database.actionPlans);
+  const previousLegacyActionIds = new Set(
+    database.actionPlans.filter((item) => item.source === "legacy_excel").map((item) => toInt(item.id))
+  );
+  // Versões anteriores criaram uma notificação por linha do arquivo. Elas não
+  // representam ações novas da plataforma e precisam ser descartadas.
+  database.notifications = arrayValue(database.notifications).filter((item) => {
+    const isPreviousLegacyAction = previousLegacyActionIds.has(toInt(item.actionPlanId));
+    const isLegacyAssignmentAlert = item.link === "actionPlans" && item.title === "Ação sob sua responsabilidade";
+    return !isPreviousLegacyAction && !isLegacyAssignmentAlert;
+  });
   // Replace only spreadsheet history; manually created actions remain intact.
   database.actionPlans = database.actionPlans.filter((item) => item.source !== "legacy_excel");
   database.sequence.actionPlans = Math.max(
@@ -492,11 +502,11 @@ function ensureImportedActionHistory(database) {
   });
 
   // Notificações pertencem somente às ações abertas dentro da plataforma.
-  const legacyActionIds = new Set(
+  const currentLegacyActionIds = new Set(
     database.actionPlans.filter((item) => item.source === "legacy_excel").map((item) => toInt(item.id))
   );
   database.notifications = arrayValue(database.notifications).filter(
-    (item) => !legacyActionIds.has(toInt(item.actionPlanId))
+    (item) => !currentLegacyActionIds.has(toInt(item.actionPlanId))
   );
   database.meta.importedActionHistoryVersion = IMPORTED_ACTION_HISTORY_VERSION;
 }
@@ -1061,7 +1071,7 @@ function buildDashboard(database, user) {
         })),
       unreadNotifications: notifications.filter((item) => !item.read).length
     },
-    actionPlans: [...actionPlans].sort((left, right) =>
+    actionPlans: [...openActions].sort((left, right) =>
       String(right.meetingExecutionDate || right.createdAt).localeCompare(String(left.meetingExecutionDate || left.createdAt))
     ),
     inProgressActions,

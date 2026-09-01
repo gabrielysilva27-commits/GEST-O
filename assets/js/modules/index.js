@@ -305,7 +305,7 @@ function dashboardView(data, context) {
     ${moduleHeader("Dashboard operacional", "Acompanhe todas as ações abertas e em andamento pela equipe.")}
     ${metricCards(data.kpis || [])}
     <section class="table-card action-portfolio-card">
-      <div class="table-card-header"><div><h3>Ações da equipe</h3><p>Consulta compartilhada das ações, com contexto da reunião e respectivo status.</p></div></div>
+      <div class="table-card-header"><div><h3>Ações em andamento</h3><p>Consulta compartilhada apenas das ações abertas ou em andamento.</p></div></div>
       ${actionRows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-plan-column"><col class="action-date-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Ações</th><th>Prazo</th><th>Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações cadastradas</h2><p>As próximas ações abertas pela equipe aparecerão aqui.</p></div></div>'}
     </section>
   `;
