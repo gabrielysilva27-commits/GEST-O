@@ -118,8 +118,18 @@ const GEROT_FORMULAS = {
   "stock-age": ["hl-total", "hl-nok"], "stock-age-curva-c": ["hl-total-curva-c", "hl-nok-curva-c"], "txr-armazem": ["txr-tendencia", "txr-real"], "wlp": ["wlp-ajudantes", "wlp-operadores", "wlp-volume", "wlp-dias"],
   "pnp": ["pnp-volume", "pnp-dias", "pnp-ajudantes", "pnp-operadores", "pnp-conferentes", "pnp-adm"], "fnp": ["fnp-volume", "fnp-horas"], "tqi": ["tqi-hl-baixado", "tqi-volume"], "pallets-avariados": ["pallets-avariados-base", "pallets-puxados"]
 };
+const GEROT_YTD_REFERENCE = {
+  "eficiencia-carregamento": .9386022207707381, ressuprimento: .03351428571428571, reabastecimento: .11327142857142856, "eficiencia-montagem": .9196857142857143,
+  "aderencia-wms": .917483126496843, "matriz-priorizacao": .9684187279151943, "eficiencia-descarga": .9986953685583823, "tempo-interno-fisica": .9861242203479937,
+  "tempo-interno-financeira": .9522256686766498, "tempo-interno-revenda": .9417082811132766, "tempo-interno": .008243378059634475, "stock-age": .9939495390447491,
+  "stock-age-curva-c": .988, "quebra-fefo": 6.142857142857143, oor: .10844285714285713, "stock-out": .10468255411998333, "stock-over": .003794383289612396,
+  indisponibilidade: .047271428571428575, inovacao: .1619142857142857, "ocupacao-estoque": .6692857142857144, "txr-armazem": null, wlp: 6.9603691609008695,
+  pnp: 4.740309751111996, fnp: 39.72183731075186, tqi: 178.815990077263, tma: .033533812830687826, "tr-nova-rio": .14367503895680653,
+  "tr-pirai": .10178128115175215, "furo-puxada": .003357142857142857, "eficiencia-puxada": .9966428571428573, "produtividade-repack": .0011767325560908888,
+  "produtividade-despejo": .04094724367822193, "pallets-avariados": .008819538670284939, "ronda-qualidade": .9638, "falha-bloqueio": 0, "cinco-s": .9421285714285714
+};
 const GEROT_NUMERIC_FORMATS = { reabastecimento: "%", "aderencia-wms": "%", "txr-armazem": "%" };
-const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
+const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, referenceYtd: GEROT_YTD_REFERENCE[row.id], displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
 const ADDITIONAL_SEEDED_USERS = [
   ["CHRISTOFEE DOS SANTOS SILVA ARAUJO", "Christofee", "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161", "CA", "Christofee Araujo", "FROTA"],
   ["DIEGO DA SILVA TEIXEIRA", "Diego", "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d", "DT", "Diego Teixeira", "CONTROLE"],
@@ -454,6 +464,7 @@ const INITIAL_DATABASE = {
     area: "ARMAZÉM",
     year: 2026,
     rows: GEROT_WAREHOUSE_ROWS,
+    calculatedYtd: false,
     updatedAt: "2026-09-01T00:00:00.000Z",
     updatedBy: null
   },
@@ -733,6 +744,7 @@ function sanitizeDatabase(database) {
     year: 2026,
     updatedAt: sanitized.gerotWarehouse?.updatedAt || null,
     updatedBy: sanitized.gerotWarehouse?.updatedBy || null,
+    calculatedYtd: Boolean(sanitized.gerotWarehouse?.calculatedYtd),
     rows: GEROT_WAREHOUSE_ROWS.map((template) => {
       const persisted = persistedGerotRows.find((item) => item.id === template.id);
       return { ...clone(template), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...template.monthly] };
@@ -1003,6 +1015,7 @@ function updateWarehouseGerot(database, user, payload) {
   });
   warehouse.updatedAt = nowIso();
   warehouse.updatedBy = toInt(user.id);
+  warehouse.calculatedYtd = true;
   addHistoryEntry(database, {
     module: "gerot",
     action: "updated",
@@ -2279,6 +2292,7 @@ function listPath(database, user, path) {
         rows: database.gerotWarehouse.rows,
         updatedAt: database.gerotWarehouse.updatedAt,
         updatedBy: database.gerotWarehouse.updatedBy,
+        calculatedYtd: Boolean(database.gerotWarehouse.calculatedYtd),
         canEdit: canEditWarehouseGerot(user)
       };
     case "/notifications": {
