@@ -111,14 +111,15 @@ const GEROT_WAREHOUSE_SUPPORT_ROWS = [
   ["fnp-horas","HORAS TRABALHADAS","N°",[1203,1073,1130,1134,1414,986,854],"sum"], ["fnp-volume","VOLUME (HL)","N°",[46931,45031,46447,46683,41622,41708,41170],"sum"],
   ["tqi-hl-baixado","HL BAIXADO","N°",[7.84,7.73,8.34,8.69,8.06,7.65,7.05],"sum"], ["tqi-volume","VOLUME","N°",[46931,45031,46447,46683,41622,41708,41170],"sum"],
   ["pallets-avariados-base","AVARIADO","N°",[20,44,19,44,32,33,68],"average"], ["pallets-puxados","PUXADO","N°",[5452,4032,4012,4032,3380,4228,4344],"average"]
-].map(([id,indicator,unit,monthly,aggregation]) => ({ id,type:"",indicator,product:"Memória de cálculo",unit,eoy2024:null,eoy2025:null,target:null,goalMode:"none",aggregation,calculationInput:true,monthly:[...monthly,...Array(12-monthly.length).fill(null)] }));
+].map(([id,indicator,unit,monthly,aggregation]) => ({ id,type:"",indicator,product:"Memória de cálculo",unit:"",eoy2024:null,eoy2025:null,target:null,goalMode:"none",aggregation,calculationInput:true,monthly:[...monthly,...Array(12-monthly.length).fill(null)] }));
 
 const GEROT_FORMULAS = {
   "eficiencia-carregamento": ["carros-batidos", "total-carros"], "aderencia-wms": ["carros-wms", "total-carros-wms"], "matriz-priorizacao": ["carros-priorizados", "total-carros-priorizados"], "eficiencia-descarga": ["carros-ok", "carros-nok"],
   "stock-age": ["hl-total", "hl-nok"], "stock-age-curva-c": ["hl-total-curva-c", "hl-nok-curva-c"], "txr-armazem": ["txr-tendencia", "txr-real"], "wlp": ["wlp-ajudantes", "wlp-operadores", "wlp-volume", "wlp-dias"],
   "pnp": ["pnp-volume", "pnp-dias", "pnp-ajudantes", "pnp-operadores", "pnp-conferentes", "pnp-adm"], "fnp": ["fnp-volume", "fnp-horas"], "tqi": ["tqi-hl-baixado", "tqi-volume"], "pallets-avariados": ["pallets-avariados-base", "pallets-puxados"]
 };
-const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
+const GEROT_NUMERIC_FORMATS = { reabastecimento: "%", "aderencia-wms": "%", "txr-armazem": "%" };
+const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
 const ADDITIONAL_SEEDED_USERS = [
   ["CHRISTOFEE DOS SANTOS SILVA ARAUJO", "Christofee", "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161", "CA", "Christofee Araujo", "FROTA"],
   ["DIEGO DA SILVA TEIXEIRA", "Diego", "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d", "DT", "Diego Teixeira", "CONTROLE"],

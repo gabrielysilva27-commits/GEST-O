@@ -1026,12 +1026,12 @@ const anomalyReportsConfig = {
   }
 };
 
-function gerotNumber(value, unit) {
+function gerotNumber(value, unit, displayFormat = unit) {
   if (value === null || value === undefined || value === "") return "–";
   const number = Number(value);
   if (!Number.isFinite(number)) return "–";
-  if (unit === "%") return new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number);
-  if (unit === "HORA" || unit === "MIN") {
+  if (displayFormat === "%") return new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number);
+  if (displayFormat === "HORA" || displayFormat === "MIN") {
     const seconds = Math.round(number * 86400);
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -1081,22 +1081,30 @@ function gerotGoalClass(row, value) {
 
 function gerotGoalLabel(row) {
   if (row.goalMode === "none") return "Memória";
-  if (row.goalMode === "range") return `${gerotNumber(row.targetMin, row.unit)} a ${gerotNumber(row.targetMax, row.unit)}`;
-  return gerotNumber(row.target, row.unit);
+  if (row.goalMode === "range") return `${gerotNumber(row.targetMin, row.unit, row.displayFormat)} a ${gerotNumber(row.targetMax, row.unit, row.displayFormat)}`;
+  return gerotNumber(row.target, row.unit, row.displayFormat);
 }
 
 function gerotWarehouseView(data) {
   const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
   const allRows = arrayValue(data.rows);
-  const rows = allRows.map((row) => {
+  const rowsById = new Map(allRows.map((row) => [row.id, row]));
+  const renderedMemoryRows = new Set();
+  const orderedRows = allRows.filter((row) => !row.calculationInput).flatMap((row) => {
+    const memoryRows = arrayValue(row.formulaInputs).map((id) => rowsById.get(id)).filter(Boolean);
+    memoryRows.forEach((memoryRow) => renderedMemoryRows.add(memoryRow.id));
+    return [row, ...memoryRows];
+  });
+  allRows.filter((row) => row.calculationInput && !renderedMemoryRows.has(row.id)).forEach((row) => orderedRows.push(row));
+  const rows = orderedRows.map((row) => {
     const ytd = gerotYtd(row, allRows);
     const monthly = months.map((month, index) => {
       const value = arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index) : row.monthly?.[index];
       const status = gerotGoalClass(row, value);
       const editable = !arrayValue(row.formulaInputs).length;
-      return `<td class="gerot-value ${status}" data-label="${month}">${editable ? `<input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit)}</td>`;
+      return `<td class="gerot-value ${status}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;
     }).join("");
-    return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit)}</td><td>${gerotNumber(row.eoy2025, row.unit)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit)}</td>${monthly}</tr>`;
+    return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}</tr>`;
   }).join("");
   const canEdit = Boolean(data.canEdit);
   return `

@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260901-05";
+import { api, ApiError } from "./api.js?v=20260901-06";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260901-04";
+import { views } from "./modules/index.js?v=20260901-05";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -541,6 +541,7 @@ async function handleDynamicClick(event) {
   const exportButton = event.target.closest("[data-export]");
   const gerotEditButton = event.target.closest("[data-gerot-edit]");
   if (gerotEditButton) {
+    elements.pageContent.querySelector(".gerot-card")?.classList.add("is-editing");
     elements.pageContent.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = false; });
     gerotEditButton.hidden = true;
     const saveButton = elements.pageContent.querySelector("[data-gerot-save]");
