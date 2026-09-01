@@ -11,89 +11,36 @@ const ROLE_LABELS = {
   operator: "Operador"
 };
 
+const STANDARD_PERMISSIONS = [
+  "dashboard.view",
+  "audit.view",
+  "users.read",
+  "users.manage",
+  "companies.read",
+  "companies.manage",
+  "units.read",
+  "units.manage",
+  "actionPlans.read",
+  "actionPlans.manage",
+  "meetings.read",
+  "meetings.manage",
+  "gapa.read",
+  "gapa.manage",
+  "dto.read",
+  "dto.manage",
+  "anomalyReports.read",
+  "anomalyReports.manage",
+  "gerot.read",
+  "gerot.manage",
+  "notifications.view",
+  "history.view"
+];
+
 const ROLE_PERMISSIONS = {
-  admin: [
-    "dashboard.view",
-    "audit.view",
-    "users.read",
-    "users.manage",
-    "companies.read",
-    "companies.manage",
-    "units.read",
-    "units.manage",
-    "actionPlans.read",
-    "actionPlans.manage",
-    "meetings.read",
-    "meetings.manage",
-    "gapa.read",
-    "gapa.manage",
-    "dto.read",
-    "dto.manage",
-    "anomalyReports.read",
-    "anomalyReports.manage",
-    "gerot.read",
-    "gerot.manage",
-    "notifications.view",
-    "history.view"
-  ],
-  manager: [
-    "dashboard.view",
-    "audit.view",
-    "users.read",
-    "companies.read",
-    "units.read",
-    "actionPlans.read",
-    "actionPlans.manage",
-    "meetings.read",
-    "meetings.manage",
-    "gapa.read",
-    "gapa.manage",
-    "dto.read",
-    "dto.manage",
-    "anomalyReports.read",
-    "anomalyReports.manage",
-    "gerot.read",
-    "gerot.manage",
-    "notifications.view",
-    "history.view"
-  ],
-  supervisor: [
-    "dashboard.view",
-    "audit.view",
-    "units.read",
-    "actionPlans.read",
-    "actionPlans.manage",
-    "meetings.read",
-    "meetings.manage",
-    "gapa.read",
-    "gapa.manage",
-    "dto.read",
-    "dto.manage",
-    "anomalyReports.read",
-    "anomalyReports.manage",
-    "gerot.read",
-    "gerot.manage",
-    "notifications.view",
-    "history.view"
-  ],
-  operator: [
-    "dashboard.view",
-    "audit.view",
-    "actionPlans.read",
-    "actionPlans.manage",
-    "meetings.read",
-    "meetings.manage",
-    "gapa.read",
-    "gapa.manage",
-    "dto.read",
-    "dto.manage",
-    "anomalyReports.read",
-    "anomalyReports.manage",
-    "gerot.read",
-    "gerot.manage",
-    "notifications.view",
-    "history.view"
-  ]
+  admin: STANDARD_PERMISSIONS,
+  manager: STANDARD_PERMISSIONS,
+  supervisor: STANDARD_PERMISSIONS,
+  operator: STANDARD_PERMISSIONS
 };
 
 const NAVIGATION = [
@@ -117,7 +64,7 @@ const SEEDED_USERS = [
     id: 2,
     name: "IAGO DE OLIVEIRA RODRIGUES",
     username: "Iago",
-    role: "admin",
+    role: "operator",
     companyId: 0,
     unitIds: [],
     status: "active",
@@ -130,7 +77,7 @@ const SEEDED_USERS = [
     id: 3,
     name: "MARCOS ANTONIO BARBOSA FERREIRA JUNIOR",
     username: "Marcos",
-    role: "admin",
+    role: "operator",
     companyId: 0,
     unitIds: [],
     status: "active",
@@ -143,7 +90,7 @@ const SEEDED_USERS = [
     id: 4,
     name: "JOSÉ ALVES TEIXEIRA FILHO",
     username: "José",
-    role: "admin",
+    role: "operator",
     companyId: 0,
     unitIds: [],
     status: "active",
@@ -440,6 +387,10 @@ function getRolePermissions(role) {
   return [...(ROLE_PERMISSIONS[role] || [])];
 }
 
+function isGabrielyAdministrator(userRecord) {
+  return String(userRecord?.username || "").trim().toLocaleLowerCase("pt-BR") === "gabriely";
+}
+
 function getRoleLabel(role) {
   return ROLE_LABELS[role] || role;
 }
@@ -603,6 +554,11 @@ function sanitizeDatabase(database) {
       sanitized.users.push(clone(seededUser));
     }
   });
+  sanitized.users.forEach((userRecord) => {
+    if (!isGabrielyAdministrator(userRecord) && userRecord.role === "admin") {
+      userRecord.role = "operator";
+    }
+  });
   sanitized.sequence.users = Math.max(
     toInt(sanitized.sequence.users, 0),
     ...sanitized.users.map((item) => toInt(item.id, 0))
@@ -676,7 +632,7 @@ function getUserProfile(database, userRecord) {
   const units = database.units.filter((item) => arrayValue(userRecord.unitIds).includes(toInt(item.id)));
   const permissions = getRolePermissions(userRecord.role);
 
-  if (userRecord.role === "admin" && userRecord.username === "Gabriely") {
+  if (userRecord.role === "admin" && isGabrielyAdministrator(userRecord)) {
     permissions.push("administration.view", "administration.manage");
   }
 
@@ -706,7 +662,7 @@ function testCollectionScope(collectionName, record, user) {
     return toInt(record.userId) === toInt(user.id);
   }
 
-  if (user.role === "admin") {
+  if (collectionName !== "notifications") {
     return true;
   }
 
@@ -864,7 +820,9 @@ function buildLookups(database, user) {
       city: record.city,
       state: record.state
     })),
-    roles: Object.entries(ROLE_LABELS).map(([id, label]) => ({ id, label })),
+    roles: Object.entries(ROLE_LABELS)
+      .filter(([id]) => id !== "admin")
+      .map(([id, label]) => ({ id, label })),
     navigation: NAVIGATION.map((item) => ({ ...item }))
   };
 }
@@ -1156,6 +1114,10 @@ async function createUser(database, user, payload) {
 
   if (!payload?.name?.trim() || !payload?.username?.trim() || !payload?.role?.trim()) {
     throw new ApiError("Nome, usuário e perfil são obrigatórios.", 400);
+  }
+
+  if (payload.role === "admin") {
+    throw new ApiError("O perfil Administrador é exclusivo da Gabriely.", 403);
   }
 
   if (getUserByUsername(database, payload.username)) {
