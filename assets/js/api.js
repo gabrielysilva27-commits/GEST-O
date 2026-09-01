@@ -996,10 +996,15 @@ function isPastDue(value) {
 }
 
 function buildDashboard(database, user) {
-  const actionPlans = getScopedCollection(database, user, "actionPlans");
+  // O dashboard é coletivo: qualquer usuário autenticado acompanha os mesmos
+  // itens ativos, independentemente de autoria ou responsabilidade.
+  const actionPlans = arrayValue(database.actionPlans);
   const openActions = actionPlans.filter((item) => item.status !== "done");
   const inProgressActions = actionPlans.filter((item) => item.status === "in_progress");
-  const meetings = getScopedCollection(database, user, "meetings");
+  const meetings = arrayValue(database.meetings);
+  const activeMeetings = meetings.filter(
+    (item) => item.scheduledAt && !["held", "closed", "done"].includes(item.status)
+  );
   const gapaRecords = getScopedCollection(database, user, "gapaRecords");
   const dtoRecords = getScopedCollection(database, user, "dtoRecords");
   const anomalyReports = getScopedCollection(database, user, "anomalyReports");
@@ -1052,7 +1057,7 @@ function buildDashboard(database, user) {
       {
         label: "Ações em andamento",
         value: openActions.length,
-        helper: "Ações abertas sob sua responsabilidade"
+        helper: "Ações abertas da equipe"
       }
     ],
     charts: {
@@ -1073,6 +1078,9 @@ function buildDashboard(database, user) {
     },
     actionPlans: [...openActions].sort((left, right) =>
       String(right.meetingExecutionDate || right.createdAt).localeCompare(String(left.meetingExecutionDate || left.createdAt))
+    ),
+    meetings: [...activeMeetings].sort((left, right) =>
+      String(left.scheduledAt).localeCompare(String(right.scheduledAt))
     ),
     inProgressActions,
     feed: getScopedCollection(database, user, "history")

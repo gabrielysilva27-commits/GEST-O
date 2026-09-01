@@ -300,6 +300,12 @@ function dashboardView(data, context) {
       <td data-label="Status">${actionStatusBadge(item.status || "open")}</td>
     </tr>`;
   }).join("");
+  const meetingRows = (data.meetings || []).map((item) => [
+    escapeHtml(item.title),
+    escapeHtml(formatDate(item.scheduledAt)),
+    escapeHtml(getUserLabel(context.lookups, item.ownerId)),
+    statusBadge(item.status || "scheduled")
+  ]);
 
   return `
     ${moduleHeader("Dashboard operacional", "Acompanhe todas as ações abertas e em andamento pela equipe.")}
@@ -308,6 +314,7 @@ function dashboardView(data, context) {
       <div class="table-card-header"><div><h3>Ações em andamento</h3><p>Consulta compartilhada apenas das ações abertas ou em andamento.</p></div></div>
       ${actionRows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-plan-column"><col class="action-date-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Ações</th><th>Prazo</th><th>Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações cadastradas</h2><p>As próximas ações abertas pela equipe aparecerão aqui.</p></div></div>'}
     </section>
+    ${tableCard("Reuniões em andamento", "Consulta compartilhada das reuniões agendadas ou em execução.", ["Reunião", "Data", "Responsável", "Status"], meetingRows)}
   `;
 }
 
