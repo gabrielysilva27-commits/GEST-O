@@ -136,6 +136,8 @@ export class Presence {
     const now = Date.now();
     const current = (await this.state.storage.get("users")) || [];
     const users = current.filter((item) => now - Number(item.lastSeenAt || 0) < 90000);
+    const events = ((await this.state.storage.get("events")) || [])
+      .filter((item) => now - Number(item.occurredAt || 0) < 60000);
 
     if (request.method === "POST") {
       const body = await request.json();
@@ -148,14 +150,20 @@ export class Presence {
         module: String(body.module).slice(0, 80),
         lastSeenAt: now
       };
+      const previous = users.find((item) => item.userId === entry.userId);
       const next = users.filter((item) => item.userId !== entry.userId);
       next.push(entry);
+      if (!previous || previous.module !== entry.module) {
+        events.push({ ...entry, occurredAt: now });
+      }
       await this.state.storage.put("users", next);
-      return Response.json({ users: next });
+      await this.state.storage.put("events", events);
+      return Response.json({ users: next, events });
     }
 
     await this.state.storage.put("users", users);
-    return Response.json({ users });
+    await this.state.storage.put("events", events);
+    return Response.json({ users, events });
   }
 }
 

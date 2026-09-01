@@ -306,16 +306,16 @@ function dashboardView(data, context) {
     escapeHtml(getUserLabel(context.lookups, item.ownerId)),
     statusBadge(item.status || "scheduled")
   ]);
-  const activeUsersRows = (data.presence?.users || []).map((item) => [
+  const activeUsersRows = (data.presence?.events || []).slice().reverse().map((item) => [
     escapeHtml(item.name),
     escapeHtml(moduleLabel(item.module)),
-    escapeHtml(formatDate(new Date(Number(item.lastSeenAt)).toISOString()))
+    escapeHtml(formatDate(new Date(Number(item.occurredAt)).toISOString()))
   ]);
   const dashboardCards = [
     ...(data.kpis || []),
     {
       label: "Usuários online",
-      value: activeUsersRows.length,
+      value: (data.presence?.users || []).length,
       helper: "Pessoas ativas na plataforma agora"
     }
   ];
@@ -328,7 +328,7 @@ function dashboardView(data, context) {
       ${actionRows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-plan-column"><col class="action-date-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Ações</th><th>Prazo</th><th>Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações cadastradas</h2><p>As próximas ações abertas pela equipe aparecerão aqui.</p></div></div>'}
     </section>
     ${tableCard("Reuniões em andamento", "Consulta compartilhada das reuniões agendadas ou em execução.", ["Reunião", "Data", "Responsável", "Status"], meetingRows)}
-    ${tableCard("Usuários ativos agora", "Presença atualizada automaticamente enquanto o usuário navega na plataforma.", ["Usuário", "Módulo atual", "Última atividade"], activeUsersRows)}
+    ${tableCard("Usuários ativos agora", "Movimentações registradas nos últimos 60 segundos.", ["Usuário", "Módulo acessado", "Quando"], activeUsersRows)}
   `;
 }
 
