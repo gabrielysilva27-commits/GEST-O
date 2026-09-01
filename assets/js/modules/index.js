@@ -306,6 +306,11 @@ function dashboardView(data, context) {
     escapeHtml(getUserLabel(context.lookups, item.ownerId)),
     statusBadge(item.status || "scheduled")
   ]);
+  const activeUsersRows = (data.presence?.users || []).map((item) => [
+    escapeHtml(item.name),
+    escapeHtml(moduleLabel(item.module)),
+    escapeHtml(formatDate(new Date(Number(item.lastSeenAt)).toISOString()))
+  ]);
 
   return `
     ${moduleHeader("Dashboard operacional", "Acompanhe todas as ações abertas e em andamento pela equipe.")}
@@ -315,6 +320,7 @@ function dashboardView(data, context) {
       ${actionRows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-plan-column"><col class="action-date-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Ações</th><th>Prazo</th><th>Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações cadastradas</h2><p>As próximas ações abertas pela equipe aparecerão aqui.</p></div></div>'}
     </section>
     ${tableCard("Reuniões em andamento", "Consulta compartilhada das reuniões agendadas ou em execução.", ["Reunião", "Data", "Responsável", "Status"], meetingRows)}
+    ${tableCard("Usuários ativos agora", "Presença atualizada automaticamente enquanto o usuário navega na plataforma.", ["Usuário", "Módulo atual", "Última atividade"], activeUsersRows)}
   `;
 }
 
@@ -1069,7 +1075,11 @@ const gerotConfig = {
 export const views = {
   dashboard: {
     title: "Dashboard",
-    load: (api, token) => api.dashboard(token),
+    load: async (api, token) => {
+      const dashboard = await api.dashboard(token);
+      const presence = await api.presence(token, "dashboard");
+      return { ...dashboard, presence };
+    },
     render: (data, context) => dashboardView(data, context)
   },
   audit: {

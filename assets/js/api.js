@@ -2381,6 +2381,19 @@ export const api = {
     return buildDashboard(database, user);
   },
 
+  async presence(token, module) {
+    const { database, user } = getAuthContext(token);
+    const response = await fetch("/api/presence", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId: user.id, name: user.name, module })
+    });
+    if (!response.ok) {
+      throw new ApiError("Não foi possível atualizar a presença.", response.status);
+    }
+    return response.json();
+  },
+
   async list(token, path) {
     const { database, user } = getAuthContext(token);
     return listPath(database, user, path);

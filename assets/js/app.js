@@ -259,6 +259,11 @@ async function loadView(viewId) {
   }
 
   state.currentView = viewId;
+  try {
+    await api.presence(state.token, viewId);
+  } catch {
+    // A presença não impede o uso dos módulos se a conexão oscilar.
+  }
   renderNavigation();
   elements.pageTitle.textContent = view.title;
   elements.pageContent.innerHTML = `
@@ -285,6 +290,14 @@ async function loadView(viewId) {
   } catch (error) {
     handleError(error, "Não foi possível abrir o módulo selecionado.");
   }
+}
+
+function startPresenceHeartbeat() {
+  window.setInterval(() => {
+    if (state.token && state.user) {
+      api.presence(state.token, state.currentView).catch(() => {});
+    }
+  }, 30000);
 }
 
 async function handleLogin(event) {
@@ -824,6 +837,7 @@ async function bootstrap() {
   try {
     await refreshBootstrap();
     setLoggedInUi();
+    startPresenceHeartbeat();
     await syncRoute();
   } catch (error) {
     clearSession();

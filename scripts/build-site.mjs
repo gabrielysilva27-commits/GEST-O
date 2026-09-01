@@ -127,10 +127,48 @@ function buildResponse(asset) {
   return new Response(body, { status: 200, headers });
 }
 
-export default {
+export class Presence {
+  constructor(state) {
+    this.state = state;
+  }
+
   async fetch(request) {
+    const now = Date.now();
+    const current = (await this.state.storage.get("users")) || [];
+    const users = current.filter((item) => now - Number(item.lastSeenAt || 0) < 90000);
+
+    if (request.method === "POST") {
+      const body = await request.json();
+      if (!body || !body.userId || !body.name || !body.module) {
+        return Response.json({ error: "Presença inválida." }, { status: 400 });
+      }
+      const entry = {
+        userId: String(body.userId),
+        name: String(body.name).slice(0, 120),
+        module: String(body.module).slice(0, 80),
+        lastSeenAt: now
+      };
+      const next = users.filter((item) => item.userId !== entry.userId);
+      next.push(entry);
+      await this.state.storage.put("users", next);
+      return Response.json({ users: next });
+    }
+
+    await this.state.storage.put("users", users);
+    return Response.json({ users });
+  }
+}
+
+export default {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const pathname = url.pathname || "/";
+
+    if (pathname === "/api/presence") {
+      const presence = env.PRESENCE.getByName("lead-gestao-presence");
+      return presence.fetch(request);
+    }
+
     const asset = assets.get(pathname);
 
     if (asset) {
