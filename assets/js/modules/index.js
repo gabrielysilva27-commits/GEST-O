@@ -285,17 +285,29 @@ function actionStatusBadge(value = "open") {
   return `<span class="badge ${badgeClass(value)}">${escapeHtml(labels[value] || formatValueLabel(value))}</span>`;
 }
 
-function dashboardView(data) {
-  const inProgressRows = (data.inProgressActions || []).map((item) => [
-    escapeHtml(item.title),
-    escapeHtml(formatDate(item.dueDate)),
-    actionStatusBadge("in_progress")
-  ]);
+function dashboardView(data, context) {
+  const actionRows = (data.actionPlans || []).map((item) => {
+    const requester = item.requesterName || item.legacyRequesterName || "Não informado";
+    const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
+    return `<tr>
+      <td data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
+      <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
+      <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
+      <td data-label="Solicitante">${escapeHtml(requester)}</td>
+      <td data-label="Responsável">${escapeHtml(owner)}</td>
+      <td class="action-plan-cell" data-label="Ação">${escapeHtml(item.objective || item.title)}</td>
+      <td data-label="Prazo">${escapeHtml(formatDate(item.dueDate))}</td>
+      <td data-label="Status">${actionStatusBadge(item.status || "open")}</td>
+    </tr>`;
+  }).join("");
 
   return `
-    ${moduleHeader("Dashboard operacional", "Acompanhe somente as ações que estão em andamento.")}
+    ${moduleHeader("Dashboard operacional", "Acompanhe todas as ações abertas e em andamento pela equipe.")}
     ${metricCards(data.kpis || [])}
-    ${tableCard("Ações em andamento", "Ações existentes com status em andamento.", ["Ação", "Prazo", "Status"], inProgressRows)}
+    <section class="table-card action-portfolio-card">
+      <div class="table-card-header"><div><h3>Ações da equipe</h3><p>Consulta compartilhada das ações, com contexto da reunião e respectivo status.</p></div></div>
+      ${actionRows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-plan-column"><col class="action-date-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Ações</th><th>Prazo</th><th>Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações cadastradas</h2><p>As próximas ações abertas pela equipe aparecerão aqui.</p></div></div>'}
+    </section>
   `;
 }
 
@@ -1051,7 +1063,7 @@ export const views = {
   dashboard: {
     title: "Dashboard",
     load: (api, token) => api.dashboard(token),
-    render: (data) => dashboardView(data)
+    render: (data, context) => dashboardView(data, context)
   },
   audit: {
     title: "Painel de auditoria",

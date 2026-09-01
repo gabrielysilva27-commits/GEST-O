@@ -1,8 +1,10 @@
 import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
+import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260831-01";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
-const IMPORTED_ACTION_HISTORY_VERSION = 2;
+// A versão também executa a limpeza das notificações geradas pelo arquivo legado.
+const IMPORTED_ACTION_HISTORY_VERSION = 4;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -453,7 +455,7 @@ function ensureImportedActionHistory(database) {
     ...database.actionPlans.map((item) => toInt(item.id))
   );
 
-  IMPORTED_ACTION_HISTORY.forEach((item) => {
+  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS].forEach((item) => {
     const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
     if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
       return;
@@ -464,11 +466,12 @@ function ensureImportedActionHistory(database) {
       id: database.sequence.actionPlans,
       title: item.meetingSubject,
       objective: item.objective,
-      status: item.status,
+      // A planilha é histórico: nenhuma de suas ações fica pendente no sistema.
+      status: "done",
       priority: item.priority,
       companyId: 0,
       unitId: 0,
-      ownerId: 0,
+      ownerId: findUserIdByLegacyName(database, item.ownerName),
       requesterId: 0,
       requesterName: item.requesterName,
       legacyOwnerName: item.ownerName,
@@ -483,11 +486,58 @@ function ensureImportedActionHistory(database) {
       legacySourceRow: toInt(item.sourceRow),
       legacyStatus: item.sourceStatus,
       createdAt: `${item.openedAt || "2026-01-01"}T12:00:00.000Z`,
-      updatedAt: `${item.openedAt || "2026-01-01"}T12:00:00.000Z`
+      updatedAt: `${item.openedAt || "2026-01-01"}T12:00:00.000Z`,
+      completedAt: `${item.executionDate || item.openedAt || "2026-01-01"}T12:00:00.000Z`
     });
   });
 
+  // Notificações pertencem somente às ações abertas dentro da plataforma.
+  const legacyActionIds = new Set(
+    database.actionPlans.filter((item) => item.source === "legacy_excel").map((item) => toInt(item.id))
+  );
+  database.notifications = arrayValue(database.notifications).filter(
+    (item) => !legacyActionIds.has(toInt(item.actionPlanId))
+  );
   database.meta.importedActionHistoryVersion = IMPORTED_ACTION_HISTORY_VERSION;
+}
+
+function normalizePersonName(value = "") {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function findUserIdByLegacyName(database, ownerName) {
+  const normalizedOwner = normalizePersonName(ownerName);
+  if (!normalizedOwner) {
+    return 0;
+  }
+
+  const ownerTokens = normalizedOwner.split(" ");
+  const matches = arrayValue(database.users).filter((user) => {
+    const identities = [user.name, user.username, user.title].map(normalizePersonName).filter(Boolean);
+    return identities.some((identity) =>
+      identity === normalizedOwner || ownerTokens.every((token) => identity.split(" ").includes(token))
+    );
+  });
+
+  return matches.length === 1 ? toInt(matches[0].id) : 0;
+}
+
+function matchesLegacyOwner(user, ownerName) {
+  const normalizedOwner = normalizePersonName(ownerName);
+  if (!normalizedOwner) {
+    return false;
+  }
+
+  const ownerTokens = normalizedOwner.split(" ");
+  return [user.name, user.username, user.title]
+    .map(normalizePersonName)
+    .filter(Boolean)
+    .some((identity) => identity === normalizedOwner || ownerTokens.every((token) => identity.split(" ").includes(token)));
 }
 
 async function sha256(value) {
@@ -662,6 +712,8 @@ function testCollectionScope(collectionName, record, user) {
     return toInt(record.userId) === toInt(user.id);
   }
 
+  // A consulta e a operação dos módulos são compartilhadas por toda a equipe.
+  // Notificações continuam individuais e Administração continua protegida por permissão.
   if (collectionName !== "notifications") {
     return true;
   }
@@ -694,7 +746,11 @@ function testCollectionScope(collectionName, record, user) {
       if (user.role === "supervisor") {
         return userUnitIds.includes(toInt(record.unitId));
       }
-      return toInt(record.ownerId) === toInt(user.id) || toInt(record.createdBy) === toInt(user.id);
+      return (
+        toInt(record.ownerId) === toInt(user.id) ||
+        toInt(record.createdBy) === toInt(user.id) ||
+        (record.source === "legacy_excel" && matchesLegacyOwner(user, record.legacyOwnerName))
+      );
     case "meetings":
       if (record.templateId) {
         return true;
@@ -864,7 +920,13 @@ function addNotification(database, values) {
 function ensureActionOwnerNotifications(database) {
   arrayValue(database.actionPlans).forEach((action) => {
     const ownerId = toInt(action.ownerId, 0);
-    if (!ownerId || database.notifications.some((item) => toInt(item.actionPlanId, 0) === toInt(action.id))) {
+    if (
+      !ownerId ||
+      action.source === "legacy_excel" ||
+      action.status === "done" ||
+      action.notificationCreated ||
+      database.notifications.some((item) => toInt(item.actionPlanId, 0) === toInt(action.id))
+    ) {
       return;
     }
     addNotification(database, {
@@ -925,6 +987,7 @@ function isPastDue(value) {
 
 function buildDashboard(database, user) {
   const actionPlans = getScopedCollection(database, user, "actionPlans");
+  const openActions = actionPlans.filter((item) => item.status !== "done");
   const inProgressActions = actionPlans.filter((item) => item.status === "in_progress");
   const meetings = getScopedCollection(database, user, "meetings");
   const gapaRecords = getScopedCollection(database, user, "gapaRecords");
@@ -978,8 +1041,8 @@ function buildDashboard(database, user) {
     kpis: [
       {
         label: "Ações em andamento",
-        value: inProgressActions.length,
-        helper: "Ações existentes com status em andamento"
+        value: openActions.length,
+        helper: "Ações abertas sob sua responsabilidade"
       }
     ],
     charts: {
@@ -998,6 +1061,9 @@ function buildDashboard(database, user) {
         })),
       unreadNotifications: notifications.filter((item) => !item.read).length
     },
+    actionPlans: [...actionPlans].sort((left, right) =>
+      String(right.meetingExecutionDate || right.createdAt).localeCompare(String(left.meetingExecutionDate || left.createdAt))
+    ),
     inProgressActions,
     feed: getScopedCollection(database, user, "history")
       .sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)))
@@ -1183,6 +1249,8 @@ function createActionPlan(database, user, payload) {
     ownerId: toInt(payload.ownerId),
     createdBy: toInt(user.id),
     dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    source: "platform",
+    notificationCreated: true,
     createdAt: nowIso(),
     updatedAt: nowIso()
   };
@@ -1394,6 +1462,7 @@ function createMeetingAction(database, user, payload) {
     meetingExecutionDate: payload.executionDate || "",
     attachment,
     source: "meetings",
+    notificationCreated: true,
     createdAt: nowIso(),
     updatedAt: nowIso()
   };
