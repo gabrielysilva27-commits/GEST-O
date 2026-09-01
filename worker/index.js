@@ -21,7 +21,7 @@ function cacheControlFor(pathname) {
   }
 
   if (pathname.endsWith(".css") || pathname.endsWith(".js")) {
-    return "public, max-age=31536000, immutable";
+    return "no-cache";
   }
 
   return "public, max-age=86400";
