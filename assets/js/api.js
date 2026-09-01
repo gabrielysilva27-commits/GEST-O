@@ -58,6 +58,35 @@ const NAVIGATION = [
 ];
 
 const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42";
+const ADDITIONAL_SEEDED_USERS = [
+  ["CHRISTOFEE DOS SANTOS SILVA ARAUJO", "Christofee", "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161", "CA", "Christofee Araujo", "FROTA"],
+  ["DIEGO DA SILVA TEIXEIRA", "Diego", "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d", "DT", "Diego Teixeira", "CONTROLE"],
+  ["GUILHERME OLIVEIRA DE SOUZA", "Guilherme", "8b4dba09e6408be9f3a4d636453964b1777bd29091029b7fc21789435d70d520", "GS", "Guilherme Souza", "TST"],
+  ["JOSEPH MARCOS SALES LACERDA", "Joseph", "5efa7f9b686b58f4754b94df0c02cdf6327a4303157aaab7e4b04499b9b1c05a", "JL", "Joseph Lacerda", "CONTROLE"],
+  ["LEANDRO DA SILVA", "Leandro", "1d88b9cc30ce83730a7ffdfe0f929a07679749c0052c39cef4c81725b030f77d", "LS", "Leandro Silva", "ARMAZÉM"],
+  ["LUCIANO GOMES SARDINHA", "Luciano", "c16c79644323b58acf459c2d8d97c0f2c02c2fc07106e35b81270dbe64df775d", "LS", "Luciano Sardinha", "ENTREGA"],
+  ["MAURICIO DO NASCIMENTO FILHO", "Mauricio", "9e95dff76afe977e4075c83d893d0cc2ced1581be9ff33bce77ccdfe32f71417", "MF", "Mauricio Filho", "FROTA"],
+  ["MICHAEL FERNANDES AZEVEDO", "Michael", "a6dfd5104fc9f3554871aad3c6b72e9d59dcff3c47cfb5468daf473ea950d8b5", "MA", "Michael Azevedo", "PUXADA"],
+  ["NATHAN MARTINS CAPITAO", "Nathan", "d58d5749ddb5c635cb9cf9b227a7d6bdd7ef0a0158f63169da2a8d05cc1115e7", "NC", "Nathan Capitao", "ARMAZÉM"],
+  ["GABRIELLE DE MACEDO PONTES DA ROSA", "Gabrielle", "40dde169402e52a306657e56da40de0595d25d0cc9ecaba8a003109bd876a6b9", "GR", "Gabrielle Rosa", "TST"],
+  ["ISABELLY DA SILVA COSTA DIAS", "Isabelly", "31a06a8934c52b3ac49641da68c0f8a8b23ba15332612fd8237405a2dcadc91a", "ID", "Isabelly Dias", "TST"],
+  ["MANUELLE DE LIMA SERGIO CORREA", "Manuelle", "dcd6e494a82d2b894a303f97c8ff70ba2eed38bdd7ba9abf7e22a59a20c565ad", "MC", "Manuelle Correa", "ENTREGA"],
+  ["MATHEUS DE AMORIM VIANNA", "Matheus", "05eaa5156d19a7431bb5bc9a58ebfc28587f153f559b40f6ad1ac243be075db7", "MV", "Matheus Vianna", "ENTREGA"],
+  ["RODRIGO CAVALCANTE DOS SANTOS", "Rodrigo", "6eaa010b43abc1da0560917668208487d1ee274549fb856ff2e64348625733fb", "RS", "Rodrigo Santos", "FROTA"],
+  ["YURI GUILHERME SOUSA GUSMAO", "Yuri", "86ef22d8e7846102bc7a9fef9cfb4be8657291768a33afe55f5bda1f14971e96", "YG", "Yuri Gusmao", "FROTA"],
+  ["ALEX FREIRE DE OLIVEIRA", "Alex", "163b7e7ebddf321750dca1119ff5962503284432fa02f532cb31330d2532afbf", "AO", "Alex Oliveira", "ARMAZÉM"],
+  ["CÍNTIA DE MENEZES FELIX", "Cíntia", "e734d73063a7a06497b9031ce248a1df3d6f1ac09d5cc3de644677f5bf67a776", "CF", "Cíntia Felix", "ARMAZÉM"],
+  ["LUIS CARLOS MARQUES DA SILVA", "Luis", "2962c9d29be8c1a75e5ce4900698762511c975fa16d224d152f5b08912e0505f", "LS", "Luis Silva", "ARMAZÉM"],
+  ["RAISSA CUNHA MARTINS", "Raissa", "4277c636fd05ac44b33c369fc6eab8d82b9495ca642477b35cda30bd036a5f88", "RM", "Raissa Martins", "ARMAZÉM"],
+  ["RICARDO GOMES LICURGO", "Ricardo", "44daa0861864693fd0bd8246d3c7cbe873636addc6a49c7a54dc163611dd0177", "RL", "Ricardo Licurgo", "ARMAZÉM"],
+  ["RUAN DA SILVA PEREIRA", "Ruan", "d01e801ab7f09d7182b5d54d78116bee556e9c696948089a7db0e99a133f334c", "RP", "Ruan Pereira", "ARMAZÉM"],
+  ["TIAGO COSTA RAMOS DA SILVA", "Tiago", "5bb16d924ee6a3136a08e4d99fdb65e96b2c8bf0bb351af0d3a96ca505de5311", "TS", "Tiago Silva", "ARMAZÉM"],
+  ["VANDERSON MARQUES", "Vanderson", "535f6010f6b534c7efe99c4b9fa132d306accedf6fb85145d8c4a2ecf8acf941", "VM", "Vanderson Marques", "ARMAZÉM"],
+  ["GRACIELLE SILVA DE FARIAS", "Gracielle", "5e0cbd46cf4c3e3d89cb62c8ebfacb76c6ff2ebc257be252d5c66428f990b034", "GF", "Gracielle Farias", "ARMAZÉM"]
+].map(([name, username, passwordHash, avatar, title, department], index) => ({
+  id: index + 5, name, username, passwordHash, avatar, title, department,
+  role: "operator", companyId: 0, unitIds: [], status: "active", createdAt: "2026-09-01T00:00:00.000Z"
+}));
 const SEEDED_USERS = [
   {
     id: 2,
@@ -70,6 +99,7 @@ const SEEDED_USERS = [
     passwordHash: "41ba8b3cc4ec12b94cf489c54fd3370d5f88465d9a02876e1d2556445637e6aa",
     avatar: "IO",
     title: "Usuário da plataforma",
+    department: "ENTREGA",
     createdAt: "2026-08-31T00:00:00.000Z"
   },
   {
@@ -83,6 +113,7 @@ const SEEDED_USERS = [
     passwordHash: "37031ece6c39fb93a4af9dfc153daef36e5f4da7b34949d0cfbb1fcb623fa5ef",
     avatar: "MA",
     title: "Usuário da plataforma",
+    department: "ENTREGA",
     createdAt: "2026-08-31T00:00:00.000Z"
   },
   {
@@ -96,8 +127,10 @@ const SEEDED_USERS = [
     passwordHash: "f10c90456d3c3a91a43197c74f6ca48c28ffc7a707a5d7f84437176757b48e79",
     avatar: "JA",
     title: "Usuário da plataforma",
+    department: "",
     createdAt: "2026-08-31T00:00:00.000Z"
-  }
+  },
+  ...ADDITIONAL_SEEDED_USERS
 ];
 
 const MEETING_TEMPLATES = [
@@ -317,7 +350,7 @@ const INITIAL_DATABASE = {
     storageVersion: 2
   },
   sequence: {
-    users: 4,
+    users: 28,
     companies: 0,
     units: 0,
     actionPlans: 0,
@@ -342,6 +375,7 @@ const INITIAL_DATABASE = {
       passwordHash: PASSWORD_HASH_GABY0739,
       avatar: "GA",
       title: "Administradora da plataforma",
+      department: "ADMINISTRADOR",
       createdAt: "2026-08-01T09:00:00.000Z"
     },
     ...SEEDED_USERS
@@ -607,6 +641,8 @@ function sanitizeDatabase(database) {
       existingUser.passwordHash = seededUser.passwordHash;
       existingUser.role = seededUser.role;
       existingUser.status = seededUser.status;
+      existingUser.title = seededUser.title;
+      existingUser.department = seededUser.department || "";
     } else {
       sanitized.users.push(clone(seededUser));
     }
@@ -614,6 +650,9 @@ function sanitizeDatabase(database) {
   sanitized.users.forEach((userRecord) => {
     if (!isGabrielyAdministrator(userRecord) && userRecord.role === "admin") {
       userRecord.role = "operator";
+    }
+    if (isGabrielyAdministrator(userRecord)) {
+      userRecord.department = "ADMINISTRADOR";
     }
   });
   sanitized.sequence.users = Math.max(
@@ -722,6 +761,7 @@ function getUserProfile(database, userRecord) {
     status: userRecord.status || "active",
     avatar: userRecord.avatar || getInitials(userRecord.name),
     title: userRecord.title || "Usuario da plataforma",
+    department: userRecord.department || "",
     permissions
   };
 }
@@ -1214,8 +1254,8 @@ function getAuthContext(token) {
 async function createUser(database, user, payload) {
   ensurePermission(user, "users.manage");
 
-  if (!payload?.name?.trim() || !payload?.username?.trim() || !payload?.role?.trim()) {
-    throw new ApiError("Nome, usuário e perfil são obrigatórios.", 400);
+  if (!payload?.name?.trim() || !payload?.username?.trim() || !payload?.department?.trim() || !payload?.role?.trim()) {
+    throw new ApiError("Nome, usuário, setor e perfil são obrigatórios.", 400);
   }
 
   if (payload.role === "admin") {
@@ -1245,6 +1285,7 @@ async function createUser(database, user, payload) {
     passwordHash,
     avatar: getInitials(payload.name),
     title: "Usuário da plataforma",
+    department: payload.department.trim(),
     createdAt: nowIso()
   };
 
@@ -2440,6 +2481,7 @@ export const api = {
         return {
           nome: profile.name,
           usuario: profile.username,
+          setor: profile.department,
           perfil: profile.roleLabel,
           status: profile.status,
           empresa: profile.companyName || "",

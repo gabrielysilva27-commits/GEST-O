@@ -387,6 +387,7 @@ function usersView(data, context) {
   const rows = (data.items || []).map((item) => [
     escapeHtml(item.name),
     escapeHtml(item.username),
+    escapeHtml(item.department || "Não informado"),
     `<span class="badge info">${escapeHtml(item.roleLabel)}</span>`,
     `<span class="badge ${badgeClass(item.status || "active")}">${escapeHtml(item.status || "active")}</span>`
   ]);
@@ -415,6 +416,10 @@ function usersView(data, context) {
             <input name="username" required>
           </label>
           <label class="field">
+            <span>Setor</span>
+            <input name="department" required>
+          </label>
+          <label class="field">
             <span>Perfil</span>
             <select name="role" required>${roleOptions}</select>
           </label>
@@ -435,7 +440,7 @@ function usersView(data, context) {
     ${moduleHeader("Usuários e permissões", "Cadastre acessos, senhas iniciais e perfis diretamente pela plataforma.")}
     ${resetRequests.length > 0 ? tableCard("Recuperações aguardando ADM", "Aprove uma solicitação para liberar o código temporário ao usuário.", ["Usuário", "Solicitado em", "Expira em", "Ação"], resetRows) : ""}
     <div class="split-layout">
-      ${tableCard("Usuários ativos", "Lista atual de acessos disponíveis.", ["Nome", "Usuário", "Perfil", "Status"], rows)}
+      ${tableCard("Usuários ativos", "Lista atual de acessos disponíveis.", ["Nome", "Usuário", "Setor", "Perfil", "Status"], rows)}
       ${formCard("Novo usuário", "Crie um novo acesso com nome de usuário e senha inicial.", formContent)}
     </div>
   `;
@@ -821,7 +826,7 @@ function administrationView(data, context) {
   const userRows = users.map((item) => [
     escapeHtml(item.name),
     escapeHtml(item.username),
-    escapeHtml(item.unitNames?.join(", ") || "Não informado")
+    escapeHtml(item.department || "Não informado")
   ]);
 
   return `
