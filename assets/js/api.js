@@ -670,6 +670,22 @@ function getInitials(name = "") {
   return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
+function formatProfileName(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return "Usuário";
+  }
+
+  const formatPart = (part) => {
+    const lower = part.toLocaleLowerCase("pt-BR");
+    return lower.charAt(0).toLocaleUpperCase("pt-BR") + lower.slice(1);
+  };
+
+  return parts.length === 1
+    ? formatPart(parts[0])
+    : `${formatPart(parts[0])} ${formatPart(parts[parts.length - 1])}`;
+}
+
 function getCompany(database, companyId) {
   return database.companies.find((item) => toInt(item.id) === toInt(companyId)) || null;
 }
@@ -698,7 +714,7 @@ function getUserProfile(database, userRecord) {
 
   return {
     id: toInt(userRecord.id),
-    name: userRecord.name,
+    name: formatProfileName(userRecord.name),
     username: userRecord.username,
     role: userRecord.role,
     roleLabel: getRoleLabel(userRecord.role),
