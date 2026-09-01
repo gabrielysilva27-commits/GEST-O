@@ -43,6 +43,11 @@ function arrayValue(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function toInt(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function badgeClass(value = "") {
   return String(value).toLowerCase().replaceAll(" ", "_");
 }
