@@ -1839,6 +1839,8 @@ tbody td {
 .gerot-value input { width: 84px; border: 0; background: transparent; color: inherit; font: inherit; text-align: right; }
 .gerot-value input:disabled { cursor: default; opacity: 1; }
 .gerot-value input:not(:disabled) { border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); padding: 5px; }
+.gerot-memory-row { background: rgba(32, 88, 178, .045); }
+.gerot-memory-row td:nth-child(2) { padding-left: 28px; font-weight: 600; }
 
 /* Dark mode */
 body.dark-mode {

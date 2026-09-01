@@ -1041,12 +1041,38 @@ function gerotNumber(value, unit) {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number);
 }
 
-function gerotYtd(row) {
+function gerotYtd(row, rows) {
+  if (arrayValue(row.formulaInputs).length) return gerotCalculatedValue(row, rows, null);
   const values = arrayValue(row.monthly).map(Number).filter(Number.isFinite);
-  return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+  if (!values.length) return null;
+  const total = values.reduce((sum, value) => sum + value, 0);
+  return row.aggregation === "sum" ? total : total / values.length;
+}
+
+function gerotCalculatedValue(row, rows, monthIndex) {
+  const valueFor = (id) => {
+    const source = rows.find((item) => item.id === id);
+    return monthIndex === null ? gerotYtd(source, rows) : Number(source?.monthly?.[monthIndex]);
+  };
+  const [a, b, c, d, e, f] = arrayValue(row.formulaInputs).map(valueFor);
+  if (![a, b].every(Number.isFinite)) return null;
+  switch (row.id) {
+    case "eficiencia-carregamento": case "aderencia-wms": case "matriz-priorizacao": return b ? a / b : null;
+    case "eficiencia-descarga": return a + b ? a / (a + b) : null;
+    case "stock-age": return a ? 1 - b / a : null;
+    case "stock-age-curva-c": return a + b ? a / (a + b) : null;
+    case "txr-armazem": return b ? 1 - a / b : null;
+    case "wlp": return c && d ? c / ((a * 7.36 + b * 7.33) * d) : null;
+    case "pnp": return a && b ? a / ((c * 7.36 + d * 7.33 + e * 8.33 + f * 8.08) * b) : null;
+    case "fnp": return b ? a / b : null;
+    case "tqi": return b ? a / b * 1000000 : null;
+    case "pallets-avariados": return b ? a / b : null;
+    default: return null;
+  }
 }
 
 function gerotGoalClass(row, value) {
+  if (row.goalMode === "none") return "neutral";
   if (!Number.isFinite(Number(value))) return "neutral";
   if (row.goalMode === "higher") return Number(value) >= Number(row.target) ? "success" : "danger";
   if (row.goalMode === "lower") return Number(value) <= Number(row.target) ? "success" : "danger";
@@ -1054,20 +1080,23 @@ function gerotGoalClass(row, value) {
 }
 
 function gerotGoalLabel(row) {
+  if (row.goalMode === "none") return "Memória";
   if (row.goalMode === "range") return `${gerotNumber(row.targetMin, row.unit)} a ${gerotNumber(row.targetMax, row.unit)}`;
   return gerotNumber(row.target, row.unit);
 }
 
 function gerotWarehouseView(data) {
   const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
-  const rows = arrayValue(data.rows).map((row) => {
-    const ytd = gerotYtd(row);
+  const allRows = arrayValue(data.rows);
+  const rows = allRows.map((row) => {
+    const ytd = gerotYtd(row, allRows);
     const monthly = months.map((month, index) => {
-      const value = row.monthly?.[index];
+      const value = arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index) : row.monthly?.[index];
       const status = gerotGoalClass(row, value);
-      return `<td class="gerot-value ${status}" data-label="${month}"><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}"></td>`;
+      const editable = !arrayValue(row.formulaInputs).length;
+      return `<td class="gerot-value ${status}" data-label="${month}">${editable ? `<input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit)}</td>`;
     }).join("");
-    return `<tr><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit)}</td><td>${gerotNumber(row.eoy2025, row.unit)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit)}</td>${monthly}</tr>`;
+    return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit)}</td><td>${gerotNumber(row.eoy2025, row.unit)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit)}</td>${monthly}</tr>`;
   }).join("");
   const canEdit = Boolean(data.canEdit);
   return `

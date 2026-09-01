@@ -59,7 +59,7 @@ const NAVIGATION = [
 
 const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42";
 const GEROT_MONTHS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
-const GEROT_WAREHOUSE_ROWS = [
+const GEROT_WAREHOUSE_METRIC_ROWS = [
   ["eficiencia-carregamento","IC","EFICIÊNCIA DE CARREGAMENTO","PRODUTIVIDADE","%",.9209,.9678488,.96,"higher",[.975422,.964615,.929775,.790393,.94721,.978689,.998387]],
   ["ressuprimento","IV","% RESSUPRIMENTO","PRODUTIVIDADE","%",.1893,.042375,.0423,"lower",[.0347,.0389,.0318,.0524,.0262,.0253,.0253]],
   ["reabastecimento","IV","% REABASTECIMENTO","PRODUTIVIDADE","",null,.1283,.1282,"lower",[.1209,.1178,.1093,.1236,.1065,.1166,.0982]],
@@ -97,6 +97,28 @@ const GEROT_WAREHOUSE_ROWS = [
   ["falha-bloqueio","IC","FALHA NO BLOQUEIO","QUALIDADE","N°",0,0,0,"lower",[0,0,0,0,0,0,0]],
   ["cinco-s","IC","5S","QUALIDADE","%",.9214,.929064,.85,"higher",[.9369,.9375,.94,.95,.9422,.9532,.9351]]
 ].map(([id,type,indicator,product,unit,eoy2024,eoy2025,target,goalMode,monthly,targetMin,targetMax]) => ({ id,type,indicator,product,unit,eoy2024,eoy2025,target,goalMode,targetMin,targetMax,monthly:[...monthly,...Array(12-monthly.length).fill(null)] }));
+
+const GEROT_WAREHOUSE_SUPPORT_ROWS = [
+  ["carros-batidos","CARROS BATIDOS","N°",[635,627,662,543,628,597,619],"sum"], ["total-carros","TOTAL DE CARROS","N°",[651,650,712,687,663,610,620],"sum"],
+  ["total-carros-wms","TOTAL DE CARROS","N°",[651,650,712,687,663,610,620],"sum"], ["carros-wms","CARROS WMS","N°",[595,585,625,654,613,549,593],"sum"],
+  ["total-carros-priorizados","TOTAL DE CARROS","N°",[651,650,712,622,663,610,620],"sum"], ["carros-priorizados","CARROS PRIORIZADOS","N°",[627,638,689,606,637,588,600],"sum"],
+  ["carros-ok","TOTAL DE CARROS OK","N°",[651,650,712,687,663,610,620],"sum"], ["carros-nok","TOTAL DE CARROS NOK","N°",[0,0,0,0,3,2,1],"sum"],
+  ["hl-total","HL TOTAL","N°",[29707.87081,24480.11007,24385.73829,26748.85639,22567.07124,37406.68,39704.41],"sum"], ["hl-nok","HL NOK","N°",[237.42655,84.80865,73.59604,480.22,41.35195,159.72,148.56],"sum"],
+  ["hl-total-curva-c","HL TOTAL (CURVA C)","N°",[12315.03949,9239.31442,9239.31,9077.30939,8715.80611,7269.88,8049.63],"sum"], ["hl-nok-curva-c","HL NOK (CURVA C)","N°",[237.42655,84.80865,9154.51,178.9,38.59195,.6,.3],"sum"],
+  ["txr-tendencia","TENDÊNCIA","N°",[9.79,8.32,8.42,9.52,8.52,9.04,9.1],"average"], ["txr-real","REAL","N°",[9.59,8.2,8.32,9.39,8.39,8.97,8.97],"average"],
+  ["wlp-ajudantes","AJUDANTES","N°",[24,24,24,24,24,27,30],"sum"], ["wlp-operadores","OPERADORES","N°",[9,9,9,8,10,10,10],"sum"], ["wlp-volume","VOLUME (HL)","N°",[46931,45031,46447,46683,41622,41708,41170],"sum"], ["wlp-dias","DIAS ÚTEIS","N°",[26,23,26,24,25,24,27],"average"],
+  ["pnp-volume","VOLUME (HL)","N°",[46931,45031,46447,46683,41622,41708,41170],"sum"], ["pnp-dias","DIAS ÚTEIS","N°",[25,24,24,24,25,26,27],"average"], ["pnp-ajudantes","AJUDANTES","N°",[28,25,26,27,28,30,30],"sum"], ["pnp-operadores","OPERADORES","N°",[8,10,10,10,10,10,10],"sum"], ["pnp-conferentes","CONFERENTES","N°",[8,9,9,9,9,9,9],"sum"], ["pnp-adm","ADM","N°",[3,3,3,3,3,3,3],"sum"],
+  ["fnp-horas","HORAS TRABALHADAS","N°",[1203,1073,1130,1134,1414,986,854],"sum"], ["fnp-volume","VOLUME (HL)","N°",[46931,45031,46447,46683,41622,41708,41170],"sum"],
+  ["tqi-hl-baixado","HL BAIXADO","N°",[7.84,7.73,8.34,8.69,8.06,7.65,7.05],"sum"], ["tqi-volume","VOLUME","N°",[46931,45031,46447,46683,41622,41708,41170],"sum"],
+  ["pallets-avariados-base","AVARIADO","N°",[20,44,19,44,32,33,68],"average"], ["pallets-puxados","PUXADO","N°",[5452,4032,4012,4032,3380,4228,4344],"average"]
+].map(([id,indicator,unit,monthly,aggregation]) => ({ id,type:"",indicator,product:"Memória de cálculo",unit,eoy2024:null,eoy2025:null,target:null,goalMode:"none",aggregation,calculationInput:true,monthly:[...monthly,...Array(12-monthly.length).fill(null)] }));
+
+const GEROT_FORMULAS = {
+  "eficiencia-carregamento": ["carros-batidos", "total-carros"], "aderencia-wms": ["carros-wms", "total-carros-wms"], "matriz-priorizacao": ["carros-priorizados", "total-carros-priorizados"], "eficiencia-descarga": ["carros-ok", "carros-nok"],
+  "stock-age": ["hl-total", "hl-nok"], "stock-age-curva-c": ["hl-total-curva-c", "hl-nok-curva-c"], "txr-armazem": ["txr-tendencia", "txr-real"], "wlp": ["wlp-ajudantes", "wlp-operadores", "wlp-volume", "wlp-dias"],
+  "pnp": ["pnp-volume", "pnp-dias", "pnp-ajudantes", "pnp-operadores", "pnp-conferentes", "pnp-adm"], "fnp": ["fnp-volume", "fnp-horas"], "tqi": ["tqi-hl-baixado", "tqi-volume"], "pallets-avariados": ["pallets-avariados-base", "pallets-puxados"]
+};
+const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
 const ADDITIONAL_SEEDED_USERS = [
   ["CHRISTOFEE DOS SANTOS SILVA ARAUJO", "Christofee", "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161", "CA", "Christofee Araujo", "FROTA"],
   ["DIEGO DA SILVA TEIXEIRA", "Diego", "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d", "DT", "Diego Teixeira", "CONTROLE"],
@@ -972,7 +994,7 @@ function updateWarehouseGerot(database, user, payload) {
   const updates = arrayValue(payload?.rows);
   updates.forEach((update) => {
     const row = warehouse.rows.find((item) => item.id === update.id);
-    if (!row || !Array.isArray(update.monthly)) return;
+    if (!row || arrayValue(row.formulaInputs).length || !Array.isArray(update.monthly)) return;
     row.monthly = GEROT_MONTHS.map((_, index) => {
       const value = update.monthly[index];
       return value === "" || value === null || typeof value === "undefined" ? null : Number(value);
