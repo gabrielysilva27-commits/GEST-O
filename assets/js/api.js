@@ -54,8 +54,7 @@ const NAVIGATION = [
   { id: "gapa", label: "GAPA", permission: "gapa.read" },
   { id: "dto", label: "DTO - Diagnóstico de tarefa operacional", permission: "dto.read" },
   { id: "anomalyReports", label: "Relato de anomalia", permission: "anomalyReports.read" },
-  { id: "gerot", label: "GEROT", permission: "gerot.read" },
-  { id: "history", label: "Histórico", permission: "history.view" }
+  { id: "gerot", label: "GEROT", permission: "gerot.read" }
 ];
 
 const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42";

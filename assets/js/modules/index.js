@@ -1153,10 +1153,5 @@ export const views = {
     title: "Notificações",
     load: (api, token) => api.list(token, "/notifications"),
     render: (data) => notificationsView(data)
-  },
-  history: {
-    title: "Histórico",
-    load: (api, token) => api.list(token, "/history"),
-    render: (data) => historyView(data)
   }
 };
