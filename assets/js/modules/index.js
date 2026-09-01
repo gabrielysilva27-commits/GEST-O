@@ -1031,8 +1031,13 @@ function gerotNumber(value, unit) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "–";
   if (unit === "%") return new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number);
-  if (unit === "HORA") return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number * 24)} h`;
-  if (unit === "MIN") return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number * 1440)} min`;
+  if (unit === "HORA" || unit === "MIN") {
+    const seconds = Math.round(number * 86400);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  }
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number);
 }
 

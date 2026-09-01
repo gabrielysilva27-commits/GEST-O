@@ -62,9 +62,9 @@ const GEROT_MONTHS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "S
 const GEROT_WAREHOUSE_ROWS = [
   ["eficiencia-carregamento","IC","EFICIÊNCIA DE CARREGAMENTO","PRODUTIVIDADE","%",.9209,.9678488,.96,"higher",[.975422,.964615,.929775,.790393,.94721,.978689,.998387]],
   ["ressuprimento","IV","% RESSUPRIMENTO","PRODUTIVIDADE","%",.1893,.042375,.0423,"lower",[.0347,.0389,.0318,.0524,.0262,.0253,.0253]],
-  ["reabastecimento","IV","% REABASTECIMENTO","PRODUTIVIDADE","%",null,.1283,.1282,"lower",[.1209,.1178,.1093,.1236,.1065,.1166,.0982]],
+  ["reabastecimento","IV","% REABASTECIMENTO","PRODUTIVIDADE","",null,.1283,.1282,"lower",[.1209,.1178,.1093,.1236,.1065,.1166,.0982]],
   ["eficiencia-montagem","IV","EFICIÊNCIA DE MONTAGEM","PRODUTIVIDADE","%",.99,.856408,.85,"higher",[.89,.8949,.9,.91,.89,.9725,.9804]],
-  ["aderencia-wms","IC","ADERÊNCIA AO WMS (T2P)","PRODUTIVIDADE","%",null,.870798,.8709,"higher",[.913978,.9,.877809,.9517,.924586,.9,.956452]],
+  ["aderencia-wms","IC","ADERÊNCIA AO WMS (T2P)","PRODUTIVIDADE","",null,.870798,.8709,"higher",[.913978,.9,.877809,.9517,.924586,.9,.956452]],
   ["matriz-priorizacao","IV CRÍTICO","MATRIZ DE PRIORIZAÇÃO","PRODUTIVIDADE","%",.9466,.966744,.96,"higher",[.963134,.981538,.967697,.974277,.960784,.963934,.967742]],
   ["eficiencia-descarga","IC","EFICIÊNCIA DE DESCARGA","PRODUTIVIDADE","%",.9715,.994647,.9,"higher",[1,1,1,1,.995495,.996732,.99839]],
   ["tempo-interno-fisica","IC","TEMPO INTERNO (PC FÍSICA)","PRODUTIVIDADE","%",.9793,.977006,.85,"higher",[.987673,.978618,.9889,.9885,.977778,.9871,.9943]],
@@ -80,7 +80,7 @@ const GEROT_WAREHOUSE_ROWS = [
   ["indisponibilidade","IC","INDISPONIBILIDADE","QUALIDADE","%",null,.05675,.0567,"lower",[.0698,.0512,.0497,.0401,.0342,.0397,.0462]],
   ["inovacao","IC","INOVAÇÃO","QUALIDADE","%",null,.190917,.191,"higher",[.1746,.1495,.1608,.1387,.1572,.1754,.1772]],
   ["ocupacao-estoque","IC","OCUPAÇÃO DO ESTOQUE","QUALIDADE","%",.8085,.640517,.6,"range",[.6544,.607,.6356,.5486,.6762,.8145,.7487],.6,.9],
-  ["txr-armazem","IC","TxR (ARMAZÉM)","CUSTOS","%",null,.061156,null,"range",[-.020855,-.014634,-.012019,-.013845,-.015495,-.007804,-.014493],-.1,.1],
+  ["txr-armazem","IC","TxR (ARMAZÉM)","CUSTOS","",null,.061156,null,"range",[-.020855,-.014634,-.012019,-.013845,-.015495,-.007804,-.014493],-.1,.1],
   ["wlp","IC","WLP","PRODUTIVIDADE","N°",7.24,7.311743,4.78,"higher",[7.440083,8.070028,7.363353,8.267277,6.661119,6.388623,5.184681]],
   ["pnp","IC","PNP","PRODUTIVIDADE","N°",5.11,5.150499,5.16,"higher",[5.283238,5.262943,5.318635,5.239676,4.39758,4.078599,3.876878]],
   ["fnp","IC","FNP","PRODUTIVIDADE","N°",40.92,40.472332,40.48,"higher",[39.011638,41.967381,41.10354,41.166667,29.435644,42.300203,48.208431]],
@@ -704,6 +704,17 @@ function sanitizeDatabase(database) {
       userRecord.department = "ADMINISTRADOR";
     }
   });
+  const persistedGerotRows = arrayValue(sanitized.gerotWarehouse?.rows);
+  sanitized.gerotWarehouse = {
+    area: "ARMAZÉM",
+    year: 2026,
+    updatedAt: sanitized.gerotWarehouse?.updatedAt || null,
+    updatedBy: sanitized.gerotWarehouse?.updatedBy || null,
+    rows: GEROT_WAREHOUSE_ROWS.map((template) => {
+      const persisted = persistedGerotRows.find((item) => item.id === template.id);
+      return { ...clone(template), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...template.monthly] };
+    })
+  };
   sanitized.sequence.users = Math.max(
     toInt(sanitized.sequence.users, 0),
     ...sanitized.users.map((item) => toInt(item.id, 0))
