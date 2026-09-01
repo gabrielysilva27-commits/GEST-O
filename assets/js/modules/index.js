@@ -8,7 +8,6 @@ const MODULE_LABELS = {
   dto: "DTO - Diagnóstico de tarefa operacional",
   anomalyReports: "Relato de anomalia",
   gerot: "GEROT",
-  users: "Usuários e permissões",
   notifications: "Notificações",
   history: "Histórico"
 };
@@ -1149,11 +1148,6 @@ export const views = {
     title: "GEROT",
     load: (api, token) => api.list(token, "/gerot"),
     render: (data, context) => operationsView(gerotConfig, data, context)
-  },
-  users: {
-    title: "Usuários e permissões",
-    load: (api, token) => api.list(token, "/users"),
-    render: (data, context) => usersView(data, context)
   },
   notifications: {
     title: "Notificações",
