@@ -80,6 +80,10 @@ function applySecurityHeaders(headers) {
 async function fetchFromRepository(pathname, request) {
   const upstreamUrl = new URL(`${REPO_BASE_URL}${pathname}`);
   upstreamUrl.search = new URL(request.url).search;
+  // GitHub's raw endpoint can retain a branch response at an edge even after a
+  // deployment. A unique upstream URL prevents that stale copy from reaching
+  // clients while the Worker itself remains the single published endpoint.
+  upstreamUrl.searchParams.set("_lead_revision", String(Date.now()));
 
   return fetch(upstreamUrl, {
     headers: {
