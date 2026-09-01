@@ -821,10 +821,7 @@ function administrationView(data, context) {
   const userRows = users.map((item) => [
     escapeHtml(item.name),
     escapeHtml(item.username),
-    `<span class="badge info">${escapeHtml(item.roleLabel)}</span>`,
-    `<span class="badge ${badgeClass(item.status || "active")}">${escapeHtml(item.status || "active")}</span>`,
-    escapeHtml(item.companyName || "Não definida"),
-    escapeHtml(item.unitNames?.join(", ") || "Não definidas")
+    escapeHtml(item.unitNames?.join(", ") || "Não informado")
   ]);
 
   return `
@@ -851,7 +848,7 @@ function administrationView(data, context) {
       <div class="administration-form">${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}</div>
     </div>
     <div class="administration-user-actions"><button class="button secondary" type="button" data-export="users">Exportar usuários</button></div>
-    ${tableCard("Usuários cadastrados", "Informações de todos os usuários ativos e seus perfis de acesso.", ["Nome", "Usuário", "Perfil", "Status", "Empresa", "Unidades"], userRows, "administration-users")}
+    ${tableCard("Usuários cadastrados", "Informações dos usuários com acesso à plataforma.", ["Nome", "Usuário", "Setor"], userRows, "administration-users")}
   `;
 }
 
