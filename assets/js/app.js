@@ -1,6 +1,6 @@
-import { api, ApiError } from "./api.js?v=20260901-02";
+import { api, ApiError } from "./api.js?v=20260901-03";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260901-01";
+import { views } from "./modules/index.js?v=20260901-02";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -539,6 +539,34 @@ async function handleDynamicClick(event) {
   }
 
   const exportButton = event.target.closest("[data-export]");
+  const gerotEditButton = event.target.closest("[data-gerot-edit]");
+  if (gerotEditButton) {
+    elements.pageContent.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = false; });
+    gerotEditButton.hidden = true;
+    const saveButton = elements.pageContent.querySelector("[data-gerot-save]");
+    if (saveButton) saveButton.hidden = false;
+    showToast("Edição mensal liberada.");
+    return;
+  }
+
+  const gerotSaveButton = event.target.closest("[data-gerot-save]");
+  if (gerotSaveButton) {
+    try {
+      const rows = new Map();
+      elements.pageContent.querySelectorAll("[data-gerot-input]").forEach((input) => {
+        const id = input.dataset.gerotRow;
+        if (!rows.has(id)) rows.set(id, { id, monthly: Array(12).fill(null) });
+        rows.get(id).monthly[Number(input.dataset.gerotMonth)] = input.value === "" ? null : Number(input.value);
+      });
+      await api.patch(state.token, "/gerot/warehouse", { rows: [...rows.values()] });
+      showToast("GEROT Armazém atualizado com sucesso.");
+      await loadView("gerot");
+    } catch (error) {
+      handleError(error, "Não foi possível atualizar o GEROT.");
+    }
+    return;
+  }
+
   if (exportButton) {
     try {
       const entity = exportButton.dataset.export;

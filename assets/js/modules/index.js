@@ -1026,61 +1026,52 @@ const anomalyReportsConfig = {
   }
 };
 
-const gerotConfig = {
-  title: "GEROT",
-  description: "Acompanhe registros, frentes e encaminhamentos do GEROT em uma trilha única.",
-  tableTitle: "Registros GEROT",
-  tableDescription: "Itens GEROT ativos no seu escopo.",
-  headers: ["Registro", "Frente", "Unidade", "Responsável", "Status"],
-  formTitle: "Novo registro GEROT",
-  formDescription: "Abra um registro GEROT com responsável definido e prazo claro.",
-  dependencies: { requiresUnits: true, requiresUsers: true },
-  managePermission: "gerot.manage",
-  columns: [
-    (item) => escapeHtml(item.title),
-    (item) => escapeHtml(item.front || "Geral"),
-    (item, context) => escapeHtml(getLookupName(context.lookups, "units", item.unitId)),
-    (item, context) => escapeHtml(getUserLabel(context.lookups, item.ownerId)),
-    (item) => statusBadge(item.status || "open")
-  ],
-  form(context) {
-    return `
-      <form class="stack" data-form="gerot">
-        <label class="field">
-          <span>Título do registro</span>
-          <input name="title" required>
-        </label>
-        <div class="form-grid">
-          <label class="field">
-            <span>Frente</span>
-            <input name="front" placeholder="Rotina, tratativa, melhoria...">
-          </label>
-          <label class="field">
-            <span>Unidade</span>
-            <select name="unitId" required>${optionList(context.lookups.units)}</select>
-          </label>
-          <label class="field">
-            <span>Responsável</span>
-            <select name="ownerId" required>${optionList(context.lookups.users)}</select>
-          </label>
-          <label class="field">
-            <span>Status</span>
-            <select name="status">
-              <option value="open">Aberto</option>
-              <option value="in_progress">Em andamento</option>
-              <option value="closed">Encerrado</option>
-            </select>
-          </label>
-        </div>
-        <label class="field">
-          <span>Observações</span>
-          <textarea name="notes" placeholder="Registre contexto, tratativa e próximo passo"></textarea>
-        </label>
-        <button class="button primary" type="submit">Criar registro</button>
-      </form>
-    `;
-  }
-};
+function gerotNumber(value, unit) {
+  if (value === null || value === undefined || value === "") return "–";
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "–";
+  if (unit === "%") return new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number);
+  if (unit === "HORA") return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number * 24)} h`;
+  if (unit === "MIN") return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number * 1440)} min`;
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number);
+}
+
+function gerotYtd(row) {
+  const values = arrayValue(row.monthly).map(Number).filter(Number.isFinite);
+  return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+}
+
+function gerotGoalClass(row, value) {
+  if (!Number.isFinite(Number(value))) return "neutral";
+  if (row.goalMode === "higher") return Number(value) >= Number(row.target) ? "success" : "danger";
+  if (row.goalMode === "lower") return Number(value) <= Number(row.target) ? "success" : "danger";
+  return Number(value) >= Number(row.targetMin) && Number(value) <= Number(row.targetMax) ? "success" : "danger";
+}
+
+function gerotGoalLabel(row) {
+  if (row.goalMode === "range") return `${gerotNumber(row.targetMin, row.unit)} a ${gerotNumber(row.targetMax, row.unit)}`;
+  return gerotNumber(row.target, row.unit);
+}
+
+function gerotWarehouseView(data) {
+  const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+  const rows = arrayValue(data.rows).map((row) => {
+    const ytd = gerotYtd(row);
+    const monthly = months.map((month, index) => {
+      const value = row.monthly?.[index];
+      const status = gerotGoalClass(row, value);
+      return `<td class="gerot-value ${status}" data-label="${month}"><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}"></td>`;
+    }).join("");
+    return `<tr><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit)}</td><td>${gerotNumber(row.eoy2025, row.unit)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit)}</td>${monthly}</tr>`;
+  }).join("");
+  const canEdit = Boolean(data.canEdit);
+  return `
+    ${moduleHeader("GEROT", "Quadro geral de indicadores operacionais. O primeiro painel disponível é o Armazém; as demais áreas serão incluídas no mesmo formato.")}
+    <section class="gerot-toolbar"><div><span class="badge info">${escapeHtml(data.area || "ARMAZÉM")}</span><strong>GEROT ${escapeHtml(data.year || 2026)}</strong><small>Acumulado calculado pela média dos meses preenchidos.</small></div>${canEdit ? `<div><button class="button secondary" type="button" data-gerot-edit>Editar mês</button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : "<span class=\"text-muted\">Visualização disponível. A edição é exclusiva do setor Armazém.</span>"}</section>
+    <p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Metas avaliadas conforme direção ou faixa definida na planilha.</span></p>
+    <section class="table-card gerot-card"><div class="table-scroll"><table class="gerot-table"><thead><tr><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Unidade</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section>
+  `;
+}
 
 export const views = {
   dashboard: {
@@ -1150,7 +1141,7 @@ export const views = {
   gerot: {
     title: "GEROT",
     load: (api, token) => api.list(token, "/gerot"),
-    render: (data, context) => operationsView(gerotConfig, data, context)
+    render: (data) => gerotWarehouseView(data)
   },
   notifications: {
     title: "Notificações",

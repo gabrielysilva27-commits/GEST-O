@@ -58,6 +58,45 @@ const NAVIGATION = [
 ];
 
 const PASSWORD_HASH_GABY0739 = "5fab329183a90c4fa0f3d52559f267fc8a7c152c27c8f64a1d5efc25e058ea42";
+const GEROT_MONTHS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+const GEROT_WAREHOUSE_ROWS = [
+  ["eficiencia-carregamento","IC","EFICIÊNCIA DE CARREGAMENTO","PRODUTIVIDADE","%",.9209,.9678488,.96,"higher",[.975422,.964615,.929775,.790393,.94721,.978689,.998387]],
+  ["ressuprimento","IV","% RESSUPRIMENTO","PRODUTIVIDADE","%",.1893,.042375,.0423,"lower",[.0347,.0389,.0318,.0524,.0262,.0253,.0253]],
+  ["reabastecimento","IV","% REABASTECIMENTO","PRODUTIVIDADE","%",null,.1283,.1282,"lower",[.1209,.1178,.1093,.1236,.1065,.1166,.0982]],
+  ["eficiencia-montagem","IV","EFICIÊNCIA DE MONTAGEM","PRODUTIVIDADE","%",.99,.856408,.85,"higher",[.89,.8949,.9,.91,.89,.9725,.9804]],
+  ["aderencia-wms","IC","ADERÊNCIA AO WMS (T2P)","PRODUTIVIDADE","%",null,.870798,.8709,"higher",[.913978,.9,.877809,.9517,.924586,.9,.956452]],
+  ["matriz-priorizacao","IV CRÍTICO","MATRIZ DE PRIORIZAÇÃO","PRODUTIVIDADE","%",.9466,.966744,.96,"higher",[.963134,.981538,.967697,.974277,.960784,.963934,.967742]],
+  ["eficiencia-descarga","IC","EFICIÊNCIA DE DESCARGA","PRODUTIVIDADE","%",.9715,.994647,.9,"higher",[1,1,1,1,.995495,.996732,.99839]],
+  ["tempo-interno-fisica","IC","TEMPO INTERNO (PC FÍSICA)","PRODUTIVIDADE","%",.9793,.977006,.85,"higher",[.987673,.978618,.9889,.9885,.977778,.9871,.9943]],
+  ["tempo-interno-financeira","IC","TEMPO INTERNO (PC FINANCEIRA)","PRODUTIVIDADE","%",.8445,.944635,.85,"higher",[.955316,.935855,.957,.9656,.947009,.9576,.9472]],
+  ["tempo-interno-revenda","IC","TEMPO INTERNO (REVENDA)","PRODUTIVIDADE","%",.8479,.933037,.85,"higher",[.946071,.917763,.9506,.9542,.931624,.9502,.9415]],
+  ["tempo-interno","IV","TEMPO INTERNO","PRODUTIVIDADE","MIN",.015255,.010333,.020833,"lower",[.006311,.006909,.009722,.009722,.010456,.006944,.007639]],
+  ["stock-age","IC","STOCK AGE","QUALIDADE","%",.966,.991011,.9911,"higher",[.992008,.996536,.9969,.982047,.998168,.99573,.996258]],
+  ["stock-age-curva-c","IV","STOCK AGE (CURVA C)","QUALIDADE","%",.9612,.978225,.9783,"higher",[.981085,.990904,.9919,.980672,.995592,.999917,.999963]],
+  ["quebra-fefo","IV","QUEBRA DE FEFO","QUALIDADE","N°",8,5.75,6,"lower",[9,4,6,7,4,6,7]],
+  ["oor","IC","OOR","QUALIDADE","%",.697,.152958,.1529,"lower",[.1539,.1106,.0841,.1325,.0956,.0851,.0973]],
+  ["stock-out","IV","STOCK OUT","QUALIDADE","%",.3386,.120608,.1205,"lower",[.150678,.1051,.0794,.1252,.0936,.0825,.0963]],
+  ["stock-over","IV","STOCK OVER","QUALIDADE","%",.3592,.032358,.0323,"lower",[.003261,.0055,.0047,.0074,.0021,.0026,.001]],
+  ["indisponibilidade","IC","INDISPONIBILIDADE","QUALIDADE","%",null,.05675,.0567,"lower",[.0698,.0512,.0497,.0401,.0342,.0397,.0462]],
+  ["inovacao","IC","INOVAÇÃO","QUALIDADE","%",null,.190917,.191,"higher",[.1746,.1495,.1608,.1387,.1572,.1754,.1772]],
+  ["ocupacao-estoque","IC","OCUPAÇÃO DO ESTOQUE","QUALIDADE","%",.8085,.640517,.6,"range",[.6544,.607,.6356,.5486,.6762,.8145,.7487],.6,.9],
+  ["txr-armazem","IC","TxR (ARMAZÉM)","CUSTOS","%",null,.061156,null,"range",[-.020855,-.014634,-.012019,-.013845,-.015495,-.007804,-.014493],-.1,.1],
+  ["wlp","IC","WLP","PRODUTIVIDADE","N°",7.24,7.311743,4.78,"higher",[7.440083,8.070028,7.363353,8.267277,6.661119,6.388623,5.184681]],
+  ["pnp","IC","PNP","PRODUTIVIDADE","N°",5.11,5.150499,5.16,"higher",[5.283238,5.262943,5.318635,5.239676,4.39758,4.078599,3.876878]],
+  ["fnp","IC","FNP","PRODUTIVIDADE","N°",40.92,40.472332,40.48,"higher",[39.011638,41.967381,41.10354,41.166667,29.435644,42.300203,48.208431]],
+  ["tqi","IC","TQI ARMAZÉM","QUALIDADE","PPM",149.73,148.764407,148.75,"lower",[167.05376,171.659523,179.559498,186.149134,193.64759,183.418049,171.241195]],
+  ["tma","IC","TMA","PRODUTIVIDADE","HORA",.047025,.032952,.109167,"lower",[.031227,.03572,.031806,.040023,.036192,.031563,.028206]],
+  ["tr-nova-rio","IC","TR FABRIL NOVA RIO","PRODUTIVIDADE","HORA",.230822,.176872,.176872,"lower",[.141895,.143362,.13191,.148947,.158721,.145625,.135266]],
+  ["tr-pirai","IC","TR FABRIL PIRAI","PRODUTIVIDADE","HORA",.117037,.111363,.111363,"lower",[.109896,.098729,.106551,.119444,.105488,.084745,.087616]],
+  ["furo-puxada","IC","FURO DE PUXADA","PRODUTIVIDADE","%",.0143,.004992,.1,"lower",[0,0,0,0,.0051,0,.0184]],
+  ["eficiencia-puxada","IC","EFICIÊNCIA DE PUXADA","PRODUTIVIDADE","%",.9857,.995008,.9,"higher",[1,1,1,1,.9949,1,.9816]],
+  ["produtividade-repack","IC","PRODUTIVIDADE DO REPACK","PRODUTIVIDADE","HORA",.001319,.001221,.001204,"lower",[.001424,.001384,.001134,.0011,.001054,.001076,.001065]],
+  ["produtividade-despejo","IV","PRODUTIVIDADE DO DESPEJO","PRODUTIVIDADE","HORA",.029063,.035203,.035203,"lower",[.069979,.044928,.057454,.033171,.026389,.027627,.027083]],
+  ["pallets-avariados","IC","PALLETS PUXADO X AVARIADO","QUALIDADE","%",.0879,.048207,.0481,"lower",[.003668,.010913,.004736,.010913,.009467,.007805,.015654]],
+  ["ronda-qualidade","IC","RONDA DE QUALIDADE","QUALIDADE","%",.9066,.928025,.9281,"higher",[.9615,.9593,.9615,.9545,.97,.9554,.9844]],
+  ["falha-bloqueio","IC","FALHA NO BLOQUEIO","QUALIDADE","N°",0,0,0,"lower",[0,0,0,0,0,0,0]],
+  ["cinco-s","IC","5S","QUALIDADE","%",.9214,.929064,.85,"higher",[.9369,.9375,.94,.95,.9422,.9532,.9351]]
+].map(([id,type,indicator,product,unit,eoy2024,eoy2025,target,goalMode,monthly,targetMin,targetMax]) => ({ id,type,indicator,product,unit,eoy2024,eoy2025,target,goalMode,targetMin,targetMax,monthly:[...monthly,...Array(12-monthly.length).fill(null)] }));
 const ADDITIONAL_SEEDED_USERS = [
   ["CHRISTOFEE DOS SANTOS SILVA ARAUJO", "Christofee", "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161", "CA", "Christofee Araujo", "FROTA"],
   ["DIEGO DA SILVA TEIXEIRA", "Diego", "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d", "DT", "Diego Teixeira", "CONTROLE"],
@@ -388,6 +427,13 @@ const INITIAL_DATABASE = {
   dtoRecords: [],
   anomalyReports: [],
   gerotRecords: [],
+  gerotWarehouse: {
+    area: "ARMAZÉM",
+    year: 2026,
+    rows: GEROT_WAREHOUSE_ROWS,
+    updatedAt: "2026-09-01T00:00:00.000Z",
+    updatedBy: null
+  },
   notifications: [],
   history: [],
     sessions: [],
@@ -624,6 +670,9 @@ function sanitizeDatabase(database) {
     dtoRecords: arrayValue(database.dtoRecords),
     anomalyReports: arrayValue(database.anomalyReports),
     gerotRecords: arrayValue(database.gerotRecords),
+    gerotWarehouse: database.gerotWarehouse?.area === "ARMAZÉM"
+      ? database.gerotWarehouse
+      : { area: "ARMAZÉM", year: 2026, rows: clone(GEROT_WAREHOUSE_ROWS), updatedAt: null, updatedBy: null },
     notifications: arrayValue(database.notifications),
     history: arrayValue(database.history),
       sessions: arrayValue(database.sessions),
@@ -896,6 +945,40 @@ function ensureGabrielyAdministration(user) {
   if (user.username !== "Gabriely" || user.role !== "admin") {
     throw new ApiError("A administração de reuniões é exclusiva da Gabriely.", 403);
   }
+}
+
+function canEditWarehouseGerot(user) {
+  const department = String(user?.department || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  return isGabrielyAdministrator(user) || department === "ARMAZEM";
+}
+
+function updateWarehouseGerot(database, user, payload) {
+  ensurePermission(user, "gerot.read");
+  if (!canEditWarehouseGerot(user)) {
+    throw new ApiError("A edição do GEROT Armazém é permitida somente ao setor Armazém e à Gabriely.", 403);
+  }
+  const warehouse = database.gerotWarehouse;
+  const updates = arrayValue(payload?.rows);
+  updates.forEach((update) => {
+    const row = warehouse.rows.find((item) => item.id === update.id);
+    if (!row || !Array.isArray(update.monthly)) return;
+    row.monthly = GEROT_MONTHS.map((_, index) => {
+      const value = update.monthly[index];
+      return value === "" || value === null || typeof value === "undefined" ? null : Number(value);
+    });
+  });
+  warehouse.updatedAt = nowIso();
+  warehouse.updatedBy = toInt(user.id);
+  addHistoryEntry(database, {
+    module: "gerot",
+    action: "updated",
+    entityId: 1,
+    actorId: user.id,
+    companyId: 0,
+    unitId: 0,
+    description: "GEROT Armazém atualizado."
+  });
+  return { item: warehouse };
 }
 
 function buildLookups(database, user) {
@@ -2157,9 +2240,12 @@ function listPath(database, user, path) {
     case "/gerot":
       ensurePermission(user, "gerot.read");
       return {
-        items: getScopedCollection(database, user, "gerotRecords").sort((left, right) =>
-          String(right.updatedAt || right.createdAt).localeCompare(String(left.updatedAt || left.createdAt))
-        )
+        area: "ARMAZÉM",
+        year: database.gerotWarehouse.year || 2026,
+        rows: database.gerotWarehouse.rows,
+        updatedAt: database.gerotWarehouse.updatedAt,
+        updatedBy: database.gerotWarehouse.updatedBy,
+        canEdit: canEditWarehouseGerot(user)
       };
     case "/notifications": {
       ensurePermission(user, "notifications.view");
@@ -2271,6 +2357,10 @@ function patchPath(database, user, path, body = {}) {
   const deleteMeetingMatch = path.match(/^\/administration\/meetings\/(\d+)\/delete$/);
   if (deleteMeetingMatch) {
     return deleteAdministrationMeeting(database, user, deleteMeetingMatch[1]);
+  }
+
+  if (path === "/gerot/warehouse") {
+    return updateWarehouseGerot(database, user, body);
   }
 
   throw new ApiError("Endpoint não encontrado.", 404);
