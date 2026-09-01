@@ -110,7 +110,7 @@ function cacheControlFor(route) {
     return "no-cache";
   }
 
-  return "public, max-age=31536000, immutable";
+  return "no-cache";
 }
 
 function buildResponse(asset) {
