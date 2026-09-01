@@ -1058,6 +1058,11 @@ function buildDashboard(database, user) {
         label: "Ações em andamento",
         value: openActions.length,
         helper: "Ações abertas da equipe"
+      },
+      {
+        label: "Reuniões em andamento",
+        value: activeMeetings.length,
+        helper: "Reuniões agendadas ou em execução"
       }
     ],
     charts: {
