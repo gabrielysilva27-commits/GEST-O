@@ -118,6 +118,17 @@ const GEROT_FORMULAS = {
   "stock-age": ["hl-total", "hl-nok"], "stock-age-curva-c": ["hl-total-curva-c", "hl-nok-curva-c"], "txr-armazem": ["txr-tendencia", "txr-real"], "wlp": ["wlp-ajudantes", "wlp-operadores", "wlp-volume", "wlp-dias"],
   "pnp": ["pnp-volume", "pnp-dias", "pnp-ajudantes", "pnp-operadores", "pnp-conferentes", "pnp-adm"], "fnp": ["fnp-volume", "fnp-horas"], "tqi": ["tqi-hl-baixado", "tqi-volume"], "pallets-avariados": ["pallets-avariados-base", "pallets-puxados"]
 };
+const GEROT_YTD_CALCULATIONS = {
+  "stock-age": "average-monthly-result",
+  "stock-age-curva-c": "source-value",
+  "txr-armazem": "source-value"
+};
+const GEROT_MONTHLY_SOURCE_OVERRIDES = {
+  "aderencia-wms": [3],
+  "eficiencia-descarga": [3],
+  "stock-age": [2],
+  "stock-age-curva-c": [2]
+};
 const GEROT_YTD_REFERENCE = {
   "eficiencia-carregamento": .9386022207707381, ressuprimento: .03351428571428571, reabastecimento: .11327142857142856, "eficiencia-montagem": .9196857142857143,
   "aderencia-wms": .917483126496843, "matriz-priorizacao": .9684187279151943, "eficiencia-descarga": .9986953685583823, "tempo-interno-fisica": .9861242203479937,
@@ -129,7 +140,7 @@ const GEROT_YTD_REFERENCE = {
   "produtividade-despejo": .04094724367822193, "pallets-avariados": .008819538670284939, "ronda-qualidade": .9638, "falha-bloqueio": 0, "cinco-s": .9421285714285714
 };
 const GEROT_NUMERIC_FORMATS = { reabastecimento: "%", "aderencia-wms": "%", "txr-armazem": "%" };
-const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, referenceYtd: GEROT_YTD_REFERENCE[row.id], displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
+const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, sourceMonthly: [...row.monthly], monthlySourceOverrides: GEROT_MONTHLY_SOURCE_OVERRIDES[row.id] || [], referenceYtd: GEROT_YTD_REFERENCE[row.id], ytdCalculation: GEROT_YTD_CALCULATIONS[row.id] || "formula", displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
 const ADDITIONAL_SEEDED_USERS = [
   ["CHRISTOFEE DOS SANTOS SILVA ARAUJO", "Christofee", "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161", "CA", "Christofee Araujo", "FROTA"],
   ["DIEGO DA SILVA TEIXEIRA", "Diego", "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d", "DT", "Diego Teixeira", "CONTROLE"],

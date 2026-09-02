@@ -1026,6 +1026,8 @@ const anomalyReportsConfig = {
   }
 };
 
+const GEROT_MONTHS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
 function gerotNumber(value, unit, displayFormat = unit) {
   if (value === null || value === undefined || value === "") return "–";
   const number = Number(value);
@@ -1042,29 +1044,48 @@ function gerotNumber(value, unit, displayFormat = unit) {
 }
 
 function gerotYtd(row, rows, calculatedYtd = false) {
+  if (row.ytdCalculation === "source-value") return row.referenceYtd;
   if (!calculatedYtd && Object.prototype.hasOwnProperty.call(row, "referenceYtd")) return row.referenceYtd;
+  if (row.ytdCalculation === "average-monthly-result") {
+    const results = GEROT_MONTHS.map((_, index) => gerotCalculatedValue(row, rows, index, calculatedYtd)).filter(Number.isFinite);
+    return results.length ? results.reduce((sum, value) => sum + value, 0) / results.length : null;
+  }
   if (arrayValue(row.formulaInputs).length) return gerotCalculatedValue(row, rows, null, calculatedYtd);
-  const values = arrayValue(row.monthly).map(Number).filter(Number.isFinite);
+  const values = arrayValue(row.monthly)
+    .filter((value) => value !== null && value !== undefined && value !== "")
+    .map(Number)
+    .filter(Number.isFinite);
   if (!values.length) return null;
   const total = values.reduce((sum, value) => sum + value, 0);
   return row.aggregation === "sum" ? total : total / values.length;
 }
 
 function gerotCalculatedValue(row, rows, monthIndex, calculatedYtd = false) {
+  const sourceInputsMatchPlan = monthIndex !== null && arrayValue(row.formulaInputs).every((id) => {
+    const source = rows.find((item) => item.id === id);
+    return Number(source?.monthly?.[monthIndex]) === Number(source?.sourceMonthly?.[monthIndex]);
+  });
+  if (monthIndex !== null && arrayValue(row.monthlySourceOverrides).includes(monthIndex) && sourceInputsMatchPlan) {
+    const sourceResult = Number(row.monthly?.[monthIndex]);
+    if (Number.isFinite(sourceResult)) return sourceResult;
+  }
   const valueFor = (id) => {
     const source = rows.find((item) => item.id === id);
-    return monthIndex === null ? gerotYtd(source, rows, calculatedYtd) : Number(source?.monthly?.[monthIndex]);
+    if (monthIndex === null) return gerotYtd(source, rows, calculatedYtd);
+    const value = source?.monthly?.[monthIndex];
+    return value === null || value === undefined || value === "" ? null : Number(value);
   };
   const [a, b, c, d, e, f] = arrayValue(row.formulaInputs).map(valueFor);
   if (![a, b].every(Number.isFinite)) return null;
+  const assistantHours = row.id === "pnp" && monthIndex === 0 ? 7.35 : monthIndex !== null && monthIndex >= 9 ? 7.83 : monthIndex !== null && monthIndex >= 7 ? 7.35 : 7.36;
   switch (row.id) {
     case "eficiencia-carregamento": case "aderencia-wms": case "matriz-priorizacao": return b ? a / b : null;
     case "eficiencia-descarga": return a + b ? a / (a + b) : null;
     case "stock-age": return a ? 1 - b / a : null;
     case "stock-age-curva-c": return a + b ? a / (a + b) : null;
     case "txr-armazem": return b ? 1 - a / b : null;
-    case "wlp": return c && d ? c / ((a * 7.36 + b * 7.33) * d) : null;
-    case "pnp": return a && b ? a / ((c * 7.36 + d * 7.33 + e * 8.33 + f * 8.08) * b) : null;
+    case "wlp": return c && d ? c / ((a * assistantHours + b * 7.33) * d) : null;
+    case "pnp": return a && b ? a / ((c * assistantHours + d * 7.33 + e * 8.33 + f * 8.08) * b) : null;
     case "fnp": return b ? a / b : null;
     case "tqi": return b ? a / b * 1000000 : null;
     case "pallets-avariados": return b ? a / b : null;
@@ -1087,7 +1108,7 @@ function gerotGoalLabel(row) {
 }
 
 function gerotWarehouseView(data) {
-  const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+  const months = GEROT_MONTHS;
   const allRows = arrayValue(data.rows);
   const indicatorCount = allRows.filter((row) => !row.calculationInput).length;
   const rowsById = new Map(allRows.map((row) => [row.id, row]));
