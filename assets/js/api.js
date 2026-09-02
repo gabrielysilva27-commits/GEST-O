@@ -1,5 +1,6 @@
 import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
 import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260831-01";
+import { IMPORTED_GEROT_AREAS } from "./gerot-imports.js?v=20260902-01";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
@@ -141,6 +142,18 @@ const GEROT_YTD_REFERENCE = {
 };
 const GEROT_NUMERIC_FORMATS = { reabastecimento: "%", "aderencia-wms": "%", "txr-armazem": "%" };
 const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, sourceMonthly: [...row.monthly], monthlySourceOverrides: GEROT_MONTHLY_SOURCE_OVERRIDES[row.id] || [], referenceYtd: GEROT_YTD_REFERENCE[row.id], ytdCalculation: GEROT_YTD_CALCULATIONS[row.id] || "formula", displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
+const GEROT_IMPORTED_AREA_TEMPLATES = Object.fromEntries(IMPORTED_GEROT_AREAS.map((area) => {
+  const rows = area.rows.map((row) => ({ ...row, sourceMonthly: [...row.monthly], displayFormat: row.unit, goalMode: row.targetMode === "MA" ? "higher" : row.targetMode === "ME" ? "lower" : row.targetMode === "ABS" ? "absolute" : "none" }));
+  const idBySheetRow = new Map(rows.map((row) => [row.sheetRow, row.id]));
+  return [area.area, {
+    ...area,
+    rows: rows.map((row) => ({
+      ...row,
+      formulaInputs: [...new Set((row.formulas || []).join(" ").match(/[A-Z]+(\d+)/g)?.map((reference) => idBySheetRow.get(Number(reference.match(/\d+/)[0]))) || [])]
+        .filter((id) => rows.find((item) => item.id === id)?.calculationInput)
+    }))
+  }];
+}));
 const ADDITIONAL_SEEDED_USERS = [
   ["CHRISTOFEE DOS SANTOS SILVA ARAUJO", "Christofee", "b489d3cb0b5b0397f6672b9a85090f733140922d3493d637fdf77308edf97161", "CA", "Christofee Araujo", "FROTA"],
   ["DIEGO DA SILVA TEIXEIRA", "Diego", "f4014a4bb63d77adceb23aa3f7dfa7944fb3c31f7e521a51cee71b8b3451227d", "DT", "Diego Teixeira", "CONTROLE"],
@@ -479,6 +492,14 @@ const INITIAL_DATABASE = {
     updatedAt: "2026-09-01T00:00:00.000Z",
     updatedBy: null
   },
+  gerotAdditionalAreas: Object.fromEntries(Object.entries(GEROT_IMPORTED_AREA_TEMPLATES).map(([area, template]) => [area, {
+    area,
+    year: 2026,
+    rows: clone(template.rows),
+    calculatedYtd: false,
+    updatedAt: "2026-09-01T00:00:00.000Z",
+    updatedBy: null
+  }])),
   notifications: [],
   history: [],
     sessions: [],
@@ -715,6 +736,7 @@ function sanitizeDatabase(database) {
     dtoRecords: arrayValue(database.dtoRecords),
     anomalyReports: arrayValue(database.anomalyReports),
     gerotRecords: arrayValue(database.gerotRecords),
+    gerotAdditionalAreas: database.gerotAdditionalAreas || {},
     gerotWarehouse: database.gerotWarehouse?.area === "ARMAZÉM"
       ? database.gerotWarehouse
       : { area: "ARMAZÉM", year: 2026, rows: clone(GEROT_WAREHOUSE_ROWS), updatedAt: null, updatedBy: null },
@@ -761,6 +783,22 @@ function sanitizeDatabase(database) {
       return { ...clone(template), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...template.monthly] };
     })
   };
+  const persistedAdditionalAreas = sanitized.gerotAdditionalAreas || {};
+  sanitized.gerotAdditionalAreas = Object.fromEntries(Object.entries(GEROT_IMPORTED_AREA_TEMPLATES).map(([area, template]) => {
+    const persistedArea = persistedAdditionalAreas[area] || {};
+    const persistedRows = arrayValue(persistedArea.rows);
+    return [area, {
+      area,
+      year: 2026,
+      updatedAt: persistedArea.updatedAt || null,
+      updatedBy: persistedArea.updatedBy || null,
+      calculatedYtd: Boolean(persistedArea.calculatedYtd),
+      rows: template.rows.map((row) => {
+        const persisted = persistedRows.find((item) => item.id === row.id);
+        return { ...clone(row), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...row.monthly] };
+      })
+    }];
+  }));
   sanitized.sequence.users = Math.max(
     toInt(sanitized.sequence.users, 0),
     ...sanitized.users.map((item) => toInt(item.id, 0))
@@ -1009,6 +1047,11 @@ function canEditWarehouseGerot(user) {
   return isGabrielyAdministrator(user) || department === "ARMAZEM";
 }
 
+function canEditGerotArea(user, area) {
+  const department = String(user?.department || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  return isGabrielyAdministrator(user) || department === String(area).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+}
+
 function updateWarehouseGerot(database, user, payload) {
   ensurePermission(user, "gerot.read");
   if (!canEditWarehouseGerot(user)) {
@@ -1037,6 +1080,22 @@ function updateWarehouseGerot(database, user, payload) {
     description: "GEROT Armazém atualizado."
   });
   return { item: warehouse };
+}
+
+function updateGerotArea(database, user, payload) {
+  const area = String(payload?.area || "ARMAZÉM").toUpperCase();
+  if (area === "ARMAZÉM") return updateWarehouseGerot(database, user, payload);
+  ensurePermission(user, "gerot.read");
+  if (!canEditGerotArea(user, area)) throw new ApiError("A edição deste GEROT é permitida somente ao setor correspondente e à Gabriely.", 403);
+  const record = database.gerotAdditionalAreas?.[area];
+  if (!record) throw new ApiError("Área do GEROT não encontrada.", 404);
+  arrayValue(payload.rows).forEach((update) => {
+    const row = record.rows.find((item) => item.id === update.id);
+    if (!row || arrayValue(row.formulas).some(Boolean) || !Array.isArray(update.monthly)) return;
+    row.monthly = GEROT_MONTHS.map((_, index) => update.monthly[index] === null || update.monthly[index] === "" || typeof update.monthly[index] === "undefined" ? null : Number(update.monthly[index]));
+  });
+  record.updatedAt = nowIso(); record.updatedBy = toInt(user.id); record.calculatedYtd = true;
+  return { item: record };
 }
 
 function buildLookups(database, user) {
@@ -2298,13 +2357,10 @@ function listPath(database, user, path) {
     case "/gerot":
       ensurePermission(user, "gerot.read");
       return {
-        area: "ARMAZÉM",
-        year: database.gerotWarehouse.year || 2026,
-        rows: database.gerotWarehouse.rows,
-        updatedAt: database.gerotWarehouse.updatedAt,
-        updatedBy: database.gerotWarehouse.updatedBy,
-        calculatedYtd: Boolean(database.gerotWarehouse.calculatedYtd),
-        canEdit: canEditWarehouseGerot(user)
+        areas: [database.gerotWarehouse, ...Object.values(database.gerotAdditionalAreas || {})].map((record) => ({
+          ...record,
+          canEdit: canEditGerotArea(user, record.area)
+        }))
       };
     case "/notifications": {
       ensurePermission(user, "notifications.view");
@@ -2419,7 +2475,7 @@ function patchPath(database, user, path, body = {}) {
   }
 
   if (path === "/gerot/warehouse") {
-    return updateWarehouseGerot(database, user, body);
+    return updateGerotArea(database, user, body);
   }
 
   throw new ApiError("Endpoint não encontrado.", 404);

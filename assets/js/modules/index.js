@@ -1043,9 +1043,90 @@ function gerotNumber(value, unit, displayFormat = unit) {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number);
 }
 
-function gerotYtd(row, rows, calculatedYtd = false) {
-  if (row.ytdCalculation === "source-value") return row.referenceYtd;
+function gerotUnwrapIfError(formula) {
+  const expression = String(formula || "").replace(/^=/, "").trim();
+  if (!/^IFERROR\(/i.test(expression) || !expression.endsWith(")")) return expression;
+  const content = expression.slice(expression.indexOf("(") + 1, -1);
+  let depth = 0;
+  for (let index = 0; index < content.length; index += 1) {
+    if (content[index] === "(") depth += 1;
+    if (content[index] === ")") depth -= 1;
+    if (content[index] === "," && depth === 0) return content.slice(0, index);
+  }
+  return content;
+}
+
+function gerotColumnIndex(column) {
+  let value = 0;
+  for (const character of column) value = value * 26 + character.charCodeAt(0) - 64;
+  return value - 15; // O = primeiro mês
+}
+
+function gerotSpreadsheetFormula(row, rows, formula, monthIndex, stack = new Set()) {
+  if (!formula) return null;
+  const key = `${row.id}:${monthIndex ?? "ytd"}`;
+  if (stack.has(key)) return null;
+  const nextStack = new Set(stack).add(key);
+  const rowsBySheetRow = new Map(rows.map((item) => [Number(item.sheetRow), item]));
+  const numeric = (value) => Number.isFinite(Number(value)) ? Number(value) : null;
+  const cell = (reference) => {
+    const match = String(reference).match(/^([A-Z]+)(\d+)$/);
+    if (!match) return null;
+    const [, column, rowNumber] = match;
+    const source = rowsBySheetRow.get(Number(rowNumber));
+    if (!source) return null;
+    if (column === "N") return gerotYtd(source, rows, true, nextStack);
+    const index = gerotColumnIndex(column);
+    if (index < 0 || index > 11) return null;
+    const sourceFormula = arrayValue(source.formulas)[index];
+    return sourceFormula ? gerotSpreadsheetFormula(source, rows, sourceFormula, index, nextStack) : numeric(source.monthly?.[index]);
+  };
+  const range = (from, to) => {
+    const start = String(from).match(/^([A-Z]+)(\d+)$/);
+    const end = String(to).match(/^([A-Z]+)(\d+)$/);
+    if (!start || !end) return [];
+    const values = [];
+    for (let rowNumber = Number(start[2]); rowNumber <= Number(end[2]); rowNumber += 1) {
+      for (let column = gerotColumnIndex(start[1]); column <= gerotColumnIndex(end[1]); column += 1) {
+        const value = cell(`${String.fromCharCode(79 + column)}${rowNumber}`);
+        if (Number.isFinite(value)) values.push(value);
+      }
+    }
+    return values;
+  };
+  const sum = (values) => values.reduce((total, value) => total + value, 0);
+  const average = (values) => values.length ? sum(values) / values.length : null;
+  const ranges = [];
+  const expression = gerotUnwrapIfError(formula)
+    .replace(/^IF\((SUM\([^)]*\))=0,"",\(?\1\)?\)$/i, "$1")
+    .replace(/\$([A-Z]+)/g, "$1")
+    .replace(/([A-Z]+\d+):([A-Z]+\d+)/g, (_, from, to) => {
+      ranges.push([from, to]);
+      return `__range${ranges.length - 1}__`;
+    })
+    .replace(/\bSUM\(/gi, "sum(")
+    .replace(/\bAVERAGE\(/gi, "average(")
+    .replace(/\bABS\(/gi, "abs(")
+    .replace(/\b([A-Z]{1,2}\d+)\b/g, (_, reference) => `cell("${reference}")`)
+    .replace(/__range(\d+)__/g, (_, index) => `range("${ranges[index][0]}", "${ranges[index][1]}")`);
+  try {
+    return numeric(Function("cell", "range", "sum", "average", "abs", `return (${expression});`)(cell, range, sum, average, Math.abs));
+  } catch {
+    return null;
+  }
+}
+
+function gerotYtd(row, rows, calculatedYtd = false, stack = new Set()) {
   if (!calculatedYtd && Object.prototype.hasOwnProperty.call(row, "referenceYtd")) return row.referenceYtd;
+  if (calculatedYtd && row.ytdFormula) {
+    const calculated = gerotSpreadsheetFormula(row, rows, row.ytdFormula, null, stack);
+    if (Number.isFinite(calculated)) return calculated;
+  }
+  if (arrayValue(row.formulas).some(Boolean)) {
+    const values = GEROT_MONTHS.map((_, index) => gerotSpreadsheetFormula(row, rows, arrayValue(row.formulas)[index], index, stack)).filter(Number.isFinite);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : row.referenceYtd;
+  }
+  if (row.ytdCalculation === "source-value") return row.referenceYtd;
   if (row.ytdCalculation === "average-monthly-result") {
     const results = GEROT_MONTHS.map((_, index) => gerotCalculatedValue(row, rows, index, calculatedYtd)).filter(Number.isFinite);
     return results.length ? results.reduce((sum, value) => sum + value, 0) / results.length : null;
@@ -1098,23 +1179,36 @@ function gerotGoalClass(row, value) {
   if (!Number.isFinite(Number(value))) return "neutral";
   if (row.goalMode === "higher") return Number(value) >= Number(row.target) ? "success" : "danger";
   if (row.goalMode === "lower") return Number(value) <= Number(row.target) ? "success" : "danger";
+  if (row.goalMode === "absolute") return Math.abs(Number(value)) <= Math.abs(Number(String(row.target).replace(/[^0-9.,-]/g, "").replace(",", "."))) ? "success" : "danger";
   return Number(value) >= Number(row.targetMin) && Number(value) <= Number(row.targetMax) ? "success" : "danger";
 }
 
 function gerotGoalLabel(row) {
   if (row.goalMode === "none") return "Memória";
+  if (row.goalMode === "absolute") return String(row.target || "–");
   if (row.goalMode === "range") return `${gerotNumber(row.targetMin, row.unit, row.displayFormat)} a ${gerotNumber(row.targetMax, row.unit, row.displayFormat)}`;
   return gerotNumber(row.target, row.unit, row.displayFormat);
 }
 
 function gerotWarehouseView(data) {
+  if (Array.isArray(data.areas)) {
+    return `${moduleHeader("GEROT", "Quadro geral de indicadores operacionais por área.")}
+      <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong>GEROT 2026</strong><small>Selecione uma área para consultar os indicadores e suas memórias de cálculo.</small></div><label class="gerot-area-field"><span>Área</span><select data-gerot-area aria-label="Selecionar área do GEROT"><option>GERAL</option>${data.areas.map((area) => `<option>${escapeHtml(area.area)}</option>`).join("")}</select></label></section><section class="empty-state gerot-unavailable" data-gerot-unavailable><strong data-gerot-unavailable-title>Quadro geral</strong><p data-gerot-unavailable-copy>Escolha Armazém, Entrega, Controle ou Planejamento para abrir o quadro detalhado da área.</p></section>${data.areas.map((area) => `<div data-gerot-panel="${escapeHtml(area.area)}" hidden>${gerotWarehouseView({ ...area, embedded: true })}</div>`).join("")}`;
+  }
   const months = GEROT_MONTHS;
   const allRows = arrayValue(data.rows);
   const indicatorCount = allRows.filter((row) => !row.calculationInput).length;
   const rowsById = new Map(allRows.map((row) => [row.id, row]));
   const renderedMemoryRows = new Set();
+  const memoryRowsFor = (row, visited = new Set()) => arrayValue(row.formulaInputs).flatMap((id) => {
+    if (visited.has(id)) return [];
+    const memoryRow = rowsById.get(id);
+    if (!memoryRow) return [];
+    const nextVisited = new Set(visited).add(id);
+    return [memoryRow, ...memoryRowsFor(memoryRow, nextVisited)];
+  });
   const orderedRows = allRows.filter((row) => !row.calculationInput).flatMap((row) => {
-    const memoryRows = arrayValue(row.formulaInputs).map((id) => rowsById.get(id)).filter(Boolean);
+    const memoryRows = memoryRowsFor(row);
     memoryRows.forEach((memoryRow) => renderedMemoryRows.add(memoryRow.id));
     return [row, ...memoryRows];
   });
@@ -1122,9 +1216,11 @@ function gerotWarehouseView(data) {
   const rows = orderedRows.map((row) => {
     const ytd = gerotYtd(row, allRows, Boolean(data.calculatedYtd));
     const monthly = months.map((month, index) => {
-      const value = arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index, Boolean(data.calculatedYtd)) : row.monthly?.[index];
+      const spreadsheetFormula = arrayValue(row.formulas)[index];
+      const calculated = spreadsheetFormula && data.calculatedYtd ? gerotSpreadsheetFormula(row, allRows, spreadsheetFormula, index) : arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index, Boolean(data.calculatedYtd)) : row.monthly?.[index];
+      const value = calculated ?? row.monthly?.[index];
       const status = gerotGoalClass(row, value);
-      const editable = !arrayValue(row.formulaInputs).length;
+      const editable = !arrayValue(row.formulaInputs).length && !arrayValue(row.formulas).some(Boolean);
       return `<td class="gerot-value ${status}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;
     }).join("");
     return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}</tr>`;
@@ -1132,9 +1228,9 @@ function gerotWarehouseView(data) {
   const canEdit = Boolean(data.canEdit);
   const ytdSummary = data.calculatedYtd ? "Acumulado recalculado a partir das memórias preenchidas." : "Acumulado inicial espelhado da planilha de referência.";
   return `
-    ${moduleHeader("GEROT", "Quadro geral de indicadores operacionais. O primeiro painel disponível é o Armazém; as demais áreas serão incluídas no mesmo formato.")}
-    <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong data-gerot-title>ARMAZÉM · GEROT ${escapeHtml(data.year || 2026)}</strong><small data-gerot-summary data-gerot-default-summary="${escapeHtml(ytdSummary)}">${escapeHtml(ytdSummary)}</small></div><div class="gerot-toolbar-actions"><label class="gerot-area-field"><span>Área</span><select data-gerot-area aria-label="Selecionar área do GEROT"><option>GERAL</option><option selected>ARMAZÉM</option><option>ENTREGA</option><option>CONTROLE</option><option>PLANEJAMENTO</option></select></label>${canEdit ? `<div class="gerot-editor-actions"><button class="button secondary" type="button" data-gerot-edit>Editar mês</button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : ""}</div></section>
-    <section class="gerot-summary-strip" data-gerot-details><span><strong>${indicatorCount}</strong> indicadores</span><span><strong>${escapeHtml(data.year || 2026)}</strong> competência</span><span>Visualização para todos os usuários</span>${!canEdit ? "<span>Edição exclusiva: Armazém e Gabriely</span>" : ""}</section>
+    ${data.embedded ? "" : moduleHeader("GEROT", "Quadro geral de indicadores operacionais.")}
+    <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong data-gerot-title>${escapeHtml(data.area || "ARMAZÉM")} · GEROT ${escapeHtml(data.year || 2026)}</strong><small data-gerot-summary data-gerot-default-summary="${escapeHtml(ytdSummary)}">${escapeHtml(ytdSummary)}</small></div><div class="gerot-toolbar-actions">${canEdit ? `<div class="gerot-editor-actions"><button class="button secondary" type="button" data-gerot-edit>Editar mês</button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : ""}</div></section>
+    <section class="gerot-summary-strip" data-gerot-details><span><strong>${indicatorCount}</strong> indicadores</span><span><strong>${escapeHtml(data.year || 2026)}</strong> competência</span><span>Visualização para todos os usuários</span>${!canEdit ? `<span>Edição exclusiva: ${escapeHtml(data.area || "Armazém")} e Gabriely</span>` : ""}</section>
     <section data-gerot-details><p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Metas avaliadas conforme direção ou faixa definida na planilha.</span></p>
     <section class="table-card gerot-card"><div class="table-scroll"><table class="gerot-table"><thead><tr><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Unidade</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section></section>
     <section class="empty-state gerot-unavailable" data-gerot-unavailable hidden><strong data-gerot-unavailable-title>GEROT ainda não disponível</strong><p data-gerot-unavailable-copy>A planilha desta área será incluída assim que for importada.</p></section>
