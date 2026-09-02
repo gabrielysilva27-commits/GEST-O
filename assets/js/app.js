@@ -1,7 +1,7 @@
 import { api, ApiError } from "./api.js?v=20260902-02";
 import { createAuditApi } from "./audit-api.js?v=20260902-01";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260902-02";
+import { views } from "./modules/index.js?v=20260902-03";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),

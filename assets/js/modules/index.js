@@ -344,6 +344,16 @@ function auditPanelView(data, context) {
     { label: "Em andamento", value: counts.in_progress, helper: "Atuação registrada agora" },
     { label: "Concluídas", value: counts.done, helper: `${items.length ? Math.round((counts.done / items.length) * 100) : 0}% da carteira` }
   ];
+  const ownerSummary = ownerOptions.map((owner) => {
+    const ownerItems = items.filter((item) => item.responsavel === owner);
+    const completed = ownerItems.filter((item) => item.status === "done").length;
+    return { owner, total: ownerItems.length, completed, progress: ownerItems.length ? Math.round((completed / ownerItems.length) * 100) : 0 };
+  });
+  const statusSummary = [
+    { status: "pending", label: "Não iniciadas", value: counts.pending },
+    { status: "in_progress", label: "Em andamento", value: counts.in_progress },
+    { status: "done", label: "Concluídas", value: counts.done }
+  ].map((entry) => ({ ...entry, progress: items.length ? Math.round((entry.value / items.length) * 100) : 0 }));
 
   const rows = items.map((item) => {
     const canMove = item.username === context.user?.username;
@@ -366,7 +376,23 @@ function auditPanelView(data, context) {
   return `
     ${moduleHeader("Painel de auditoria", isAdmin ? "Acompanhe em tempo real a atuação dos responsáveis." : "Inicie e conclua as ações atribuídas ao seu usuário.")}
     <section class="audit-live-strip"><span class="audit-live-dot"></span><strong>Sincronização ativa</strong><span>Atualizado ${escapeHtml(formatDate(data.syncedAt))}</span></section>
-    ${metricCards(cards)}
+    <section class="audit-stats-grid">
+      ${cards.map((card) => `<article class="audit-metric-card"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong><small>${escapeHtml(card.helper)}</small></article>`).join("")}
+    </section>
+    <section class="audit-overview-grid">
+      <article class="audit-overview-card">
+        <div class="audit-card-heading"><div><span>Equipe · visão geral</span><h3>Progresso por responsável</h3></div><small>Concluídas / total</small></div>
+        <div class="audit-progress-list">
+          ${ownerSummary.map((entry) => `<div class="audit-progress-row"><div class="audit-progress-person"><span class="audit-avatar">${escapeHtml(entry.owner.split(" ").map((part) => part[0]).join("").slice(0, 2))}</span><div><strong>${escapeHtml(entry.owner)}</strong><small>${entry.completed} de ${entry.total} concluídas</small></div></div><div class="audit-progress-track"><span style="width:${entry.progress}%"></span></div><b>${entry.progress}%</b></div>`).join("")}
+        </div>
+      </article>
+      <article class="audit-overview-card">
+        <div class="audit-card-heading"><div><span>Portfólio · atualizado</span><h3>Ações por status</h3></div><small>${items.length} ações</small></div>
+        <div class="audit-status-list">
+          ${statusSummary.map((entry) => `<div class="audit-status-row"><span>${escapeHtml(entry.label)}</span><div class="audit-status-track ${entry.status}"><i style="width:${entry.progress}%"></i></div><strong>${entry.value}</strong></div>`).join("")}
+        </div>
+      </article>
+    </section>
     <section class="action-filter-card" data-audit-filters>
       <div class="action-filter-heading"><div><h3>Localizar ações</h3><p>Filtre a carteira por pilar, responsável ou situação.</p></div><button class="button secondary" type="button" data-clear-audit-filters>Limpar filtros</button></div>
       <div class="action-filter-grid audit-filter-grid">
