@@ -19,7 +19,7 @@ export function createAuditApi(getUser) {
       if (!database?.notifications || !database?.sequence) return 0;
 
       const known = new Set(database.notifications.filter((item) => item.auditActionId).map((item) => Number(item.auditActionId)));
-      items.forEach((item) => {
+      items.filter((item) => item.username === user.username).forEach((item) => {
         if (known.has(Number(item.id))) return;
         database.sequence.notifications = Number(database.sequence.notifications || 0) + 1;
         database.notifications.push({

@@ -195,10 +195,11 @@ export class AuditStore {
     await this.ready;
     const username = String(request.headers.get("x-lead-username") || "").trim();
     const role = String(request.headers.get("x-lead-role") || "").trim();
+    const teamEditor = ["Diego", "Nathan", "Iago"].includes(username);
     let actions = (await this.state.storage.get("actions")) || [];
 
     if (request.method === "GET") {
-      if (role !== "admin") actions = actions.filter((item) => item.username === username);
+      if (role !== "admin" && !teamEditor) actions = actions.filter((item) => item.username === username);
       return Response.json({ items: actions, syncedAt: new Date().toISOString() });
     }
 
@@ -211,8 +212,8 @@ export class AuditStore {
     if (!action) return Response.json({ error: "Ação não encontrada." }, { status: 404 });
     const nextStatus = String(body?.status || "");
     const adminClose = role === "admin" && nextStatus === "done" && action.status !== "done";
-    if (!username || (action.username !== username && !adminClose)) {
-      return Response.json({ error: "Somente o responsável pode movimentar esta ação." }, { status: 403 });
+    if (!username || (!teamEditor && action.username !== username && !adminClose)) {
+      return Response.json({ error: "Você não possui permissão para movimentar esta ação." }, { status: 403 });
     }
 
     const allowed = (action.status === "pending" && nextStatus === "in_progress")

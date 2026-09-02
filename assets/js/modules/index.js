@@ -336,6 +336,7 @@ function auditPanelView(data, context) {
   const items = data.items || [];
   const counts = Object.fromEntries(["pending", "in_progress", "done"].map((status) => [status, items.filter((item) => item.status === status).length]));
   const isAdmin = context.user?.role === "admin";
+  const isTeamEditor = ["Diego", "Nathan", "Iago"].includes(context.user?.username);
   const pilarOptions = [...new Set(items.map((item) => item.pilar))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const ownerOptions = [...new Set(items.map((item) => item.responsavel))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const cards = [
@@ -356,7 +357,7 @@ function auditPanelView(data, context) {
   ].map((entry) => ({ ...entry, progress: items.length ? Math.round((entry.value / items.length) * 100) : 0 }));
 
   const rows = items.map((item) => {
-    const canMove = item.username === context.user?.username;
+    const canMove = isTeamEditor || item.username === context.user?.username;
     const ownerControl = item.status === "pending" && canMove
       ? `<button class="button primary audit-action-button" type="button" data-audit-action="${item.id}" data-audit-status="in_progress">Iniciar</button>`
       : item.status === "in_progress" && canMove
@@ -377,7 +378,7 @@ function auditPanelView(data, context) {
   }).join("");
 
   return `
-    ${moduleHeader("Painel de auditoria", isAdmin ? "Acompanhe em tempo real a atuação dos responsáveis." : "Inicie e conclua as ações atribuídas ao seu usuário.")}
+    ${moduleHeader("Painel de auditoria", isAdmin ? "Acompanhe em tempo real a atuação dos responsáveis." : "Visualize, inicie e conclua as ações da auditoria.")}
     <section class="audit-live-strip"><span class="audit-live-dot"></span><strong>Sincronização ativa</strong><span>Atualizado ${escapeHtml(formatDate(data.syncedAt))}</span></section>
     <section class="audit-stats-grid">
       ${cards.map((card) => `<article class="audit-metric-card"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong><small>${escapeHtml(card.helper)}</small></article>`).join("")}
