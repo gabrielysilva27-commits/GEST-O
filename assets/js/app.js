@@ -767,8 +767,19 @@ function handleDynamicChange(event) {
       panels.forEach((panel) => { panel.hidden = panel.dataset.gerotPanel !== area; });
       const generalPanel = elements.pageContent.querySelector("[data-gerot-general]");
       if (generalPanel) generalPanel.hidden = area !== "GERAL";
-      elements.pageContent.querySelectorAll("[data-gerot-master-actions]").forEach((actions) => { actions.hidden = actions.dataset.gerotMasterActions !== area; });
       const selectedPanel = panels.find((panel) => panel.dataset.gerotPanel === area);
+      const masterActions = elements.pageContent.querySelector("[data-gerot-master-actions]");
+      if (masterActions) {
+        const canEditArea = area !== "GERAL" && selectedPanel?.dataset.gerotCanEdit === "true";
+        masterActions.hidden = !canEditArea;
+        masterActions.querySelectorAll("[data-gerot-action-area], [data-gerot-edit], [data-gerot-save]").forEach((button) => {
+          button.dataset.gerotActionArea = canEditArea ? area : "";
+        });
+        const editButton = masterActions.querySelector("[data-gerot-edit]");
+        const saveButton = masterActions.querySelector("[data-gerot-save]");
+        if (editButton) editButton.hidden = false;
+        if (saveButton) saveButton.hidden = true;
+      }
       const masterTitle = elements.pageContent.querySelector("[data-gerot-master-title]");
       const masterSummary = elements.pageContent.querySelector("[data-gerot-master-summary]");
       if (masterTitle) masterTitle.textContent = `${area} · GEROT 2026`;

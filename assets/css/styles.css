@@ -1983,6 +1983,7 @@ tbody td {
 .gerot-toolbar strong { display: block; margin-top: 3px; font-size: .82rem; letter-spacing: .01em; }
 .gerot-toolbar small { color: var(--text-muted); display: block; margin-top: 2px; font-size: .69rem; }
 .gerot-toolbar-actions, .gerot-editor-actions { display: flex; align-items: end; gap: 6px; }
+.gerot-editor-actions[hidden] { display: none; }
 .gerot-area-field { display: grid; gap: 2px; color: var(--text-muted); font-size: .6rem; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
 .gerot-area-field select { min-width: 150px; padding: 5px 25px 5px 7px; border: 1px solid var(--line-strong); border-radius: 4px; color: var(--text); background: var(--surface-elevated); font: 700 .68rem/1.1 inherit; letter-spacing: .02em; }
 .gerot-editor-actions .button { width: auto; min-height: 30px; padding: 5px 9px; font-size: .68rem; }
