@@ -1148,16 +1148,21 @@ function gerotSpreadsheetFormula(row, rows, formula, monthIndex, stack = new Set
 }
 
 function gerotYtd(row, rows, calculatedYtd = false, stack = new Set()) {
-  if (!calculatedYtd && Object.prototype.hasOwnProperty.call(row, "referenceYtd")) return row.referenceYtd;
-  if (calculatedYtd && row.ytdFormula) {
+  const hasReferenceYtd = row.referenceYtd !== null && row.referenceYtd !== undefined && row.referenceYtd !== "";
+  if (!calculatedYtd && hasReferenceYtd) return row.referenceYtd;
+  if (row.ytdFormula) {
     const calculated = gerotSpreadsheetFormula(row, rows, row.ytdFormula, null, stack);
     if (Number.isFinite(calculated)) return calculated;
   }
   if (arrayValue(row.formulas).some(Boolean)) {
     const values = GEROT_MONTHS.map((_, index) => gerotSpreadsheetFormula(row, rows, arrayValue(row.formulas)[index], index, stack)).filter(Number.isFinite);
-    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : row.referenceYtd;
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : hasReferenceYtd ? row.referenceYtd : null;
   }
-  if (row.ytdCalculation === "source-value") return row.referenceYtd;
+  if (row.ytdCalculation === "source-value" && hasReferenceYtd) return row.referenceYtd;
+  if (row.ytdCalculation === "source-value" && arrayValue(row.formulaInputs).length) {
+    const results = GEROT_MONTHS.map((_, index) => gerotCalculatedValue(row, rows, index, calculatedYtd)).filter(Number.isFinite);
+    return results.length ? results.reduce((sum, value) => sum + value, 0) / results.length : null;
+  }
   if (row.ytdCalculation === "average-monthly-result") {
     const results = GEROT_MONTHS.map((_, index) => gerotCalculatedValue(row, rows, index, calculatedYtd)).filter(Number.isFinite);
     return results.length ? results.reduce((sum, value) => sum + value, 0) / results.length : null;
