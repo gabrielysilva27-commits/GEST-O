@@ -338,16 +338,15 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: auto;
-  padding: 8px 12px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
   border: 1px solid rgba(22, 66, 154, 0.1);
   border-radius: 8px;
   background: rgba(22, 66, 154, 0.06);
   color: var(--primary-strong);
   box-shadow: none;
-  font-size: 0.78rem;
-  font-weight: 700;
 }
 
 .login-theme-toggle:hover {
@@ -1102,6 +1101,20 @@ button {
   justify-content: flex-end;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.topbar-theme-toggle {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border-color: rgba(22, 66, 154, 0.1);
+  background: rgba(22, 66, 154, 0.06);
+  color: var(--primary-strong);
+}
+
+.topbar-theme-toggle:hover {
+  background: rgba(22, 66, 154, 0.12);
 }
 
 .search-field {

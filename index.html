@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260902-08">
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260902-09">
 </head>
 <body>
   <div id="loginRoot" class="login-shell" aria-labelledby="login-title">
@@ -37,9 +37,8 @@
       <div class="login-panel">
         <div class="login-panel-shell">
           <div class="login-theme-actions">
-            <button id="login-dark-mode-toggle" class="button ghost login-theme-toggle" type="button" aria-pressed="false">
+            <button id="login-dark-mode-toggle" class="button ghost login-theme-toggle" type="button" aria-label="Ativar modo escuro" title="Modo escuro" aria-pressed="false">
               <span class="theme-toggle-icon" aria-hidden="true">◐</span>
-              <span>Modo escuro</span>
             </button>
           </div>
           <div class="login-card">
@@ -130,10 +129,6 @@
             <strong id="user-name">Usuário</strong>
           </div>
           <ul id="footer-nav-list" class="nav-list footer-nav-list"></ul>
-          <button id="dark-mode-toggle" class="sidebar-logout theme-toggle" type="button" aria-pressed="false">
-            <span class="theme-toggle-icon" aria-hidden="true">◐</span>
-            <span>Modo escuro</span>
-          </button>
           <button id="logout-button" class="sidebar-logout" type="button">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M3 5v14a2 2 0 0 0 2 2h10"></path></svg>
             <span>Sair</span>
@@ -153,6 +148,9 @@
           </div>
 
           <div class="topbar-actions">
+            <button id="dark-mode-toggle" class="icon-button topbar-theme-toggle" type="button" aria-label="Ativar modo escuro" title="Modo escuro" aria-pressed="false">
+              <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+            </button>
             <button id="notification-link" class="icon-button counter-button" type="button" aria-label="Abrir notificações">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
@@ -174,6 +172,6 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="assets/js/app.js?v=20260902-08"></script>
+  <script type="module" src="assets/js/app.js?v=20260902-09"></script>
 </body>
 </html>

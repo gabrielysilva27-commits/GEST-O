@@ -62,8 +62,9 @@ function applyTheme(isDark) {
   [elements.darkModeToggle, elements.loginDarkModeToggle].forEach((toggle) => {
     if (toggle) {
       toggle.setAttribute("aria-pressed", String(isDark));
-      const label = toggle.querySelector("span:last-child");
-      if (label) label.textContent = isDark ? "Modo claro" : "Modo escuro";
+      const label = isDark ? "Ativar modo claro" : "Ativar modo escuro";
+      toggle.setAttribute("aria-label", label);
+      toggle.setAttribute("title", isDark ? "Modo claro" : "Modo escuro");
     }
   });
 }
