@@ -1,7 +1,7 @@
 import { api, ApiError } from "./api.js?v=20260902-02";
 import { createAuditApi } from "./audit-api.js?v=20260902-02";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260902-12";
+import { views } from "./modules/index.js?v=20260902-13";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -439,6 +439,34 @@ function downloadCsv(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+function gerotCsv(areas) {
+  const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+  const headers = ["Área", "Categoria", "Tipo", "Indicador", "Unidade", "EOY 2024", "EOY 2025", "Meta 2026", "YTD referência", "Memórias utilizadas", "Fórmulas mensais", ...months];
+  const escapeCell = (value) => {
+    const text = value === null || value === undefined ? "" : String(value);
+    return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  };
+  const rows = areas.flatMap((area) => {
+    const areaRows = Array.isArray(area.rows) ? area.rows : [];
+    const rowsById = new Map(areaRows.map((row) => [row.id, row]));
+    return areaRows.map((row) => [
+      area.area,
+      row.calculationInput ? "Memória de cálculo" : "Indicador",
+      row.type || "",
+      row.indicator || "",
+      row.unit || "",
+      row.eoy2024 ?? "",
+      row.eoy2025 ?? "",
+      row.goalMode === "range" ? `${row.targetMin ?? ""} a ${row.targetMax ?? ""}` : row.target ?? "",
+      row.referenceYtd ?? "",
+      (Array.isArray(row.formulaInputs) ? row.formulaInputs : []).map((id) => rowsById.get(id)?.indicator || id).join(" | "),
+      (Array.isArray(row.formulas) ? row.formulas : []).filter(Boolean).join(" | "),
+      ...months.map((_, index) => row.monthly?.[index] ?? "")
+    ]);
+  });
+  return [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\n");
+}
+
 async function handleDynamicSubmit(event) {
   const form = event.target.closest("form[data-form]");
   if (!form) {
@@ -629,8 +657,10 @@ async function handleDynamicClick(event) {
   if (exportButton) {
     try {
       const entity = exportButton.dataset.export;
-      const csv = await api.exportCsv(state.token, entity);
-      downloadCsv(`lead-${entity}.csv`, csv);
+      const csv = entity === "gerot"
+        ? gerotCsv(state.dataCache.gerot?.areas || [])
+        : await api.exportCsv(state.token, entity);
+      downloadCsv(entity === "gerot" ? "GEROT-completo.csv" : `lead-${entity}.csv`, csv);
       showToast("Exportação concluída.");
     } catch (error) {
       handleError(error, "Não foi possível exportar o relatório.");
