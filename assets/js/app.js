@@ -1,7 +1,7 @@
 import { api, ApiError } from "./api.js?v=20260902-02";
 import { createAuditApi } from "./audit-api.js?v=20260902-02";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260902-06";
+import { views } from "./modules/index.js?v=20260902-08";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -762,8 +762,8 @@ function handleDynamicChange(event) {
     const panels = [...elements.pageContent.querySelectorAll("[data-gerot-panel]")];
     if (panels.length) {
       panels.forEach((panel) => { panel.hidden = panel.dataset.gerotPanel !== area; });
-      const unavailablePanel = elements.pageContent.querySelector("[data-gerot-unavailable]");
-      if (unavailablePanel) unavailablePanel.hidden = area !== "GERAL";
+      const generalPanel = elements.pageContent.querySelector("[data-gerot-general]");
+      if (generalPanel) generalPanel.hidden = area !== "GERAL";
       return;
     }
     const available = area === "ARMAZÉM";

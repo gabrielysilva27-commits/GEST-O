@@ -1221,10 +1221,42 @@ function gerotGoalLabel(row) {
   return gerotNumber(row.target, row.unit, row.displayFormat);
 }
 
+function gerotGeneralView(areas) {
+  const months = GEROT_MONTHS;
+  const areaSummaries = areas.map((area) => ({
+    area: area.area,
+    count: arrayValue(area.rows).filter((row) => !row.calculationInput).length
+  }));
+  const rows = areas.flatMap((area) => {
+    const areaRows = arrayValue(area.rows);
+    return areaRows.filter((row) => !row.calculationInput).map((row) => {
+      const ytd = gerotYtd(row, areaRows, Boolean(area.calculatedYtd));
+      const monthly = months.map((month, index) => {
+        const spreadsheetFormula = arrayValue(row.formulas)[index];
+        const calculated = spreadsheetFormula && area.calculatedYtd
+          ? gerotSpreadsheetFormula(row, areaRows, spreadsheetFormula, index)
+          : arrayValue(row.formulaInputs).length
+            ? gerotCalculatedValue(row, areaRows, index, Boolean(area.calculatedYtd))
+            : row.monthly?.[index];
+        const value = calculated ?? row.monthly?.[index];
+        return `<td class="gerot-value ${gerotGoalClass(row, value)}">${gerotNumber(value, row.unit, row.displayFormat)}</td>`;
+      }).join("");
+      return `<tr><td><span class="gerot-area-badge">${escapeHtml(area.area)}</span></td><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}</tr>`;
+    });
+  }).join("");
+  const total = areaSummaries.reduce((sum, item) => sum + item.count, 0);
+
+  return `<section data-gerot-general>
+    <div class="gerot-general-summary"><strong>${total} indicadores</strong>${areaSummaries.map((item) => `<span>${escapeHtml(item.area)} <b>${item.count}</b></span>`).join("")}</div>
+    <p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Visão consolidada somente para consulta.</span></p>
+    <section class="table-card gerot-card gerot-general-card"><div class="table-scroll"><table class="gerot-table gerot-general-table"><thead><tr><th>Área</th><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Un.</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section>
+  </section>`;
+}
+
 function gerotWarehouseView(data) {
   if (Array.isArray(data.areas)) {
     return `${moduleHeader("GEROT", "Quadro geral de indicadores operacionais por área.")}
-      <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong>GEROT 2026</strong><small>Selecione uma área para consultar os indicadores e suas memórias de cálculo.</small></div><label class="gerot-area-field"><span>Área</span><select data-gerot-area aria-label="Selecionar área do GEROT"><option>GERAL</option>${data.areas.map((area) => `<option>${escapeHtml(area.area)}</option>`).join("")}</select></label></section><section class="empty-state gerot-unavailable" data-gerot-unavailable><strong data-gerot-unavailable-title>Quadro geral</strong><p data-gerot-unavailable-copy>Escolha Armazém, Entrega, Controle ou Planejamento para abrir o quadro detalhado da área.</p></section>${data.areas.map((area) => `<div data-gerot-panel="${escapeHtml(area.area)}" hidden>${gerotWarehouseView({ ...area, embedded: true })}</div>`).join("")}`;
+      <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong>GEROT 2026</strong><small>GERAL consolida todos os indicadores; selecione uma área para abrir suas memórias.</small></div><label class="gerot-area-field"><span>Área</span><select data-gerot-area aria-label="Selecionar área do GEROT"><option>GERAL</option>${data.areas.map((area) => `<option>${escapeHtml(area.area)}</option>`).join("")}</select></label></section>${gerotGeneralView(data.areas)}${data.areas.map((area) => `<div data-gerot-panel="${escapeHtml(area.area)}" hidden>${gerotWarehouseView({ ...area, embedded: true })}</div>`).join("")}`;
   }
   const months = GEROT_MONTHS;
   const allRows = arrayValue(data.rows);
