@@ -357,11 +357,14 @@ function auditPanelView(data, context) {
 
   const rows = items.map((item) => {
     const canMove = item.username === context.user?.username;
-    const controls = item.status === "pending" && canMove
+    const ownerControl = item.status === "pending" && canMove
       ? `<button class="button primary audit-action-button" type="button" data-audit-action="${item.id}" data-audit-status="in_progress">Iniciar</button>`
       : item.status === "in_progress" && canMove
         ? `<button class="button primary audit-action-button" type="button" data-audit-action="${item.id}" data-audit-status="done">Concluir</button>`
         : "";
+    const adminControl = isAdmin && item.status !== "done"
+      ? `<button class="audit-admin-check" type="button" data-audit-action="${item.id}" data-audit-status="done" aria-label="Concluir ação como administradora" title="Marcar como concluída">✓</button>`
+      : "";
     return `<tr data-audit-row data-search="${escapeHtml(`${item.pilar} ${item.bloco} ${item.questao} ${item.acao} ${item.meta} ${item.responsavel}`)}" data-pilar="${escapeHtml(item.pilar)}" data-owner="${escapeHtml(item.responsavel)}" data-status="${escapeHtml(item.status)}">
       <td><span class="badge info">${escapeHtml(item.pilar)}</span></td>
       <td>${escapeHtml(item.bloco)}</td>
@@ -369,7 +372,7 @@ function auditPanelView(data, context) {
       <td class="audit-text-cell">${escapeHtml(item.acao)}</td>
       <td class="audit-text-cell">${escapeHtml(item.meta)}</td>
       <td><strong>${escapeHtml(item.responsavel)}</strong></td>
-      <td><div class="audit-status-cell"><span class="badge ${badgeClass(item.status)}">${escapeHtml(formatValueLabel(item.status))}</span>${controls}${item.updatedAt ? `<small>${escapeHtml(formatDate(item.updatedAt))}</small>` : ""}</div></td>
+      <td><div class="audit-status-cell"><div class="audit-status-line"><span class="badge ${badgeClass(item.status)}">${escapeHtml(formatValueLabel(item.status))}</span>${ownerControl}${adminControl}</div>${item.updatedAt ? `<small>${escapeHtml(formatDate(item.updatedAt))}</small>` : ""}</div></td>
     </tr>`;
   }).join("");
 
@@ -394,7 +397,7 @@ function auditPanelView(data, context) {
       </article>
     </section>
     <section class="action-filter-card" data-audit-filters>
-      <div class="action-filter-heading"><div><h3>Localizar ações</h3><p>Filtre a carteira por pilar, responsável ou situação.</p></div><button class="button secondary" type="button" data-clear-audit-filters>Limpar filtros</button></div>
+      <div class="action-filter-heading"><div><h3>Localizar ações</h3></div><button class="button secondary" type="button" data-clear-audit-filters>Limpar</button></div>
       <div class="action-filter-grid audit-filter-grid">
         <label class="field"><span>Buscar</span><input data-audit-filter="text" placeholder="Questão, ação ou meta"></label>
         <label class="field"><span>Pilar</span><select data-audit-filter="pilar"><option value="">Todos</option>${pilarOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>
@@ -404,7 +407,7 @@ function auditPanelView(data, context) {
       <p class="action-filter-result" data-audit-filter-result>${items.length} ações encontradas</p>
     </section>
     <section class="table-card audit-table-card">
-      <div class="table-card-header"><div><h3>${isAdmin ? "Acompanhamento da equipe" : "Minhas ações de auditoria"}</h3><p>Os status são compartilhados entre os usuários e atualizados automaticamente.</p></div></div>
+      <div class="table-card-header"><div><h3>${isAdmin ? "Acompanhamento da equipe" : "Minhas ações de auditoria"}</h3></div><small>Atualização automática</small></div>
       <div class="table-scroll"><table class="audit-actions-table"><thead><tr><th>Pilar</th><th>Bloco</th><th>Questão</th><th>Ação</th><th>Meta</th><th>Responsável</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
     </section>
   `;

@@ -209,13 +209,15 @@ export class AuditStore {
     const body = await request.json();
     const action = actions.find((item) => Number(item.id) === Number(body?.actionId));
     if (!action) return Response.json({ error: "Ação não encontrada." }, { status: 404 });
-    if (!username || action.username !== username) {
+    const nextStatus = String(body?.status || "");
+    const adminClose = role === "admin" && nextStatus === "done" && action.status !== "done";
+    if (!username || (action.username !== username && !adminClose)) {
       return Response.json({ error: "Somente o responsável pode movimentar esta ação." }, { status: 403 });
     }
 
-    const nextStatus = String(body?.status || "");
     const allowed = (action.status === "pending" && nextStatus === "in_progress")
-      || (action.status === "in_progress" && nextStatus === "done");
+      || (action.status === "in_progress" && nextStatus === "done")
+      || adminClose;
     if (!allowed) return Response.json({ error: "Transição de status inválida." }, { status: 409 });
 
     action.status = nextStatus;

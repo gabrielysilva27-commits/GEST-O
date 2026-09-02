@@ -1476,15 +1476,26 @@ tbody td {
 .audit-status-track.in_progress i { background: #dda62f; }
 .audit-status-track.done i { background: #31b795; }
 .audit-table-card,
-[data-audit-filters] { padding: 12px; }
-[data-audit-filters] .action-filter-heading { margin-bottom: 7px; }
-[data-audit-filters] .action-filter-grid { gap: 7px; }
+[data-audit-filters] { padding: 8px 10px; }
+[data-audit-filters] .action-filter-heading { margin-bottom: 4px; }
+[data-audit-filters] .action-filter-heading h3 { margin: 0; font-size: .75rem; }
+[data-audit-filters] .action-filter-heading .button { min-height: 26px; padding: 3px 7px; font-size: .65rem; }
+[data-audit-filters] .action-filter-grid { gap: 5px; }
+[data-audit-filters] .field { gap: 2px; }
+[data-audit-filters] .field span { font-size: .61rem; }
 [data-audit-filters] .field input,
-[data-audit-filters] .field select { min-height: 34px; padding: 7px 9px; font-size: .72rem; }
+[data-audit-filters] .field select { min-height: 29px; padding: 4px 7px; font-size: .68rem; }
+[data-audit-filters] .action-filter-result { margin-top: 4px; font-size: .65rem; }
+.audit-table-card { padding: 9px 10px; }
+.audit-table-card .table-card-header { min-height: 0; align-items: center; }
+.audit-table-card .table-card-header h3 { margin: 0; font-size: .8rem; }
+.audit-table-card .table-card-header small { color: var(--text-muted); font-size: .62rem; }
+.audit-table-card .table-scroll { margin-top: 6px; max-height: 58vh; overflow: auto; }
+.audit-table-card thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-strong); }
 .audit-actions-table { min-width: 1320px; }
 .audit-actions-table th,
-.audit-actions-table td { padding: 7px 9px; font-size: .72rem; }
-.audit-actions-table th { padding: 0 9px 7px; font-size: .64rem; }
+.audit-actions-table td { padding: 5px 7px; font-size: .68rem; }
+.audit-actions-table th { padding: 5px 7px; font-size: .6rem; }
 .audit-actions-table th:first-child,
 .audit-actions-table td:first-child { padding-left: 0; }
 .audit-actions-table th:last-child,
@@ -1496,10 +1507,26 @@ tbody td {
 .audit-actions-table th:nth-child(5) { width: 24%; }
 .audit-actions-table th:nth-child(6) { width: 12%; }
 .audit-actions-table th:nth-child(7) { width: 13%; }
-.audit-text-cell { line-height: 1.45; }
-.audit-status-cell { display: grid; justify-items: start; gap: 7px; }
-.audit-status-cell small { color: var(--text-muted); font-size: 0.68rem; }
-.audit-action-button { min-width: 86px; padding: 7px 10px; }
+.audit-text-cell { line-height: 1.28; }
+.audit-status-cell { display: grid; justify-items: start; gap: 3px; }
+.audit-status-line { display: flex; align-items: center; gap: 4px; }
+.audit-status-cell small { color: var(--text-muted); font-size: 0.59rem; }
+.audit-action-button { min-width: 62px; min-height: 25px; padding: 3px 7px; font-size: .64rem; }
+.audit-admin-check {
+  display: inline-grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 1px solid rgba(23,114,85,.3);
+  border-radius: 6px;
+  color: var(--success);
+  background: rgba(23,114,85,.1);
+  font-size: .84rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.audit-admin-check:hover { color: #fff; background: var(--success); }
 
 @media (max-width: 900px) {
   .audit-filter-grid { grid-template-columns: 1fr 1fr; }
