@@ -2016,12 +2016,6 @@ tbody td {
 .gerot-unavailable { margin-top: 10px; padding: 26px; text-align: center; }
 .gerot-unavailable strong { display: block; font-size: .82rem; }
 .gerot-unavailable p { margin: 5px 0 0; color: var(--text-muted); font-size: .72rem; }
-.gerot-general-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
-.gerot-general-summary > strong,
-.gerot-general-summary span { padding: 4px 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); font-size: .63rem; }
-.gerot-general-summary > strong { color: var(--primary-strong); }
-.gerot-general-summary span { color: var(--text-muted); }
-.gerot-general-summary b { margin-left: 3px; color: var(--text); }
 .gerot-general-card .table-scroll { max-height: 72vh; }
 .gerot-general-table { min-width: 1580px; font-size: .61rem; }
 .gerot-general-table th,

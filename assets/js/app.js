@@ -595,11 +595,12 @@ async function handleDynamicClick(event) {
   }
   const gerotEditButton = event.target.closest("[data-gerot-edit]");
   if (gerotEditButton) {
-    const scope = gerotEditButton.closest("[data-gerot-panel]") || elements.pageContent;
+    const actionArea = gerotEditButton.dataset.gerotActionArea;
+    const scope = (actionArea && [...elements.pageContent.querySelectorAll("[data-gerot-panel]")].find((panel) => panel.dataset.gerotPanel === actionArea)) || gerotEditButton.closest("[data-gerot-panel]") || elements.pageContent;
     scope.querySelector(".gerot-card")?.classList.add("is-editing");
     scope.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = false; });
     gerotEditButton.hidden = true;
-    const saveButton = scope.querySelector("[data-gerot-save]");
+    const saveButton = gerotEditButton.parentElement?.querySelector("[data-gerot-save]") || scope.querySelector("[data-gerot-save]");
     if (saveButton) saveButton.hidden = false;
     showToast("Edição mensal liberada.");
     return;
@@ -608,15 +609,16 @@ async function handleDynamicClick(event) {
   const gerotSaveButton = event.target.closest("[data-gerot-save]");
   if (gerotSaveButton) {
     try {
-      const scope = gerotSaveButton.closest("[data-gerot-panel]") || elements.pageContent;
+      const actionArea = gerotSaveButton.dataset.gerotActionArea;
+      const scope = (actionArea && [...elements.pageContent.querySelectorAll("[data-gerot-panel]")].find((panel) => panel.dataset.gerotPanel === actionArea)) || gerotSaveButton.closest("[data-gerot-panel]") || elements.pageContent;
       const rows = new Map();
       scope.querySelectorAll("[data-gerot-input]").forEach((input) => {
         const id = input.dataset.gerotRow;
         if (!rows.has(id)) rows.set(id, { id, monthly: Array(12).fill(null) });
         rows.get(id).monthly[Number(input.dataset.gerotMonth)] = input.value === "" ? null : Number(input.value);
       });
-      await api.patch(state.token, "/gerot/warehouse", { area: scope.dataset.gerotPanel || "ARMAZÉM", rows: [...rows.values()] });
-      showToast(`GEROT ${scope.dataset.gerotPanel || "Armazém"} atualizado com sucesso.`);
+      await api.patch(state.token, "/gerot/warehouse", { area: actionArea || scope.dataset.gerotPanel || "ARMAZÉM", rows: [...rows.values()] });
+      showToast(`GEROT ${actionArea || scope.dataset.gerotPanel || "Armazém"} atualizado com sucesso.`);
       await loadView("gerot");
     } catch (error) {
       handleError(error, "Não foi possível atualizar o GEROT.");
@@ -765,6 +767,12 @@ function handleDynamicChange(event) {
       panels.forEach((panel) => { panel.hidden = panel.dataset.gerotPanel !== area; });
       const generalPanel = elements.pageContent.querySelector("[data-gerot-general]");
       if (generalPanel) generalPanel.hidden = area !== "GERAL";
+      elements.pageContent.querySelectorAll("[data-gerot-master-actions]").forEach((actions) => { actions.hidden = actions.dataset.gerotMasterActions !== area; });
+      const selectedPanel = panels.find((panel) => panel.dataset.gerotPanel === area);
+      const masterTitle = elements.pageContent.querySelector("[data-gerot-master-title]");
+      const masterSummary = elements.pageContent.querySelector("[data-gerot-master-summary]");
+      if (masterTitle) masterTitle.textContent = `${area} · GEROT 2026`;
+      if (masterSummary) masterSummary.textContent = area === "GERAL" ? "Todos os indicadores consolidados." : selectedPanel?.dataset.gerotPanelSummary || "";
       return;
     }
     const available = area === "ARMAZÉM";

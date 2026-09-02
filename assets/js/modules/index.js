@@ -1223,10 +1223,6 @@ function gerotGoalLabel(row) {
 
 function gerotGeneralView(areas) {
   const months = GEROT_MONTHS;
-  const areaSummaries = areas.map((area) => ({
-    area: area.area,
-    count: arrayValue(area.rows).filter((row) => !row.calculationInput).length
-  }));
   const rows = areas.flatMap((area) => {
     const areaRows = arrayValue(area.rows);
     return areaRows.filter((row) => !row.calculationInput).map((row) => {
@@ -1244,10 +1240,7 @@ function gerotGeneralView(areas) {
       return `<tr><td><span class="gerot-area-badge">${escapeHtml(area.area)}</span></td><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.product)}</td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}</tr>`;
     });
   }).join("");
-  const total = areaSummaries.reduce((sum, item) => sum + item.count, 0);
-
   return `<section data-gerot-general>
-    <div class="gerot-general-summary"><strong>${total} indicadores</strong>${areaSummaries.map((item) => `<span>${escapeHtml(item.area)} <b>${item.count}</b></span>`).join("")}</div>
     <p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Visão consolidada somente para consulta.</span></p>
     <section class="table-card gerot-card gerot-general-card"><div class="table-scroll"><table class="gerot-table gerot-general-table"><thead><tr><th>Área</th><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Un.</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section>
   </section>`;
@@ -1255,8 +1248,10 @@ function gerotGeneralView(areas) {
 
 function gerotWarehouseView(data) {
   if (Array.isArray(data.areas)) {
+    const year = data.areas[0]?.year || 2026;
+    const areaActions = data.areas.map((area) => area.canEdit ? `<div class="gerot-editor-actions" data-gerot-master-actions="${escapeHtml(area.area)}" hidden><button class="button secondary" type="button" data-gerot-edit data-gerot-action-area="${escapeHtml(area.area)}">Editar mês</button><button class="button primary" type="button" data-gerot-save data-gerot-action-area="${escapeHtml(area.area)}" hidden>Salvar alterações</button></div>` : "").join("");
     return `${moduleHeader("GEROT", "Quadro geral de indicadores operacionais por área.")}
-      <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong>GEROT 2026</strong><small>GERAL consolida todos os indicadores; selecione uma área para abrir suas memórias.</small></div><label class="gerot-area-field"><span>Área</span><select data-gerot-area aria-label="Selecionar área do GEROT"><option>GERAL</option>${data.areas.map((area) => `<option>${escapeHtml(area.area)}</option>`).join("")}</select></label></section>${gerotGeneralView(data.areas)}${data.areas.map((area) => `<div data-gerot-panel="${escapeHtml(area.area)}" hidden>${gerotWarehouseView({ ...area, embedded: true })}</div>`).join("")}`;
+      <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong data-gerot-master-title>GERAL · GEROT ${escapeHtml(year)}</strong><small data-gerot-master-summary>Todos os indicadores consolidados.</small></div><div class="gerot-toolbar-actions"><label class="gerot-area-field"><span>Área</span><select data-gerot-area aria-label="Selecionar área do GEROT"><option>GERAL</option>${data.areas.map((area) => `<option>${escapeHtml(area.area)}</option>`).join("")}</select></label>${areaActions}</div></section>${gerotGeneralView(data.areas)}${data.areas.map((area) => `<div data-gerot-panel="${escapeHtml(area.area)}" data-gerot-panel-summary="${escapeHtml(area.calculatedYtd ? "Acumulado recalculado a partir das memórias preenchidas." : "Acumulado inicial espelhado da planilha de referência.")}" hidden>${gerotWarehouseView({ ...area, embedded: true })}</div>`).join("")}`;
   }
   const months = GEROT_MONTHS;
   const allRows = arrayValue(data.rows);
@@ -1292,7 +1287,7 @@ function gerotWarehouseView(data) {
   const ytdSummary = data.calculatedYtd ? "Acumulado recalculado a partir das memórias preenchidas." : "Acumulado inicial espelhado da planilha de referência.";
   return `
     ${data.embedded ? "" : moduleHeader("GEROT", "Quadro geral de indicadores operacionais.")}
-    <section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong data-gerot-title>${escapeHtml(data.area || "ARMAZÉM")} · GEROT ${escapeHtml(data.year || 2026)}</strong><small data-gerot-summary data-gerot-default-summary="${escapeHtml(ytdSummary)}">${escapeHtml(ytdSummary)}</small></div><div class="gerot-toolbar-actions">${canEdit ? `<div class="gerot-editor-actions"><button class="button secondary" type="button" data-gerot-edit>Editar mês</button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : ""}</div></section>
+    ${data.embedded ? "" : `<section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong data-gerot-title>${escapeHtml(data.area || "ARMAZÉM")} · GEROT ${escapeHtml(data.year || 2026)}</strong><small data-gerot-summary data-gerot-default-summary="${escapeHtml(ytdSummary)}">${escapeHtml(ytdSummary)}</small></div><div class="gerot-toolbar-actions">${canEdit ? `<div class="gerot-editor-actions"><button class="button secondary" type="button" data-gerot-edit><span>Editar mês</span></button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : ""}</div></section>`}
     <section class="gerot-summary-strip" data-gerot-details><span><strong>${indicatorCount}</strong> indicadores</span><span><strong>${escapeHtml(data.year || 2026)}</strong> competência</span><span>Visualização para todos os usuários</span>${!canEdit ? `<span>Edição exclusiva: ${escapeHtml(data.area || "Armazém")} e Gabriely</span>` : ""}</section>
     <section data-gerot-details><p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Metas avaliadas conforme direção ou faixa definida na planilha.</span></p>
     <section class="table-card gerot-card"><div class="table-scroll"><table class="gerot-table"><thead><tr><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Unidade</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section></section>
