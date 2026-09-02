@@ -2014,9 +2014,6 @@ tbody td {
 .gerot-card:not(.is-editing) .gerot-memory-row { display: none; }
 .gerot-card:not(.is-editing) .gerot-value input { display: none; }
 .gerot-card.is-editing .gerot-result { display: none; }
-.gerot-unavailable { margin-top: 10px; padding: 26px; text-align: center; }
-.gerot-unavailable strong { display: block; font-size: .82rem; }
-.gerot-unavailable p { margin: 5px 0 0; color: var(--text-muted); font-size: .72rem; }
 .gerot-general-card .table-scroll { max-height: 72vh; }
 .gerot-general-table { min-width: 1580px; font-size: .61rem; }
 .gerot-general-table th,

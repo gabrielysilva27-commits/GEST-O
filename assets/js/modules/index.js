@@ -1291,7 +1291,6 @@ function gerotWarehouseView(data) {
     <section class="gerot-summary-strip" data-gerot-details><span><strong>${indicatorCount}</strong> indicadores</span><span><strong>${escapeHtml(data.year || 2026)}</strong> competência</span><span>Visualização para todos os usuários</span>${!canEdit ? `<span>Edição exclusiva: ${escapeHtml(data.area || "Armazém")} e Gabriely</span>` : ""}</section>
     <section data-gerot-details><p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Metas avaliadas conforme direção ou faixa definida na planilha.</span></p>
     <section class="table-card gerot-card"><div class="table-scroll"><table class="gerot-table"><thead><tr><th>Tipo</th><th>Indicador</th><th>Produto</th><th>Unidade</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section></section>
-    <section class="empty-state gerot-unavailable" data-gerot-unavailable hidden><strong data-gerot-unavailable-title>GEROT ainda não disponível</strong><p data-gerot-unavailable-copy>A planilha desta área será incluída assim que for importada.</p></section>
   `;
 }
 
