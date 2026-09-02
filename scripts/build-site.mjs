@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
 
 const projectRoot = process.cwd();
 const sourceIndexPath = path.join(projectRoot, "index.html");
@@ -91,8 +92,11 @@ async function buildAssetMap() {
 
 function renderServerModule(assets) {
   const serializedAssets = JSON.stringify(assets);
+  const serializedAuditActions = JSON.stringify(AUDIT_ACTIONS);
 
   return `const assets = new Map(${serializedAssets}.map((entry) => [entry.route, entry]));
+const auditActionSeed = ${serializedAuditActions};
+const auditSeedVersion = 1;
 
 function decodeBase64(value) {
   const binary = atob(value);
@@ -167,6 +171,61 @@ export class Presence {
   }
 }
 
+export class AuditStore {
+  constructor(state) {
+    this.state = state;
+    this.ready = state.blockConcurrencyWhile(() => this.ensureSeeded());
+  }
+
+  async ensureSeeded() {
+    const storedVersion = Number((await this.state.storage.get("seedVersion")) || 0);
+    const current = (await this.state.storage.get("actions")) || [];
+    if (storedVersion >= auditSeedVersion && current.length) return;
+
+    const currentById = new Map(current.map((item) => [Number(item.id), item]));
+    const merged = auditActionSeed.map((seed) => {
+      const persisted = currentById.get(Number(seed.id));
+      return persisted ? { ...seed, ...persisted } : { ...seed, updatedAt: null, updatedBy: null };
+    });
+    await this.state.storage.put("actions", merged);
+    await this.state.storage.put("seedVersion", auditSeedVersion);
+  }
+
+  async fetch(request) {
+    await this.ready;
+    const username = String(request.headers.get("x-lead-username") || "").trim();
+    const role = String(request.headers.get("x-lead-role") || "").trim();
+    let actions = (await this.state.storage.get("actions")) || [];
+
+    if (request.method === "GET") {
+      if (role !== "admin") actions = actions.filter((item) => item.username === username);
+      return Response.json({ items: actions, syncedAt: new Date().toISOString() });
+    }
+
+    if (request.method !== "PATCH") {
+      return Response.json({ error: "Método não permitido." }, { status: 405 });
+    }
+
+    const body = await request.json();
+    const action = actions.find((item) => Number(item.id) === Number(body?.actionId));
+    if (!action) return Response.json({ error: "Ação não encontrada." }, { status: 404 });
+    if (!username || action.username !== username) {
+      return Response.json({ error: "Somente o responsável pode movimentar esta ação." }, { status: 403 });
+    }
+
+    const nextStatus = String(body?.status || "");
+    const allowed = (action.status === "pending" && nextStatus === "in_progress")
+      || (action.status === "in_progress" && nextStatus === "done");
+    if (!allowed) return Response.json({ error: "Transição de status inválida." }, { status: 409 });
+
+    action.status = nextStatus;
+    action.updatedAt = new Date().toISOString();
+    action.updatedBy = username;
+    await this.state.storage.put("actions", actions);
+    return Response.json({ item: action, syncedAt: action.updatedAt });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -175,6 +234,11 @@ export default {
     if (pathname === "/api/presence") {
       const presence = env.PRESENCE.getByName("lead-gestao-presence");
       return presence.fetch(request);
+    }
+
+    if (pathname === "/api/audit-actions") {
+      const auditStore = env.AUDIT_STORE.getByName("lead-gestao-audit-actions");
+      return auditStore.fetch(request);
     }
 
     const asset = assets.get(pathname);

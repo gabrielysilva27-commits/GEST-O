@@ -13,6 +13,7 @@ const MODULE_LABELS = {
 };
 
 const VALUE_LABELS = {
+  pending: "Não iniciada",
   open: "Aberto",
   in_progress: "Em andamento",
   done: "Concluído",
@@ -331,55 +332,55 @@ function dashboardView(data, context) {
   `;
 }
 
-function auditPanelView(data) {
-  const dashboard = data.dashboard || {};
-  const notifications = data.notifications || { items: [], unreadCount: 0 };
-  const history = data.history || { items: [] };
-
+function auditPanelView(data, context) {
+  const items = data.items || [];
+  const counts = Object.fromEntries(["pending", "in_progress", "done"].map((status) => [status, items.filter((item) => item.status === status).length]));
+  const isAdmin = context.user?.role === "admin";
+  const pilarOptions = [...new Set(items.map((item) => item.pilar))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const ownerOptions = [...new Set(items.map((item) => item.responsavel))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const cards = [
-    {
-      label: "Não lidas",
-      value: notifications.unreadCount || 0,
-      helper: "Notificações ainda pendentes"
-    },
-    {
-      label: "Prazos vencidos",
-      value: (dashboard.highlights?.overdueItems || []).length,
-      helper: "Itens que pedem ação imediata"
-    },
-    {
-      label: "Anomalias criticas",
-      value: (dashboard.highlights?.priorityAnomalies || []).length,
-      helper: "Ocorrencias de maior sensibilidade"
-    },
-    {
-      label: "Movimentações",
-      value: (history.items || []).length,
-      helper: "Últimos registros monitorados"
-    }
+    { label: "Total de ações", value: items.length, helper: isAdmin ? "Carteira completa da auditoria" : "Ações sob sua responsabilidade" },
+    { label: "Não iniciadas", value: counts.pending, helper: "Aguardando início" },
+    { label: "Em andamento", value: counts.in_progress, helper: "Atuação registrada agora" },
+    { label: "Concluídas", value: counts.done, helper: `${items.length ? Math.round((counts.done / items.length) * 100) : 0}% da carteira` }
   ];
 
-  const alertRows = (notifications.items || []).slice(0, 8).map((item) => [
-    `<span class="badge ${badgeClass(item.level)}">${escapeHtml(item.title)}</span>`,
-    escapeHtml(item.message),
-    escapeHtml(formatDate(item.createdAt)),
-    item.read ? "<span class=\"badge success\">Lida</span>" : "<span class=\"badge warning\">Pendente</span>"
-  ]);
-
-  const movementRows = (history.items || []).slice(0, 10).map((item) => [
-    `<span class="badge info">${escapeHtml(moduleLabel(item.module))}</span>`,
-    escapeHtml(item.description || ""),
-    escapeHtml(formatDate(item.createdAt))
-  ]);
+  const rows = items.map((item) => {
+    const canMove = item.username === context.user?.username;
+    const controls = item.status === "pending" && canMove
+      ? `<button class="button primary audit-action-button" type="button" data-audit-action="${item.id}" data-audit-status="in_progress">Iniciar</button>`
+      : item.status === "in_progress" && canMove
+        ? `<button class="button primary audit-action-button" type="button" data-audit-action="${item.id}" data-audit-status="done">Concluir</button>`
+        : "";
+    return `<tr data-audit-row data-search="${escapeHtml(`${item.pilar} ${item.bloco} ${item.questao} ${item.acao} ${item.meta} ${item.responsavel}`)}" data-pilar="${escapeHtml(item.pilar)}" data-owner="${escapeHtml(item.responsavel)}" data-status="${escapeHtml(item.status)}">
+      <td><span class="badge info">${escapeHtml(item.pilar)}</span></td>
+      <td>${escapeHtml(item.bloco)}</td>
+      <td><strong>${escapeHtml(item.questao)}</strong></td>
+      <td class="audit-text-cell">${escapeHtml(item.acao)}</td>
+      <td class="audit-text-cell">${escapeHtml(item.meta)}</td>
+      <td><strong>${escapeHtml(item.responsavel)}</strong></td>
+      <td><div class="audit-status-cell"><span class="badge ${badgeClass(item.status)}">${escapeHtml(formatValueLabel(item.status))}</span>${controls}${item.updatedAt ? `<small>${escapeHtml(formatDate(item.updatedAt))}</small>` : ""}</div></td>
+    </tr>`;
+  }).join("");
 
   return `
-    ${moduleHeader("Painel de auditoria", "Consolide alertas, prazos e movimentações recentes em uma leitura única.")}
+    ${moduleHeader("Painel de auditoria", isAdmin ? "Acompanhe em tempo real a atuação dos responsáveis." : "Inicie e conclua as ações atribuídas ao seu usuário.")}
+    <section class="audit-live-strip"><span class="audit-live-dot"></span><strong>Sincronização ativa</strong><span>Atualizado ${escapeHtml(formatDate(data.syncedAt))}</span></section>
     ${metricCards(cards)}
-    <div class="split-layout">
-      ${tableCard("Alertas recentes", "Visão rápida do que ainda merece acompanhamento.", ["Título", "Mensagem", "Quando", "Situação"], alertRows)}
-      ${tableCard("Movimentações monitoradas", "Últimos registros relevantes para acompanhamento.", ["Módulo", "Descrição", "Quando"], movementRows)}
-    </div>
-    ${timelineCard("Rastro operacional", "Cronologia dos eventos mais recentes da plataforma.", history.items || [])}
+    <section class="action-filter-card" data-audit-filters>
+      <div class="action-filter-heading"><div><h3>Localizar ações</h3><p>Filtre a carteira por pilar, responsável ou situação.</p></div><button class="button secondary" type="button" data-clear-audit-filters>Limpar filtros</button></div>
+      <div class="action-filter-grid audit-filter-grid">
+        <label class="field"><span>Buscar</span><input data-audit-filter="text" placeholder="Questão, ação ou meta"></label>
+        <label class="field"><span>Pilar</span><select data-audit-filter="pilar"><option value="">Todos</option>${pilarOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>
+        ${isAdmin ? `<label class="field"><span>Responsável</span><select data-audit-filter="owner"><option value="">Todos</option>${ownerOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>` : ""}
+        <label class="field"><span>Status</span><select data-audit-filter="status"><option value="">Todos</option><option value="pending">Não iniciada</option><option value="in_progress">Em andamento</option><option value="done">Concluída</option></select></label>
+      </div>
+      <p class="action-filter-result" data-audit-filter-result>${items.length} ações encontradas</p>
+    </section>
+    <section class="table-card audit-table-card">
+      <div class="table-card-header"><div><h3>${isAdmin ? "Acompanhamento da equipe" : "Minhas ações de auditoria"}</h3><p>Os status são compartilhados entre os usuários e atualizados automaticamente.</p></div></div>
+      <div class="table-scroll"><table class="audit-actions-table"><thead><tr><th>Pilar</th><th>Bloco</th><th>Questão</th><th>Ação</th><th>Meta</th><th>Responsável</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </section>
   `;
 }
 
@@ -1249,16 +1250,8 @@ export const views = {
   },
   audit: {
     title: "Painel de auditoria",
-    load: async (api, token) => {
-      const [dashboard, notifications, history] = await Promise.all([
-        api.dashboard(token),
-        api.list(token, "/notifications"),
-        api.list(token, "/history")
-      ]);
-
-      return { dashboard, notifications, history };
-    },
-    render: (data) => auditPanelView(data)
+    load: (api, token) => api.auditActions(token),
+    render: (data, context) => auditPanelView(data, context)
   },
   administration: {
     title: "Administração",

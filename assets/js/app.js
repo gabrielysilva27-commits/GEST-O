@@ -1,6 +1,7 @@
-import { api, ApiError } from "./api.js?v=20260902-01";
+import { api, ApiError } from "./api.js?v=20260902-02";
+import { createAuditApi } from "./audit-api.js?v=20260902-01";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260902-01";
+import { views } from "./modules/index.js?v=20260902-02";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -52,6 +53,8 @@ const formRoutes = {
 
 let meetingTimerInterval = null;
 let meetingTimerStartedAt = null;
+let auditRefreshInterval = null;
+const auditApi = createAuditApi(() => state.user);
 let passwordResetStep = "request";
 
 function applyTheme(isDark) {
@@ -250,6 +253,11 @@ async function loadView(viewId) {
     stopMeetingTimer();
   }
 
+  if (auditRefreshInterval) {
+    window.clearInterval(auditRefreshInterval);
+    auditRefreshInterval = null;
+  }
+
   if (viewId !== "actionPlans") {
     state.actionWorkspace = "list";
   }
@@ -276,9 +284,33 @@ async function loadView(viewId) {
   `;
 
   try {
-    const data = await view.load(api, state.token);
+    const data = await view.load(viewId === "audit" ? auditApi : api, state.token);
     state.dataCache[viewId] = data;
     elements.pageContent.innerHTML = view.render(data, state);
+
+    if (viewId === "audit") {
+      elements.notificationBadge.textContent = String(data.unreadCount || 0);
+      auditRefreshInterval = window.setInterval(async () => {
+        if (state.currentView !== "audit" || !state.token) return;
+        try {
+          const refreshed = await views.audit.load(auditApi, state.token);
+          const previous = state.dataCache.audit;
+          state.dataCache.audit = refreshed;
+          const previousSignature = JSON.stringify((previous?.items || []).map((item) => [item.id, item.status, item.updatedAt]));
+          const nextSignature = JSON.stringify((refreshed.items || []).map((item) => [item.id, item.status, item.updatedAt]));
+          if (previousSignature === nextSignature) return;
+          const activeFilters = Object.fromEntries([...elements.pageContent.querySelectorAll("[data-audit-filter]")].map((field) => [field.dataset.auditFilter, field.value]));
+          elements.pageContent.innerHTML = views.audit.render(refreshed, state);
+          Object.entries(activeFilters).forEach(([key, value]) => {
+            const field = elements.pageContent.querySelector(`[data-audit-filter="${key}"]`);
+            if (field) field.value = value;
+          });
+          applyAuditFilters();
+        } catch {
+          // Uma oscilação de sincronização não interrompe a tela atual.
+        }
+      }, 5000);
+    }
 
     if (viewId === "notifications") {
       elements.notificationBadge.textContent = String(data.unreadCount || 0);
@@ -539,6 +571,27 @@ async function handleDynamicClick(event) {
   }
 
   const exportButton = event.target.closest("[data-export]");
+  const auditActionButton = event.target.closest("[data-audit-action]");
+  if (auditActionButton) {
+    try {
+      auditActionButton.disabled = true;
+      const nextStatus = auditActionButton.dataset.auditStatus;
+      await auditApi.updateAuditAction(state.token, auditActionButton.dataset.auditAction, nextStatus);
+      showToast(nextStatus === "done" ? "Ação concluída com sucesso." : "Ação iniciada com sucesso.");
+      await loadView("audit");
+    } catch (error) {
+      auditActionButton.disabled = false;
+      handleError(error, "Não foi possível atualizar a ação de auditoria.");
+    }
+    return;
+  }
+
+  const clearAuditFiltersButton = event.target.closest("[data-clear-audit-filters]");
+  if (clearAuditFiltersButton) {
+    elements.pageContent.querySelectorAll("[data-audit-filter]").forEach((field) => { field.value = ""; });
+    applyAuditFilters();
+    return;
+  }
   const gerotEditButton = event.target.closest("[data-gerot-edit]");
   if (gerotEditButton) {
     const scope = gerotEditButton.closest("[data-gerot-panel]") || elements.pageContent;
@@ -747,6 +800,10 @@ function handleDynamicChange(event) {
     applyActionFilters();
   }
 
+  if (event.target.matches("[data-audit-filter]")) {
+    applyAuditFilters();
+  }
+
   if (event.target.matches("[data-meeting-history-filter]")) {
     applyMeetingHistoryFilters();
   }
@@ -834,9 +891,30 @@ function handleDynamicInput(event) {
     applyActionFilters();
   }
 
+  if (event.target.matches("[data-audit-filter]")) {
+    applyAuditFilters();
+  }
+
   if (event.target.matches("[data-meeting-history-filter]")) {
     applyMeetingHistoryFilters();
   }
+}
+
+function applyAuditFilters() {
+  const root = elements.pageContent.querySelector("[data-audit-filters]");
+  if (!root) return;
+  const values = Object.fromEntries([...root.querySelectorAll("[data-audit-filter]")].map((field) => [field.dataset.auditFilter, normalizeFilterValue(field.value)]));
+  let visible = 0;
+  elements.pageContent.querySelectorAll("[data-audit-row]").forEach((row) => {
+    const matches = (!values.text || normalizeFilterValue(row.dataset.search).includes(values.text))
+      && (!values.pilar || normalizeFilterValue(row.dataset.pilar) === values.pilar)
+      && (!values.owner || normalizeFilterValue(row.dataset.owner) === values.owner)
+      && (!values.status || row.dataset.status === values.status);
+    row.hidden = !matches;
+    if (matches) visible += 1;
+  });
+  const output = root.querySelector("[data-audit-filter-result]");
+  if (output) output.textContent = `${visible} ${visible === 1 ? "ação encontrada" : "ações encontradas"}`;
 }
 
 function handleError(error, fallback) {
