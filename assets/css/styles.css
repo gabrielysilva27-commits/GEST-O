@@ -1492,7 +1492,7 @@ tbody td {
 .audit-table-card .table-card-header small { color: var(--text-muted); font-size: .62rem; }
 .audit-table-card .table-scroll { margin-top: 6px; max-height: 58vh; overflow: auto; }
 .audit-table-card thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-strong); }
-.audit-actions-table { min-width: 1320px; }
+.audit-actions-table { min-width: 1160px; table-layout: fixed; }
 .audit-actions-table th,
 .audit-actions-table td { padding: 5px 7px; font-size: .68rem; }
 .audit-actions-table th { padding: 5px 7px; font-size: .6rem; }
@@ -1500,13 +1500,14 @@ tbody td {
 .audit-actions-table td:first-child { padding-left: 0; }
 .audit-actions-table th:last-child,
 .audit-actions-table td:last-child { padding-right: 0; }
-.audit-actions-table th:nth-child(1) { width: 9%; }
-.audit-actions-table th:nth-child(2) { width: 8%; }
-.audit-actions-table th:nth-child(3) { width: 7%; }
-.audit-actions-table th:nth-child(4) { width: 27%; }
-.audit-actions-table th:nth-child(5) { width: 24%; }
-.audit-actions-table th:nth-child(6) { width: 12%; }
-.audit-actions-table th:nth-child(7) { width: 13%; }
+.audit-col-check { width: 36px; }
+.audit-col-pilar { width: 10%; }
+.audit-col-question { width: 7%; }
+.audit-col-action { width: 31%; }
+.audit-col-target { width: 27%; }
+.audit-col-owner { width: 12%; }
+.audit-col-status { width: 13%; }
+.audit-check-cell { text-align: center; }
 .audit-text-cell { line-height: 1.28; }
 .audit-status-cell { display: grid; justify-items: start; gap: 3px; }
 .audit-status-line { display: flex; align-items: center; gap: 4px; }

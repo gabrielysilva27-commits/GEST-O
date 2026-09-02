@@ -366,13 +366,13 @@ function auditPanelView(data, context) {
       ? `<button class="audit-admin-check" type="button" data-audit-action="${item.id}" data-audit-status="done" aria-label="Concluir ação como administradora" title="Marcar como concluída">✓</button>`
       : "";
     return `<tr data-audit-row data-search="${escapeHtml(`${item.pilar} ${item.bloco} ${item.questao} ${item.acao} ${item.meta} ${item.responsavel}`)}" data-pilar="${escapeHtml(item.pilar)}" data-owner="${escapeHtml(item.responsavel)}" data-status="${escapeHtml(item.status)}">
+      ${isAdmin ? `<td class="audit-check-cell">${adminControl}</td>` : ""}
       <td><span class="badge info">${escapeHtml(item.pilar)}</span></td>
-      <td>${escapeHtml(item.bloco)}</td>
       <td><strong>${escapeHtml(item.questao)}</strong></td>
       <td class="audit-text-cell">${escapeHtml(item.acao)}</td>
       <td class="audit-text-cell">${escapeHtml(item.meta)}</td>
       <td><strong>${escapeHtml(item.responsavel)}</strong></td>
-      <td><div class="audit-status-cell"><div class="audit-status-line"><span class="badge ${badgeClass(item.status)}">${escapeHtml(formatValueLabel(item.status))}</span>${ownerControl}${adminControl}</div>${item.updatedAt ? `<small>${escapeHtml(formatDate(item.updatedAt))}</small>` : ""}</div></td>
+      <td><div class="audit-status-cell"><div class="audit-status-line"><span class="badge ${badgeClass(item.status)}">${escapeHtml(formatValueLabel(item.status))}</span>${ownerControl}</div>${item.updatedAt ? `<small>${escapeHtml(formatDate(item.updatedAt))}</small>` : ""}</div></td>
     </tr>`;
   }).join("");
 
@@ -408,7 +408,7 @@ function auditPanelView(data, context) {
     </section>
     <section class="table-card audit-table-card">
       <div class="table-card-header"><div><h3>${isAdmin ? "Acompanhamento da equipe" : "Minhas ações de auditoria"}</h3></div><small>Atualização automática</small></div>
-      <div class="table-scroll"><table class="audit-actions-table"><thead><tr><th>Pilar</th><th>Bloco</th><th>Questão</th><th>Ação</th><th>Meta</th><th>Responsável</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="table-scroll"><table class="audit-actions-table ${isAdmin ? "is-admin" : ""}"><colgroup>${isAdmin ? '<col class="audit-col-check">' : ""}<col class="audit-col-pilar"><col class="audit-col-question"><col class="audit-col-action"><col class="audit-col-target"><col class="audit-col-owner"><col class="audit-col-status"></colgroup><thead><tr>${isAdmin ? '<th aria-label="Concluir ação"></th>' : ""}<th>Pilar</th><th>Questão</th><th>Ação</th><th>Meta</th><th>Responsável</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
     </section>
   `;
 }
