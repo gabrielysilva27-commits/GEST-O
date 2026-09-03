@@ -141,25 +141,6 @@ function buildGerotDisplayBoards(data) {
   });
 }
 
-function gerotRowsInDisplayOrder(area) {
-  const rows = Array.isArray(area?.rows) ? area.rows : [];
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  const rendered = new Set();
-  const memoriesFor = (row, visited = new Set()) => (Array.isArray(row.formulaInputs) ? row.formulaInputs : []).flatMap((id) => {
-    if (visited.has(id)) return [];
-    const memory = byId.get(id);
-    if (!memory) return [];
-    const next = new Set(visited).add(id);
-    return [memory, ...memoriesFor(memory, next)];
-  });
-  const ordered = rows.filter((row) => !row.calculationInput).flatMap((row) => {
-    const memories = memoriesFor(row);
-    memories.forEach((memory) => rendered.add(memory.id));
-    return [row, ...memories];
-  });
-  rows.filter((row) => row.calculationInput && !rendered.has(row.id)).forEach((row) => ordered.push(row));
-  return ordered;
-}
 
 function addGerotEditorControls(data) {
   buildGerotDisplayBoards(data);
