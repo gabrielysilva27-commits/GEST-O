@@ -77,6 +77,48 @@ function toggleDarkMode() {
   applyTheme(isDark);
 }
 
+function gerotRowsInDisplayOrder(area) {
+  const rows = Array.isArray(area?.rows) ? area.rows : [];
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const rendered = new Set();
+  const memoriesFor = (row, visited = new Set()) => (Array.isArray(row.formulaInputs) ? row.formulaInputs : []).flatMap((id) => {
+    if (visited.has(id)) return [];
+    const memory = byId.get(id);
+    if (!memory) return [];
+    const next = new Set(visited).add(id);
+    return [memory, ...memoriesFor(memory, next)];
+  });
+  const ordered = rows.filter((row) => !row.calculationInput).flatMap((row) => {
+    const memories = memoriesFor(row);
+    memories.forEach((memory) => rendered.add(memory.id));
+    return [row, ...memories];
+  });
+  rows.filter((row) => row.calculationInput && !rendered.has(row.id)).forEach((row) => ordered.push(row));
+  return ordered;
+}
+
+function addGerotEditorControls(data) {
+  if (state.user?.role === "admin" || !Array.isArray(data?.areas)) return;
+  data.areas.filter((area) => area.canEdit).forEach((area) => {
+    const panel = elements.pageContent.querySelector(`[data-gerot-panel="${CSS.escape(area.area)}"]`);
+    const table = panel?.querySelector(".gerot-table");
+    if (!table || table.dataset.editorControls === "true") return;
+    table.dataset.editorControls = "true";
+    const header = table.querySelector("thead tr");
+    if (header) header.insertAdjacentHTML("beforeend", '<th aria-label="Editar indicador"></th>');
+    const orderedRows = gerotRowsInDisplayOrder(area);
+    [...table.querySelectorAll("tbody tr")].forEach((tableRow, index) => {
+      const row = orderedRows[index];
+      const cell = document.createElement("td");
+      cell.className = "gerot-indicator-actions";
+      if (row && !row.calculationInput) {
+        cell.innerHTML = `<button class="gerot-icon-button" type="button" data-gerot-indicator-edit="${String(row.id).replaceAll('"', "&quot;")}" data-gerot-indicator-area="${String(area.area).replaceAll('"', "&quot;")}" aria-label="Editar indicador" title="Editar indicador">✎</button>`;
+      }
+      tableRow.appendChild(cell);
+    });
+  });
+}
+
 function showToast(message, tone = "success") {
   const node = document.createElement("div");
   node.className = `toast ${tone}`;
@@ -291,6 +333,7 @@ async function loadView(viewId) {
     const data = viewId === "gerot" ? applyGerotAdminChanges(loadedData) : loadedData;
     state.dataCache[viewId] = data;
     elements.pageContent.innerHTML = view.render(data, state);
+    if (viewId === "gerot") addGerotEditorControls(data);
 
     if (viewId === "audit") {
       elements.notificationBadge.textContent = String(data.unreadCount || 0);
@@ -645,20 +688,25 @@ async function handleDynamicClick(event) {
   }
   const gerotIndicatorEditButton = event.target.closest("[data-gerot-indicator-edit]");
   if (gerotIndicatorEditButton) {
-    if (state.user?.role !== "admin") return;
     const area = gerotIndicatorEditButton.dataset.gerotIndicatorArea;
-    const row = state.dataCache.gerot?.areas?.find((item) => item.area === area)?.rows?.find((item) => item.id === gerotIndicatorEditButton.dataset.gerotIndicatorEdit);
+    const areaRecord = state.dataCache.gerot?.areas?.find((item) => item.area === area);
+    if (!areaRecord?.canEdit && state.user?.role !== "admin") return;
+    const row = areaRecord?.rows?.find((item) => item.id === gerotIndicatorEditButton.dataset.gerotIndicatorEdit);
     if (!row) return;
     const indicator = window.prompt("Nome do indicador:", row.indicator || "");
     if (indicator === null) return;
     const unit = window.prompt("Unidade:", row.unit || "");
     if (unit === null) return;
+    const eoy2024 = window.prompt("EOY 2024 (deixe vazio se não houver):", row.eoy2024 ?? "");
+    if (eoy2024 === null) return;
+    const eoy2025 = window.prompt("EOY 2025 (deixe vazio se não houver):", row.eoy2025 ?? "");
+    if (eoy2025 === null) return;
     const target = window.prompt("Meta (deixe vazio se não houver):", row.target ?? "");
     if (target === null) return;
     const direction = window.prompt("Direção da meta: MA (maior), ME (menor) ou vazio:", row.goalMode === "lower" ? "ME" : row.goalMode === "higher" ? "MA" : "");
     if (direction === null) return;
     try {
-      saveGerotIndicator(area, { ...row, indicator, unit, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" });
+      saveGerotIndicator(area, { ...row, indicator, unit, eoy2024, eoy2025, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" });
       showToast("Indicador atualizado.");
       await loadView("gerot");
     } catch (error) { handleError(error, "Não foi possível atualizar o indicador."); }
