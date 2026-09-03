@@ -2285,3 +2285,21 @@ td { padding-top: 7px; padding-bottom: 7px; font-size: .72rem; }
   text-align: center;
 }
 .action-owner-actions .gerot-icon-button { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
+
+.gerot-executive-board { overflow: hidden; border: 1px solid #c7ced7; border-radius: 10px; background: #fff; box-shadow: 0 9px 24px rgba(27, 42, 62, .08); }
+.gerot-board-banner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 16px; background: #5b5b5b; color: #fff; }
+.gerot-board-banner span { font-family: var(--font-display); font-size: 1.08rem; font-weight: 800; letter-spacing: .02em; }
+.gerot-board-banner small { font-size: .7rem; font-weight: 700; opacity: .86; text-transform: uppercase; letter-spacing: .08em; }
+.gerot-board-scroll { overflow: auto; background: #f6f7f9; }
+.gerot-executive-board table { width: 100%; min-width: 1380px; border-collapse: collapse; table-layout: fixed; color: #1d2937; font-size: .72rem; }
+.gerot-executive-board th, .gerot-executive-board td { border: 1px solid #fff; padding: 8px 6px; text-align: center; vertical-align: middle; }
+.gerot-executive-board thead th { background: #5b5b5b; color: #fff; font-size: .62rem; font-weight: 800; letter-spacing: .03em; white-space: nowrap; }
+.gerot-executive-board thead th:first-child { width: 210px; }
+.gerot-executive-board tbody th { background: #d9dde2; color: #192535; font-weight: 800; text-align: left; padding-left: 12px; }
+.gerot-executive-board tbody td { background: #f2f3f5; font-weight: 700; white-space: nowrap; }
+.gerot-executive-board tbody td.meta { background: #e6e8eb; color: #1c2c40; }
+.gerot-executive-board tbody td.success { background: #dff1e7; color: #1e7650; }
+.gerot-executive-board tbody td.danger { background: #f8e0e3; color: #a33a48; }
+.gerot-executive-board td.empty { padding: 20px; color: #6d7885; text-align: center; }
+.gerot-board-note { margin: 0; padding: 8px 12px; color: #667484; background: #fff; font-size: .66rem; }
+@media (max-width: 780px) { .gerot-board-banner { padding: 10px 12px; } .gerot-board-banner small { display: none; } .gerot-executive-board table { min-width: 1180px; } }

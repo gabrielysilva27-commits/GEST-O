@@ -97,10 +97,75 @@ function gerotRowsInDisplayOrder(area) {
   return ordered;
 }
 
+function createGerotBoard(table, area, isGeneral = false) {
+  if (!table || table.dataset.boardReady === "true") return;
+  table.dataset.boardReady = "true";
+  const editorLayout = table.closest(".gerot-card");
+  if (!editorLayout) return;
+  editorLayout.dataset.gerotEditorLayout = "";
+  const columnOffset = isGeneral ? 1 : 0;
+  const rows = [...table.querySelectorAll("tbody tr")]
+    .filter((row) => !row.classList.contains("gerot-memory-row"))
+    .map((row) => {
+      const cells = [...row.cells];
+      const cellAt = (index) => cells[index + columnOffset];
+      const kpi = cellAt(1)?.textContent.trim() || "";
+      if (/^(REAL|TEND|TENDÊNCIA|TENDENCIA)$/i.test(kpi)) return "";
+      const valueCell = (index) => {
+        const cell = cellAt(index);
+        const state = cell?.classList.contains("success") ? "success" : cell?.classList.contains("danger") ? "danger" : "";
+        return '<td class="' + state + '">' + (cell?.textContent.trim() || "–") + "</td>";
+      };
+      const unit = cellAt(2)?.textContent.trim() || "–";
+      const fy = cellAt(4)?.textContent.trim() || "–";
+      const meta = cellAt(5)?.textContent.trim() || "–";
+      const cia = cellAt(3)?.textContent.trim() || "–";
+      const months = Array.from({ length: 12 }, (_, index) => valueCell(7 + index)).join("");
+      return '<tr><th scope="row">' + (kpi || "Indicador") + "</th><td>" + unit + "</td><td>" + fy + '</td><td class="meta">' + meta + "</td>" + valueCell(6) + "<td>" + cia + "</td>" + months + "</tr>";
+    }).filter(Boolean).join("");
+  const board = document.createElement("section");
+  board.className = "gerot-executive-board";
+  board.dataset.gerotDisplayBoard = "";
+  board.innerHTML = '<div class="gerot-board-banner"><span>GEROT - ' + area + '</span><small>Resultados mensais</small></div><div class="gerot-board-scroll"><table><thead><tr><th>KPI</th><th>UN</th><th>FY</th><th>META 2026</th><th>YTD</th><th>CIA</th><th>JAN</th><th>FEV</th><th>MAR</th><th>ABR</th><th>MAI</th><th>JUN</th><th>JUL</th><th>AGO</th><th>SET</th><th>OUT</th><th>NOV</th><th>DEZ</th></tr></thead><tbody>' + (rows || '<tr><td colspan="18" class="empty">Sem indicadores para exibição.</td></tr>') + '</tbody></table></div><p class="gerot-board-note">FY: EOY 2025 · CIA: comparativo 2024 · Valores atualizados conforme a memória de cálculo.</p>';
+  editorLayout.before(board);
+  editorLayout.hidden = true;
+}
+
+function buildGerotDisplayBoards(data) {
+  if (!Array.isArray(data?.areas)) return;
+  const general = elements.pageContent.querySelector("[data-gerot-general]");
+  createGerotBoard(general?.querySelector(".gerot-general-table"), "GERAL", true);
+  data.areas.forEach((area) => {
+    const panel = elements.pageContent.querySelector('[data-gerot-panel="' + CSS.escape(area.area) + '"]');
+    createGerotBoard(panel?.querySelector(".gerot-table"), area.area);
+  });
+}
+
+function gerotRowsInDisplayOrder(area) {
+  const rows = Array.isArray(area?.rows) ? area.rows : [];
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const rendered = new Set();
+  const memoriesFor = (row, visited = new Set()) => (Array.isArray(row.formulaInputs) ? row.formulaInputs : []).flatMap((id) => {
+    if (visited.has(id)) return [];
+    const memory = byId.get(id);
+    if (!memory) return [];
+    const next = new Set(visited).add(id);
+    return [memory, ...memoriesFor(memory, next)];
+  });
+  const ordered = rows.filter((row) => !row.calculationInput).flatMap((row) => {
+    const memories = memoriesFor(row);
+    memories.forEach((memory) => rendered.add(memory.id));
+    return [row, ...memories];
+  });
+  rows.filter((row) => row.calculationInput && !rendered.has(row.id)).forEach((row) => ordered.push(row));
+  return ordered;
+}
+
 function addGerotEditorControls(data) {
+  buildGerotDisplayBoards(data);
   if (state.user?.role === "admin" || !Array.isArray(data?.areas)) return;
   data.areas.filter((area) => area.canEdit).forEach((area) => {
-    const panel = elements.pageContent.querySelector(`[data-gerot-panel="${CSS.escape(area.area)}"]`);
+    const panel = elements.pageContent.querySelector('[data-gerot-panel="' + CSS.escape(area.area) + '"]');
     const table = panel?.querySelector(".gerot-table");
     if (!table || table.dataset.editorControls === "true") return;
     table.dataset.editorControls = "true";
@@ -112,7 +177,7 @@ function addGerotEditorControls(data) {
       const cell = document.createElement("td");
       cell.className = "gerot-indicator-actions";
       if (row && !row.calculationInput) {
-        cell.innerHTML = `<button class="gerot-icon-button" type="button" data-gerot-indicator-edit="${String(row.id).replaceAll('"', "&quot;")}" data-gerot-indicator-area="${String(area.area).replaceAll('"', "&quot;")}" aria-label="Editar indicador" title="Editar indicador">✎</button>`;
+        cell.innerHTML = '<button class="gerot-icon-button" type="button" data-gerot-indicator-edit="' + String(row.id).replaceAll('"', "&quot;") + '" data-gerot-indicator-area="' + String(area.area).replaceAll('"', "&quot;") + '" aria-label="Editar indicador" title="Editar indicador">✎</button>';
       }
       tableRow.appendChild(cell);
     });
@@ -762,6 +827,8 @@ async function handleDynamicClick(event) {
   if (gerotEditButton) {
     const actionArea = gerotEditButton.dataset.gerotActionArea;
     const scope = (actionArea && [...elements.pageContent.querySelectorAll("[data-gerot-panel]")].find((panel) => panel.dataset.gerotPanel === actionArea)) || gerotEditButton.closest("[data-gerot-panel]") || elements.pageContent;
+    scope.querySelector("[data-gerot-display-board]")?.setAttribute("hidden", "");
+    scope.querySelector("[data-gerot-editor-layout]")?.removeAttribute("hidden");
     scope.querySelector(".gerot-card")?.classList.add("is-editing");
     scope.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = false; });
     gerotEditButton.hidden = true;
