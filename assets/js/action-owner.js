@@ -1,38 +1,7 @@
-const STORAGE_KEY = "lead-gestao-db-v2";
+import { persistOperationalData, syncOperationalData } from "./shared-api.js?v=20260903-01";
 
-function readDatabase() {
-  const database = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-  if (!database || !Array.isArray(database.actionPlans)) throw new Error("Não foi possível acessar as ações.");
-  return database;
-}
-
-function saveDatabase(database) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
-}
-
-function ownedAction(database, user, actionId) {
-  const action = database.actionPlans.find((item) => Number(item.id) === Number(actionId));
-  if (!action || Number(action.ownerId) !== Number(user?.id)) {
-    throw new Error("Somente o responsável pode alterar esta ação.");
-  }
-  return action;
-}
-
-export function updateOwnedAction(user, actionId, values = {}) {
-  const database = readDatabase();
-  const action = ownedAction(database, user, actionId);
-  const objective = String(values.objective || "").trim();
-  if (!objective) throw new Error("Informe o plano de ação.");
-  action.objective = objective;
-  action.priority = ["low", "medium", "high", "critical"].includes(values.priority) ? values.priority : action.priority;
-  action.dueDate = values.dueDate || action.dueDate;
-  action.updatedAt = new Date().toISOString();
-  saveDatabase(database);
-}
-
-export function deleteOwnedAction(user, actionId) {
-  const database = readDatabase();
-  const action = ownedAction(database, user, actionId);
-  database.actionPlans = database.actionPlans.filter((item) => Number(item.id) !== Number(action.id));
-  saveDatabase(database);
-}
+const KEY="lead-gestao-db-v2";
+function database(){const value=JSON.parse(localStorage.getItem(KEY)||"null");if(!value||!Array.isArray(value.actionPlans))throw new Error("Não foi possível acessar as ações.");return value;}
+function ownedAction(db,user,id){const action=db.actionPlans.find(item=>Number(item.id)===Number(id));if(!action||Number(action.ownerId)!==Number(user?.id))throw new Error("Somente o responsável pode alterar esta ação.");return action;}
+export async function updateOwnedAction(user,id,values={}){await syncOperationalData();const db=database(),action=ownedAction(db,user,id),objective=String(values.objective||"").trim();if(!objective)throw new Error("Informe o plano de ação.");action.objective=objective;action.priority=["low","medium","high","critical"].includes(values.priority)?values.priority:action.priority;action.dueDate=values.dueDate||action.dueDate;action.updatedAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(db));await persistOperationalData();}
+export async function deleteOwnedAction(user,id){await syncOperationalData();const db=database(),action=ownedAction(db,user,id);db.actionPlans=db.actionPlans.filter(item=>Number(item.id)!==Number(action.id));localStorage.setItem(KEY,JSON.stringify(db));await persistOperationalData();}

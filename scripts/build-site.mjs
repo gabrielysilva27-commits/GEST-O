@@ -229,6 +229,64 @@ export class AuditStore {
   }
 }
 
+function sourceUser(username) {
+  const source = assets.get("/assets/js/api.js")?.body || "";
+  if (String(username) === "Gabriely") {
+    const hash = /PASSWORD_HASH_GABY0739\s*=\s*"([a-f0-9]{64})"/i.exec(source)?.[1];
+    return hash ? { username, role: "admin", hash } : null;
+  }
+  const tuple = new RegExp('\\["[^"]+",\\s*"' + String(username) + '",\\s*"([a-f0-9]{64})"', "i").exec(source);
+  if (tuple) return { username, role: "operator", hash: tuple[1] };
+  const marker = source.indexOf('username: "' + String(username) + '"');
+  const block = marker < 0 ? "" : source.slice(marker, marker + 900);
+  const hash = /passwordHash:\s*"([a-f0-9]{64})"/i.exec(block)?.[1];
+  return hash ? { username, role: /role:\s*"([^"]+)"/.exec(block)?.[1] || "operator", hash } : null;
+}
+async function passwordHash(password) { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(password || ""))); return [...new Uint8Array(digest)].map((item) => item.toString(16).padStart(2, "0")).join(""); }
+
+export class SharedStore {
+  constructor(state, env) { this.state = state; this.env = env; }
+  async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
+  async fetch(request) {
+    const path = new URL(request.url).pathname;
+    if (path === "/api/session") {
+      const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
+      if (!this.env.APP_SYNC_SECRET || !user || user.hash !== await passwordHash(body?.password)) return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
+      const sessions = (await this.state.storage.get("sessions")) || {}, token = crypto.randomUUID() + crypto.randomUUID();
+      sessions[token] = { username: user.username, role: user.role, expiresAt: Date.now() + 43200000 };
+      await this.state.storage.put("sessions", sessions);
+      return Response.json({ token });
+    }
+    const claim = await this.session(request);
+    if (!claim) return Response.json({ error: "Sessão inválida." }, { status: 401 });
+
+    if (path === "/api/audit-actions") {
+      const headers = new Headers(request.headers);
+      headers.set("x-lead-username", claim.username);
+      headers.set("x-lead-role", claim.role);
+      return this.env.AUDIT_STORE.getByName("lead-gestao-audit-actions").fetch(new Request(request, { headers }));
+    }
+    if (path === "/api/shared-data") {
+      if (request.method === "GET") return Response.json({ data: (await this.state.storage.get("data")) || null });
+      if (request.method !== "PUT") return Response.json({ error: "Método não permitido." }, { status: 405 });
+      const body = await request.json().catch(() => ({}));
+      if (!body?.data || typeof body.data !== "object" || Array.isArray(body.data)) return Response.json({ error: "Dados inválidos." }, { status: 400 });
+      await this.state.storage.put("data", body.data);
+      return Response.json({ success: true });
+    }
+    if (path === "/api/gerot-overrides") {
+      if (request.method === "GET") return Response.json({ store: (await this.state.storage.get("gerotOverrides")) || {} });
+      if (request.method !== "PATCH") return Response.json({ error: "Método não permitido." }, { status: 405 });
+      if (claim.role !== "admin") return Response.json({ error: "Somente o ADM pode alterar indicadores do GEROT." }, { status: 403 });
+      const body = await request.json().catch(() => ({}));
+      if (!body?.store || typeof body.store !== "object" || Array.isArray(body.store)) return Response.json({ error: "Dados inválidos." }, { status: 400 });
+      await this.state.storage.put("gerotOverrides", body.store);
+      return Response.json({ store: body.store });
+    }
+    return Response.json({ error: "Endpoint não encontrado." }, { status: 404 });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -239,10 +297,11 @@ export default {
       return presence.fetch(request);
     }
 
-    if (pathname === "/api/audit-actions") {
-      const auditStore = env.AUDIT_STORE.getByName("lead-gestao-audit-actions");
-      return auditStore.fetch(request);
+    if (pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
+      return env.SHARED_STORE.getByName("lead-gestao-shared-store").fetch(request);
     }
+
+
 
     const asset = assets.get(pathname);
 

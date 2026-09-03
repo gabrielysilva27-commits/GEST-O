@@ -1,9 +1,12 @@
-import { api, ApiError } from "./api.js?v=20260902-02";
+import { api as localApi, ApiError } from "./api.js?v=20260902-02";
+import { createSharedApi } from "./shared-api.js?v=20260903-01";
 import { createAuditApi } from "./audit-api.js?v=20260902-02";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260902-13";
-import { applyGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260903-01";
+import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260903-02";
 import { deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260903-01";
+
+const api = createSharedApi(localApi);
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -376,7 +379,7 @@ async function loadView(viewId) {
 
   try {
     const loadedData = await view.load(viewId === "audit" ? auditApi : api, state.token);
-    const data = viewId === "gerot" ? applyGerotAdminChanges(loadedData) : loadedData;
+    const data = viewId === "gerot" ? applyGerotAdminChanges(loadedData, await loadGerotAdminChanges()) : loadedData;
     state.dataCache[viewId] = data;
     elements.pageContent.innerHTML = view.render(data, state);
     if (viewId === "gerot") addGerotEditorControls(data);
@@ -726,7 +729,7 @@ async function handleDynamicClick(event) {
     const direction = window.prompt("Direção da meta: MA (maior), ME (menor) ou vazio:", "MA");
     if (direction === null) return;
     try {
-      saveGerotIndicator(area, { indicator, unit, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" }, true);
+      await saveGerotIndicator(area, { indicator, unit, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" }, true);
       showToast("Indicador incluído no GEROT.");
       await loadView("gerot");
     } catch (error) { handleError(error, "Não foi possível incluir o indicador."); }
@@ -752,7 +755,7 @@ async function handleDynamicClick(event) {
     const direction = window.prompt("Direção da meta: MA (maior), ME (menor) ou vazio:", row.goalMode === "lower" ? "ME" : row.goalMode === "higher" ? "MA" : "");
     if (direction === null) return;
     try {
-      saveGerotIndicator(area, { ...row, indicator, unit, eoy2024, eoy2025, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" });
+      await saveGerotIndicator(area, { ...row, indicator, unit, eoy2024, eoy2025, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" });
       showToast("Indicador atualizado.");
       await loadView("gerot");
     } catch (error) { handleError(error, "Não foi possível atualizar o indicador."); }
@@ -763,7 +766,7 @@ async function handleDynamicClick(event) {
     if (state.user?.role !== "admin") return;
     const area = gerotIndicatorDeleteButton.dataset.gerotIndicatorArea;
     if (!window.confirm("Excluir este indicador do GEROT?")) return;
-    removeGerotIndicator(area, gerotIndicatorDeleteButton.dataset.gerotIndicatorDelete);
+    await removeGerotIndicator(area, gerotIndicatorDeleteButton.dataset.gerotIndicatorDelete);
     showToast("Indicador excluído.");
     await loadView("gerot");
     return;
@@ -780,7 +783,7 @@ async function handleDynamicClick(event) {
     const priority = window.prompt("Prioridade: low, medium, high ou critical:", item.priority || "medium");
     if (priority === null) return;
     try {
-      updateOwnedAction(state.user, item.id, { objective, dueDate, priority });
+      await updateOwnedAction(state.user, item.id, { objective, dueDate, priority });
       showToast("Ação atualizada.");
       await loadView("actionPlans");
     } catch (error) {
@@ -795,7 +798,7 @@ async function handleDynamicClick(event) {
     if (!item || Number(item.ownerId) !== Number(state.user?.id)) return;
     if (!window.confirm("Excluir esta ação?")) return;
     try {
-      deleteOwnedAction(state.user, item.id);
+      await deleteOwnedAction(state.user, item.id);
       showToast("Ação excluída.");
       await loadView("actionPlans");
     } catch (error) {
