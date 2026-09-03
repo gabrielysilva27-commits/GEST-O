@@ -2267,3 +2267,9 @@ td { padding-top: 7px; padding-bottom: 7px; font-size: .72rem; }
   .topbar { min-height: 42px; padding: 6px 9px; flex-wrap: nowrap; }
   .topbar-actions { width: auto; align-items: center; justify-content: flex-end; }
 }
+
+.gerot-indicator-actions { white-space: nowrap; text-align: right; }
+.gerot-icon-button { width: 26px; height: 26px; padding: 0; border: 1px solid var(--border-color, #d8e0eb); border-radius: 7px; background: var(--surface, #fff); color: var(--text-primary, #17304f); font: inherit; cursor: pointer; line-height: 1; }
+.gerot-icon-button + .gerot-icon-button { margin-left: 4px; }
+.gerot-icon-button:hover { border-color: var(--primary, #2356a6); color: var(--primary, #2356a6); }
+.gerot-icon-button.danger:hover { border-color: #c94949; color: #c94949; }

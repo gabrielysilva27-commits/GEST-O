@@ -2,6 +2,7 @@ import { api, ApiError } from "./api.js?v=20260902-02";
 import { createAuditApi } from "./audit-api.js?v=20260902-02";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260902-13";
+import { applyGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260903-01";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -285,7 +286,8 @@ async function loadView(viewId) {
   `;
 
   try {
-    const data = await view.load(viewId === "audit" ? auditApi : api, state.token);
+    const loadedData = await view.load(viewId === "audit" ? auditApi : api, state.token);
+    const data = viewId === "gerot" ? applyGerotAdminChanges(loadedData) : loadedData;
     state.dataCache[viewId] = data;
     elements.pageContent.innerHTML = view.render(data, state);
 
@@ -621,6 +623,57 @@ async function handleDynamicClick(event) {
     applyAuditFilters();
     return;
   }
+  const gerotIndicatorAddButton = event.target.closest("[data-gerot-indicator-add]");
+  if (gerotIndicatorAddButton) {
+    const area = gerotIndicatorAddButton.dataset.gerotActionArea;
+    if (!area || state.user?.role !== "admin") return;
+    const indicator = window.prompt("Nome do indicador:");
+    if (indicator === null) return;
+    const unit = window.prompt("Unidade (ex.: %, R$, N°):", "%");
+    if (unit === null) return;
+    const target = window.prompt("Meta (deixe vazio se não houver):", "");
+    if (target === null) return;
+    const direction = window.prompt("Direção da meta: MA (maior), ME (menor) ou vazio:", "MA");
+    if (direction === null) return;
+    try {
+      saveGerotIndicator(area, { indicator, unit, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" }, true);
+      showToast("Indicador incluído no GEROT.");
+      await loadView("gerot");
+    } catch (error) { handleError(error, "Não foi possível incluir o indicador."); }
+    return;
+  }
+  const gerotIndicatorEditButton = event.target.closest("[data-gerot-indicator-edit]");
+  if (gerotIndicatorEditButton) {
+    if (state.user?.role !== "admin") return;
+    const area = gerotIndicatorEditButton.dataset.gerotIndicatorArea;
+    const row = state.dataCache.gerot?.areas?.find((item) => item.area === area)?.rows?.find((item) => item.id === gerotIndicatorEditButton.dataset.gerotIndicatorEdit);
+    if (!row) return;
+    const indicator = window.prompt("Nome do indicador:", row.indicator || "");
+    if (indicator === null) return;
+    const unit = window.prompt("Unidade:", row.unit || "");
+    if (unit === null) return;
+    const target = window.prompt("Meta (deixe vazio se não houver):", row.target ?? "");
+    if (target === null) return;
+    const direction = window.prompt("Direção da meta: MA (maior), ME (menor) ou vazio:", row.goalMode === "lower" ? "ME" : row.goalMode === "higher" ? "MA" : "");
+    if (direction === null) return;
+    try {
+      saveGerotIndicator(area, { ...row, indicator, unit, target, goalMode: direction.trim().toUpperCase() === "ME" ? "lower" : direction.trim() ? "higher" : "none" });
+      showToast("Indicador atualizado.");
+      await loadView("gerot");
+    } catch (error) { handleError(error, "Não foi possível atualizar o indicador."); }
+    return;
+  }
+  const gerotIndicatorDeleteButton = event.target.closest("[data-gerot-indicator-delete]");
+  if (gerotIndicatorDeleteButton) {
+    if (state.user?.role !== "admin") return;
+    const area = gerotIndicatorDeleteButton.dataset.gerotIndicatorArea;
+    if (!window.confirm("Excluir este indicador do GEROT?")) return;
+    removeGerotIndicator(area, gerotIndicatorDeleteButton.dataset.gerotIndicatorDelete);
+    showToast("Indicador excluído.");
+    await loadView("gerot");
+    return;
+  }
+
   const gerotEditButton = event.target.closest("[data-gerot-edit]");
   if (gerotEditButton) {
     const actionArea = gerotEditButton.dataset.gerotActionArea;
@@ -802,7 +855,7 @@ function handleDynamicChange(event) {
       if (masterActions) {
         const canEditArea = area !== "GERAL" && selectedPanel?.dataset.gerotCanEdit === "true";
         masterActions.hidden = !canEditArea;
-        masterActions.querySelectorAll("[data-gerot-action-area], [data-gerot-edit], [data-gerot-save]").forEach((button) => {
+        masterActions.querySelectorAll("[data-gerot-action-area], [data-gerot-edit], [data-gerot-save], [data-gerot-indicator-add]").forEach((button) => {
           button.dataset.gerotActionArea = canEditArea ? area : "";
         });
         const editButton = masterActions.querySelector("[data-gerot-edit]");
