@@ -2303,3 +2303,16 @@ td { padding-top: 7px; padding-bottom: 7px; font-size: .72rem; }
 .gerot-executive-board td.empty { padding: 20px; color: #6d7885; text-align: center; }
 .gerot-board-note { margin: 0; padding: 8px 12px; color: #667484; background: #fff; font-size: .66rem; }
 @media (max-width: 780px) { .gerot-board-banner { padding: 10px 12px; } .gerot-board-banner small { display: none; } .gerot-executive-board table { min-width: 1180px; } }
+
+/* Quadro GEROT: visualização compacta e legível */
+.gerot-executive-board { border-radius: 8px; box-shadow: 0 5px 16px rgba(27, 42, 62, .07); }
+.gerot-board-banner { min-height: 34px; padding: 7px 12px; }
+.gerot-board-banner span { font-size: .9rem; }
+.gerot-board-banner small { font-size: .61rem; }
+.gerot-executive-board table { min-width: 1240px; font-size: .64rem; }
+.gerot-executive-board th, .gerot-executive-board td { padding: 5px 4px; }
+.gerot-executive-board thead th { font-size: .56rem; line-height: 1.1; }
+.gerot-executive-board thead th:first-child { width: 185px; }
+.gerot-executive-board tbody th { padding-left: 9px; }
+.gerot-board-note { padding: 5px 10px; font-size: .59rem; }
+@media (max-width: 780px) { .gerot-executive-board table { min-width: 1100px; } }

@@ -121,12 +121,12 @@ function createGerotBoard(table, area, isGeneral = false) {
       const meta = cellAt(5)?.textContent.trim() || "–";
       const cia = cellAt(3)?.textContent.trim() || "–";
       const months = Array.from({ length: 12 }, (_, index) => valueCell(7 + index)).join("");
-      return '<tr><th scope="row">' + (kpi || "Indicador") + "</th><td>" + unit + "</td><td>" + fy + '</td><td class="meta">' + meta + "</td>" + valueCell(6) + "<td>" + cia + "</td>" + months + "</tr>";
+      return '<tr><th scope="row">' + (kpi || "Indicador") + "</th><td>" + unit + "</td><td>" + fy + '</td><td class="meta">' + meta + "</td><td>" + cia + "</td>" + valueCell(6) + months + "</tr>";
     }).filter(Boolean).join("");
   const board = document.createElement("section");
   board.className = "gerot-executive-board";
   board.dataset.gerotDisplayBoard = "";
-  board.innerHTML = '<div class="gerot-board-banner"><span>GEROT - ' + area + '</span><small>Resultados mensais</small></div><div class="gerot-board-scroll"><table><thead><tr><th>KPI</th><th>UN</th><th>FY</th><th>META 2026</th><th>YTD</th><th>CIA</th><th>JAN</th><th>FEV</th><th>MAR</th><th>ABR</th><th>MAI</th><th>JUN</th><th>JUL</th><th>AGO</th><th>SET</th><th>OUT</th><th>NOV</th><th>DEZ</th></tr></thead><tbody>' + (rows || '<tr><td colspan="18" class="empty">Sem indicadores para exibição.</td></tr>') + '</tbody></table></div><p class="gerot-board-note">FY: EOY 2025 · CIA: comparativo 2024 · Valores atualizados conforme a memória de cálculo.</p>';
+  board.innerHTML = '<div class="gerot-board-banner"><span>GEROT - ' + area + '</span><small>Resultados mensais</small></div><div class="gerot-board-scroll"><table><thead><tr><th>KPI</th><th>UN</th><th>FY</th><th>META 2026</th><th>CIA</th><th>YTD</th><th>JAN</th><th>FEV</th><th>MAR</th><th>ABR</th><th>MAI</th><th>JUN</th><th>JUL</th><th>AGO</th><th>SET</th><th>OUT</th><th>NOV</th><th>DEZ</th></tr></thead><tbody>' + (rows || '<tr><td colspan="18" class="empty">Sem indicadores para exibição.</td></tr>') + '</tbody></table></div><p class="gerot-board-note">FY: EOY 2025 · CIA: comparativo 2024 · Valores atualizados conforme a memória de cálculo.</p>';
   editorLayout.before(board);
   editorLayout.hidden = true;
 }
