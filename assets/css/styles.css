@@ -597,7 +597,7 @@ button {
 }
 
 .action-table {
-  min-width: 0;
+  min-width: 1180px;
   table-layout: fixed;
   font-size: 0.72rem;
 }
@@ -2273,3 +2273,15 @@ td { padding-top: 7px; padding-bottom: 7px; font-size: .72rem; }
 .gerot-icon-button + .gerot-icon-button { margin-left: 4px; }
 .gerot-icon-button:hover { border-color: var(--primary, #2356a6); color: var(--primary, #2356a6); }
 .gerot-icon-button.danger:hover { border-color: #c94949; color: #c94949; }
+
+.action-owner-actions-column { width: 76px; }
+.action-table td.action-owner-actions {
+  width: 76px;
+  min-width: 76px;
+  padding: 6px 7px;
+  overflow: visible;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  text-align: center;
+}
+.action-owner-actions .gerot-icon-button { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
