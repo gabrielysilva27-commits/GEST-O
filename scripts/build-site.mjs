@@ -196,10 +196,9 @@ export class AuditStore {
     const username = String(request.headers.get("x-lead-username") || "").trim();
     const role = String(request.headers.get("x-lead-role") || "").trim();
     const teamEditor = ["Diego", "Nathan", "Iago", "Ruan"].includes(username);
-    let actions = (await this.state.storage.get("actions")) || [];
+    const actions = (await this.state.storage.get("actions")) || [];
 
     if (request.method === "GET") {
-      if (role !== "admin" && !teamEditor) actions = actions.filter((item) => item.username === username);
       return Response.json({ items: actions, syncedAt: new Date().toISOString() });
     }
 

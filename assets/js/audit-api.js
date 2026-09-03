@@ -5,6 +5,7 @@ export function createAuditApi(getUser) {
     const user = getUser();
     return {
       ...(includeJson ? { "content-type": "application/json" } : {}),
+      "authorization": `Bearer ${localStorage.getItem("lead-gestao-sync-token") || ""}`,
       "x-lead-username": user?.username || "",
       "x-lead-role": user?.role || ""
     };
