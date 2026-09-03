@@ -3,6 +3,7 @@ import { createAuditApi } from "./audit-api.js?v=20260902-02";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260902-13";
 import { applyGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260903-01";
+import { deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260903-01";
 
 const elements = {
   loginRoot: document.querySelector("#loginRoot"),
@@ -671,6 +672,41 @@ async function handleDynamicClick(event) {
     removeGerotIndicator(area, gerotIndicatorDeleteButton.dataset.gerotIndicatorDelete);
     showToast("Indicador excluído.");
     await loadView("gerot");
+    return;
+  }
+
+  const editOwnedActionButton = event.target.closest("[data-edit-owned-action]");
+  if (editOwnedActionButton) {
+    const item = state.dataCache.actionPlans?.items?.find((entry) => String(entry.id) === String(editOwnedActionButton.dataset.editOwnedAction));
+    if (!item || Number(item.ownerId) !== Number(state.user?.id)) return;
+    const objective = window.prompt("Plano de ação:", item.objective || item.title || "");
+    if (objective === null) return;
+    const dueDate = window.prompt("Prazo (AAAA-MM-DD):", item.dueDate || "");
+    if (dueDate === null) return;
+    const priority = window.prompt("Prioridade: low, medium, high ou critical:", item.priority || "medium");
+    if (priority === null) return;
+    try {
+      updateOwnedAction(state.user, item.id, { objective, dueDate, priority });
+      showToast("Ação atualizada.");
+      await loadView("actionPlans");
+    } catch (error) {
+      handleError(error, "Não foi possível atualizar a ação.");
+    }
+    return;
+  }
+
+  const deleteOwnedActionButton = event.target.closest("[data-delete-owned-action]");
+  if (deleteOwnedActionButton) {
+    const item = state.dataCache.actionPlans?.items?.find((entry) => String(entry.id) === String(deleteOwnedActionButton.dataset.deleteOwnedAction));
+    if (!item || Number(item.ownerId) !== Number(state.user?.id)) return;
+    if (!window.confirm("Excluir esta ação?")) return;
+    try {
+      deleteOwnedAction(state.user, item.id);
+      showToast("Ação excluída.");
+      await loadView("actionPlans");
+    } catch (error) {
+      handleError(error, "Não foi possível excluir a ação.");
+    }
     return;
   }
 

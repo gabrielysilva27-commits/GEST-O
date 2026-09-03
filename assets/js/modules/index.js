@@ -661,6 +661,7 @@ function actionPlansView(data, context) {
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
     const canComplete = toInt(item.ownerId) === toInt(context.user?.id) && item.status !== "done";
     const statusCell = `${actionStatusBadge(item.status || "open")}${canComplete ? ` <button class="button secondary action-complete-button" type="button" data-complete-action="${escapeHtml(item.id)}">Concluir</button>` : ""}`;
+    const ownerActions = toInt(item.ownerId) === toInt(context.user?.id) ? `<button class="gerot-icon-button" type="button" data-edit-owned-action="${escapeHtml(item.id)}" aria-label="Editar ação" title="Editar ação">✎</button><button class="gerot-icon-button danger" type="button" data-delete-owned-action="${escapeHtml(item.id)}" aria-label="Excluir ação" title="Excluir ação">🗑</button>` : "";
     const attachment = item.attachment?.data
       ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
       : `<span class="text-muted">Sem anexo</span>`;
@@ -674,6 +675,7 @@ function actionPlansView(data, context) {
       <td data-label="Prioridade">${statusBadge(item.priority || "medium")}</td>
       <td data-label="Status">${statusCell}</td>
       <td data-label="Anexo">${attachment}</td>
+      <td class="action-owner-actions" data-label="Ações">${ownerActions}</td>
     </tr>`;
   }).join("");
 
@@ -696,7 +698,7 @@ function actionPlansView(data, context) {
         <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
       </section>
       <section class="table-card action-portfolio-card" data-action-portfolio>
-        ${rows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-plan-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-priority-column"><col class="action-status-column"><col class="action-attachment-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Plano de ação</th><th>Solicitante</th><th>Responsável</th><th>Prioridade</th><th>Status</th><th>Anexo</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
+        ${rows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-plan-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-priority-column"><col class="action-status-column"><col class="action-attachment-column"><col class="action-owner-actions-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Plano de ação</th><th>Solicitante</th><th>Responsável</th><th>Prioridade</th><th>Status</th><th>Anexo</th><th aria-label="Ações"></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações</h2><p>As novas ações abertas nas reuniões aparecerão aqui.</p></div></div>'}
       </section>
     </section>
   `;
