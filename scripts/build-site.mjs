@@ -195,7 +195,7 @@ export class AuditStore {
     await this.ready;
     const username = String(request.headers.get("x-lead-username") || "").trim();
     const role = String(request.headers.get("x-lead-role") || "").trim();
-    const teamEditor = ["Diego", "Nathan", "Iago"].includes(username);
+    const teamEditor = ["Diego", "Nathan", "Iago", "Ruan"].includes(username);
     let actions = (await this.state.storage.get("actions")) || [];
 
     if (request.method === "GET") {

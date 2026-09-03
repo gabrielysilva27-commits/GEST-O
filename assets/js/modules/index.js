@@ -336,11 +336,12 @@ function auditPanelView(data, context) {
   const items = data.items || [];
   const counts = Object.fromEntries(["pending", "in_progress", "done"].map((status) => [status, items.filter((item) => item.status === status).length]));
   const isAdmin = context.user?.role === "admin";
-  const isTeamEditor = ["Diego", "Nathan", "Iago"].includes(context.user?.username);
+  const isTeamEditor = ["Diego", "Nathan", "Iago", "Ruan"].includes(context.user?.username);
+  const canSeeTeam = isAdmin || isTeamEditor;
   const pilarOptions = [...new Set(items.map((item) => item.pilar))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const ownerOptions = [...new Set(items.map((item) => item.responsavel))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const cards = [
-    { label: "Total de ações", value: items.length, helper: isAdmin ? "Carteira completa da auditoria" : "Ações sob sua responsabilidade" },
+    { label: "Total de ações", value: items.length, helper: canSeeTeam ? "Carteira completa da auditoria" : "Ações sob sua responsabilidade" },
     { label: "Não iniciadas", value: counts.pending, helper: "Aguardando início" },
     { label: "Em andamento", value: counts.in_progress, helper: "Atuação registrada agora" },
     { label: "Concluídas", value: counts.done, helper: `${items.length ? Math.round((counts.done / items.length) * 100) : 0}% da carteira` }
@@ -402,13 +403,13 @@ function auditPanelView(data, context) {
       <div class="action-filter-grid audit-filter-grid">
         <label class="field"><span>Buscar</span><input data-audit-filter="text" placeholder="Questão, ação ou meta"></label>
         <label class="field"><span>Pilar</span><select data-audit-filter="pilar"><option value="">Todos</option>${pilarOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>
-        ${isAdmin ? `<label class="field"><span>Responsável</span><select data-audit-filter="owner"><option value="">Todos</option>${ownerOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>` : ""}
+        ${canSeeTeam ? `<label class="field"><span>Responsável</span><select data-audit-filter="owner"><option value="">Todos</option>${ownerOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>` : ""}
         <label class="field"><span>Status</span><select data-audit-filter="status"><option value="">Todos</option><option value="pending">Não iniciada</option><option value="in_progress">Em andamento</option><option value="done">Concluída</option></select></label>
       </div>
       <p class="action-filter-result" data-audit-filter-result>${items.length} ações encontradas</p>
     </section>
     <section class="table-card audit-table-card">
-      <div class="table-card-header"><div><h3>${isAdmin ? "Acompanhamento da equipe" : "Minhas ações de auditoria"}</h3></div><small>Atualização automática</small></div>
+      <div class="table-card-header"><div><h3>${canSeeTeam ? "Acompanhamento da equipe" : "Minhas ações de auditoria"}</h3></div><small>Atualização automática</small></div>
       <div class="table-scroll"><table class="audit-actions-table ${isAdmin ? "is-admin" : ""}"><colgroup>${isAdmin ? '<col class="audit-col-check">' : ""}<col class="audit-col-pilar"><col class="audit-col-question"><col class="audit-col-action"><col class="audit-col-target"><col class="audit-col-owner"><col class="audit-col-status"></colgroup><thead><tr>${isAdmin ? '<th aria-label="Concluir ação"></th>' : ""}<th>Pilar</th><th>Questão</th><th>Ação</th><th>Meta</th><th>Responsável</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
     </section>
   `;
