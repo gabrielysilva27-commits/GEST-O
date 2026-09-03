@@ -250,7 +250,7 @@ export class SharedStore {
     const path = new URL(request.url).pathname;
     if (path === "/api/session") {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
-      if (!this.env.APP_SYNC_SECRET || !user || user.hash !== await passwordHash(body?.password)) return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
+      if (!user || user.hash !== await passwordHash(body?.password)) return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
       const sessions = (await this.state.storage.get("sessions")) || {}, token = crypto.randomUUID() + crypto.randomUUID();
       sessions[token] = { username: user.username, role: user.role, expiresAt: Date.now() + 43200000 };
       await this.state.storage.put("sessions", sessions);
