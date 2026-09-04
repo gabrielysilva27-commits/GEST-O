@@ -627,7 +627,7 @@ function actionCreationForm(meetings, context) {
       </div>
       <label class="field full attachment-field">
         <span>Documento da ação (PDF ou foto)</span>
-        <input type="file" name="attachment" accept="application/pdf,image/jpeg,image/png" data-action-field required>
+        <input type="file" name="attachment" accept="application/pdf,image/jpeg,image/png" data-action-field>
         <small>Formatos aceitos: PDF, JPG, JPEG ou PNG. Limite de 5 MB.</small>
       </label>
       <div class="form-actions">
