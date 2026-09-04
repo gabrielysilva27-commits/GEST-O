@@ -1,7 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
-import { SHARED_ACTION_IMPORT_20260904 } from "./shared-action-import-20260904.mjs";
 
 const SHARED_MEETING_SUBJECT_SEED_VERSION = 2;
 const SHARED_MEETING_SUBJECT_SEED = {
@@ -218,11 +217,23 @@ async function buildAssetMap() {
   return assets.sort((left, right) => left.route.localeCompare(right.route));
 }
 
-function renderServerModule(assets) {
+async function buildPendingSharedActionImport() {
+  const files = Array.from({ length: 11 }, (_, index) => path.join(sourceAssetsPath, "js", `imported-action-history-pending-${String(index + 1).padStart(2, "0")}.js`));
+  const parts = await Promise.all(files.map(async (file) => {
+    const source = await fs.readFile(file, "utf8");
+    const match = source.match(/=\s*([\s\S]*);\s*$/);
+    if (!match) throw new Error(`Importação central inválida: ${file}`);
+    return JSON.parse(match[1]);
+  }));
+  return parts.flat().map((item) => ({ ...item, importKey: `retry20260904v2-row-${item.sourceRow}` }));
+}
+
+function renderServerModule(assets, sharedActionImport) {
   const serializedAssets = JSON.stringify(assets);
   const serializedAuditActions = JSON.stringify(AUDIT_ACTIONS);
   const serializedMeetingSubjectSeed = JSON.stringify(SHARED_MEETING_SUBJECT_SEED);
-  const serializedSharedActionImport = JSON.stringify(SHARED_ACTION_IMPORT_20260904);
+  const serializedSharedActionImport = JSON.stringify(sharedActionImport);
+  const serializedCentralMeetingSubjectSeed = JSON.stringify({"RPS Distribuição":["Atrasos","TML (pareto de motivos) + TI (aberto fis e fin)","TR","Aderência ao BEES","Devolução PDV","Devolução HL","On Time","Jornada Líquida"],"Pré e Pós Inventário_SPO + DPO":["DIF. DE ESTOQUE PA/AG"],"Reunião de Segurança":["GSD/GSA","Relatos de Segurança","Controle de multas","Prontuário do condutor - gestão CNH","Treinamento","Gestão de ASOs","Gestão no trajeto"],"Team Room God":["ILUMINAÇÃO NO ARMAZÉM","Relatos de Segurança","IV CRÍTICO -  ADERÊNCIA A MATRIZ DE PRIORIZAÇÃO","RETORNO DE ROTA","OTIF","MANUTENÇÃO DE PALETEIRAS","DISPONIBILIZAR 5 EMPILHADEIRAS","RONDA DE QUALIDADE","JORNADA LÍQUIDA","BLITZ DE CARREGAMENTO"],"Reunião DPO":["GOP"],"MPR Armazém_Controle":["RV Equipe de Armazém","Alerta de Qualidade","Erro de Carregamento","Atrasos","Quebras","CDP Falta de Produto","Aderência ao GSDP","Refugo"],"RPS Armazém_Controle":["Atrasos","Quebras","Matriz de Priorização","FEFO","OOR"],"MPR Distribuição":["Absenteísmo","Atrasos","Meu Cliente / Bees","Utilização TT"]});
 
   return `const assets = new Map(${serializedAssets}.map((entry) => [entry.route, entry]));
 const auditActionSeed = ${serializedAuditActions};
@@ -230,6 +241,7 @@ const auditSeedVersion = 1;
 const meetingSubjectSeed = ${serializedMeetingSubjectSeed};
 const meetingSubjectSeedVersion = ${SHARED_MEETING_SUBJECT_SEED_VERSION};
 const sharedActionImportSeed = ${serializedSharedActionImport};
+const centralMeetingSubjectSeed = ${serializedCentralMeetingSubjectSeed};
 const sharedActionImportBatch = "missing-registration-retry-20260904";
 
 function decodeBase64(value) {
@@ -398,12 +410,14 @@ export class SharedStore {
   constructor(state, env) {
     this.state = state;
     this.env = env;
-    this.ready = state.blockConcurrencyWhile(async () => { await this.ensureMeetingSubjects(); await this.ensureSharedActionImport(); });
+    this.ready = Promise.resolve();
   }
   applyMeetingSubjects(data) {
     if (!data || !Array.isArray(data.meetings)) return false;
     let changed = false;
-    for (const [title, subjects] of Object.entries(meetingSubjectSeed)) {
+    const subjectEntries = new Map(Object.entries(meetingSubjectSeed));
+    for (const [title, subjects] of Object.entries(centralMeetingSubjectSeed)) subjectEntries.set(title, [...new Set([...(subjectEntries.get(title) || []), ...subjects])]);
+    for (const [title, subjects] of subjectEntries) {
       const meeting = data.meetings.find((item) => String(item?.title || "") === title);
       if (!meeting) continue;
       const current = Array.isArray(meeting.subjects) ? meeting.subjects : [];
@@ -425,16 +439,8 @@ export class SharedStore {
     if (!data || !Array.isArray(data.meetings)) return false;
     data.actionPlans = Array.isArray(data.actionPlans) ? data.actionPlans : [];
     data.sequence = data.sequence && typeof data.sequence === "object" ? data.sequence : {};
-    const fp = (x) => [
-      String(x?.meetingTitle || ""),
-      String(x?.meetingSubject || x?.title || ""),
-      String(x?.requesterName || ""),
-      String(x?.legacyOwnerName || ""),
-      String(x?.objective || ""),
-      String(x?.dueDate || "")
-    ].join("␟");
     const keys = new Set(data.actionPlans.map((x)=>String(x?.legacyImportKey||"")).filter(Boolean));
-    const fps = new Set(data.actionPlans.map(fp));
+    const sourceRows = new Set(data.actionPlans.map((x)=>Number(x?.legacySourceRow||0)).filter(Boolean));
     let nextId = Math.max(Number(data.sequence.actionPlans || 0), 0, ...data.actionPlans.map((x)=>Number(x?.id||0)));
     let changed = false;
     for (const item of sharedActionImportSeed) {
@@ -452,7 +458,7 @@ export class SharedStore {
         objective: item.objective,
         dueDate
       };
-      if (keys.has(String(item.importKey)) || fps.has(fp(probe))) continue;
+      if (keys.has(String(item.importKey)) || sourceRows.has(Number(item.sourceRow))) continue;
       nextId += 1;
       const openedAt = item.openedAt || "2026-01-01";
       const executionDate = item.executionDate || openedAt;
@@ -486,8 +492,9 @@ export class SharedStore {
       };
       data.actionPlans.push(action);
       keys.add(String(item.importKey));
-      fps.add(fp(action));
+      sourceRows.add(Number(item.sourceRow));
       changed = true;
+      if (sourceRows.size % 10 === 0) break;
     }
     if (changed) data.sequence.actionPlans = nextId;
     return changed;
@@ -500,9 +507,8 @@ export class SharedStore {
   async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
   async fetch(request) {
     await this.ready;
-    await this.ensureMeetingSubjects();
-    await this.ensureSharedActionImport();
     const path = new URL(request.url).pathname;
+    if (path === "/api/central-import" && request.method === "POST") { const data = (await this.state.storage.get("data")) || null; this.applyMeetingSubjects(data); const changed = this.applySharedActionImport(data); if (changed) await this.state.storage.put("data", data); return Response.json({ success: true, imported: changed }); }
     if (path === "/api/session") {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
       if (!user || user.hash !== await passwordHash(body?.password)) return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
@@ -563,7 +569,7 @@ export default {
       return presence.fetch(request);
     }
 
-    if (pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
+    if (pathname === "/api/central-import" || pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
       return env.SHARED_STORE.getByName("lead-gestao-shared-store").fetch(request);
     }
 
@@ -589,6 +595,7 @@ await fs.rm(distPath, { recursive: true, force: true });
 await fs.mkdir(distServerPath, { recursive: true });
 
 const assets = await buildAssetMap();
-const serverModule = renderServerModule(assets);
+const sharedActionImport = await buildPendingSharedActionImport();
+const serverModule = renderServerModule(assets, sharedActionImport);
 
 await fs.writeFile(path.join(distServerPath, "index.js"), serverModule, "utf8");
