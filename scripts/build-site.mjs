@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
+import { SHARED_ACTION_IMPORT_20260904 } from "./shared-action-import-20260904.mjs";
 
 const SHARED_MEETING_SUBJECT_SEED_VERSION = 2;
 const SHARED_MEETING_SUBJECT_SEED = {
@@ -221,12 +222,15 @@ function renderServerModule(assets) {
   const serializedAssets = JSON.stringify(assets);
   const serializedAuditActions = JSON.stringify(AUDIT_ACTIONS);
   const serializedMeetingSubjectSeed = JSON.stringify(SHARED_MEETING_SUBJECT_SEED);
+  const serializedSharedActionImport = JSON.stringify(SHARED_ACTION_IMPORT_20260904);
 
   return `const assets = new Map(${serializedAssets}.map((entry) => [entry.route, entry]));
 const auditActionSeed = ${serializedAuditActions};
 const auditSeedVersion = 1;
 const meetingSubjectSeed = ${serializedMeetingSubjectSeed};
 const meetingSubjectSeedVersion = ${SHARED_MEETING_SUBJECT_SEED_VERSION};
+const sharedActionImportSeed = ${serializedSharedActionImport};
+const sharedActionImportBatch = "missing-registration-retry-20260904";
 
 function decodeBase64(value) {
   const binary = atob(value);
@@ -394,7 +398,7 @@ export class SharedStore {
   constructor(state, env) {
     this.state = state;
     this.env = env;
-    this.ready = state.blockConcurrencyWhile(() => this.ensureMeetingSubjects());
+    this.ready = state.blockConcurrencyWhile(async () => { await this.ensureMeetingSubjects(); await this.ensureSharedActionImport(); });
   }
   applyMeetingSubjects(data) {
     if (!data || !Array.isArray(data.meetings)) return false;
@@ -417,10 +421,87 @@ export class SharedStore {
     await this.state.storage.put("data", data);
     await this.state.storage.put("meetingSubjectSeedVersion", meetingSubjectSeedVersion);
   }
+  applySharedActionImport(data) {
+    if (!data || !Array.isArray(data.meetings)) return false;
+    data.actionPlans = Array.isArray(data.actionPlans) ? data.actionPlans : [];
+    data.sequence = data.sequence && typeof data.sequence === "object" ? data.sequence : {};
+    const fp = (x) => [
+      String(x?.meetingTitle || ""),
+      String(x?.meetingSubject || x?.title || ""),
+      String(x?.requesterName || ""),
+      String(x?.legacyOwnerName || ""),
+      String(x?.objective || ""),
+      String(x?.dueDate || "")
+    ].join("␟");
+    const keys = new Set(data.actionPlans.map((x)=>String(x?.legacyImportKey||"")).filter(Boolean));
+    const fps = new Set(data.actionPlans.map(fp));
+    let nextId = Math.max(Number(data.sequence.actionPlans || 0), 0, ...data.actionPlans.map((x)=>Number(x?.id||0)));
+    let changed = false;
+    for (const item of sharedActionImportSeed) {
+      const meeting = data.meetings.find((m) =>
+        Number(m?.templateId || 0) === Number(item.meetingTemplateId || 0) ||
+        String(m?.title || "") === String(item.meetingTitle || "")
+      );
+      if (!meeting || !(Array.isArray(meeting.subjects)?meeting.subjects:[]).includes(item.meetingSubject)) continue;
+      const dueDate = item.dueDate || item.openedAt || "2026-01-01";
+      const probe = {
+        meetingTitle: meeting.title,
+        meetingSubject: item.meetingSubject,
+        requesterName: item.requesterName,
+        legacyOwnerName: item.ownerName,
+        objective: item.objective,
+        dueDate
+      };
+      if (keys.has(String(item.importKey)) || fps.has(fp(probe))) continue;
+      nextId += 1;
+      const openedAt = item.openedAt || "2026-01-01";
+      const executionDate = item.executionDate || openedAt;
+      const action = {
+        id: nextId,
+        title: item.meetingSubject,
+        objective: item.objective,
+        status: "done",
+        priority: item.priority || "medium",
+        companyId: 0,
+        unitId: 0,
+        ownerId: Number(item.ownerId || 0),
+        requesterId: 0,
+        requesterName: item.requesterName,
+        legacyOwnerName: item.ownerName,
+        createdBy: 1,
+        dueDate,
+        meetingId: Number(meeting.id || 0),
+        meetingTitle: meeting.title,
+        meetingSubject: item.meetingSubject,
+        meetingExecutionDate: executionDate,
+        source: "legacy_excel",
+        sourceLabel: "ACOES_NAO_IMPORTADAS_POR_FALTA_DE_CADASTRO(1).xlsx",
+        legacySourceRow: Number(item.sourceRow || 0),
+        legacyStatus: item.sourceStatus,
+        legacyImportBatch: sharedActionImportBatch,
+        legacyImportKey: item.importKey,
+        createdAt: openedAt + "T12:00:00.000Z",
+        updatedAt: openedAt + "T12:00:00.000Z",
+        completedAt: executionDate + "T12:00:00.000Z"
+      };
+      data.actionPlans.push(action);
+      keys.add(String(item.importKey));
+      fps.add(fp(action));
+      changed = true;
+    }
+    if (changed) data.sequence.actionPlans = nextId;
+    return changed;
+  }
+  async ensureSharedActionImport() {
+    const data = (await this.state.storage.get("data")) || null;
+    if (!this.applySharedActionImport(data)) return;
+    await this.state.storage.put("data", data);
+  }
   async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
   async fetch(request) {
     await this.ready;
     await this.ensureMeetingSubjects();
+    await this.ensureSharedActionImport();
     const path = new URL(request.url).pathname;
     if (path === "/api/session") {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
@@ -455,6 +536,7 @@ export class SharedStore {
       const body = await request.json().catch(() => ({}));
       if (!body?.data || typeof body.data !== "object" || Array.isArray(body.data)) return Response.json({ error: "Dados inválidos." }, { status: 400 });
       this.applyMeetingSubjects(body.data);
+      this.applySharedActionImport(body.data);
       await this.state.storage.put("data", body.data);
       return Response.json({ success: true });
     }
