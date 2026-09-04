@@ -259,9 +259,12 @@ export class SharedStore {
     if (path === "/api/shared-view") {
       if (request.method !== "GET") return Response.json({ error: "Método não permitido." }, { status: 405 });
       const data = (await this.state.storage.get("data")) || null;
-      const fields = ["meetings", "gerotWarehouse", "gerotAdditionalAreas", "meta"];
+      const fields = ["actionPlans", "meetings", "gerotWarehouse", "gerotAdditionalAreas", "meta"];
       const view = data ? Object.fromEntries(fields.filter((field) => field in data).map((field) => [field, data[field]])) : null;
       return Response.json({ data: view });
+    }
+    if (path === "/api/gerot-overrides" && request.method === "GET") {
+      return Response.json({ store: (await this.state.storage.get("gerotOverrides")) || {} });
     }
     const claim = await this.session(request);
     if (!claim) return Response.json({ error: "Sessão inválida." }, { status: 401 });
