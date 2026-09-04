@@ -2,6 +2,13 @@ const STORAGE_KEY = "lead-gestao-db-v2";
 const TOKEN_KEY = "lead-gestao-sync-token";
 
 export function createAuditApi(getUser) {
+  function apiError(message, status) {
+    const error = new Error(message);
+    error.status = status;
+    error.isSessionExpired = status === 401;
+    return error;
+  }
+
   function userHeaders(includeJson = false) {
     const user = getUser();
     return {
@@ -32,21 +39,21 @@ export function createAuditApi(getUser) {
   return {
     async auditActions() {
       if (!localStorage.getItem(TOKEN_KEY)) {
-        throw new Error("Sua sessão de sincronização expirou. Saia e entre novamente para acessar as ações de auditoria.");
+        throw apiError("Sua sessão de sincronização expirou. Saia e entre novamente para acessar as ações de auditoria.", 401);
       }
       const response = await fetch("/api/audit-actions", { headers: userHeaders(), cache: "no-store" });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Não foi possível sincronizar o painel de auditoria.");
+      if (!response.ok) throw apiError(payload.error || "Não foi possível sincronizar o painel de auditoria.", response.status);
       payload.unreadCount = notificationCount(payload.items || []);
       return payload;
     },
     async updateAuditAction(_token, actionId, status) {
       if (!localStorage.getItem(TOKEN_KEY)) {
-        throw new Error("Sua sessão de sincronização expirou. Saia e entre novamente antes de atualizar esta ação.");
+        throw apiError("Sua sessão de sincronização expirou. Saia e entre novamente antes de atualizar esta ação.", 401);
       }
       const response = await fetch("/api/audit-actions", { method: "PATCH", headers: userHeaders(true), body: JSON.stringify({ actionId, status }) });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Não foi possível atualizar a ação.");
+      if (!response.ok) throw apiError(payload.error || "Não foi possível atualizar a ação.", response.status);
       return payload;
     }
   };

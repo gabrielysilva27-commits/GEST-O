@@ -1,6 +1,6 @@
 import { api as localApi, ApiError } from "./api.js?v=20260904-04";
-import { createSharedApi } from "./shared-api.js?v=20260904-03";
-import { createAuditApi } from "./audit-api.js?v=20260904-01";
+import { createSharedApi } from "./shared-api.js?v=20260904-04";
+import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260902-13";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
@@ -419,6 +419,7 @@ async function loadView(viewId) {
       elements.notificationBadge.textContent = String(data.highlights?.unreadNotifications || 0);
     }
   } catch (error) {
+    renderModuleError(viewId, view.title, error, "Não foi possível abrir o módulo selecionado.");
     handleError(error, "Não foi possível abrir o módulo selecionado.");
   }
 }
@@ -632,6 +633,23 @@ function escapeOption(value = "") {
     .replaceAll('"', "&quot;");
 }
 
+function renderModuleError(viewId, title, error, fallback) {
+  const message = error?.message || fallback;
+  const isSessionExpired = error?.isSessionExpired || error?.status === 401;
+  elements.pageContent.innerHTML = `
+    <div class="empty-state module-error-state">
+      <div>
+        <h2>Não foi possível abrir ${escapeOption(title || "o módulo")}.</h2>
+        <p>${escapeOption(message)}</p>
+      </div>
+      <div class="empty-state-actions">
+        <button class="button secondary" type="button" data-retry-view="${escapeOption(viewId)}">Tentar novamente</button>
+        ${isSessionExpired ? '<button class="button primary" type="button" data-logout-inline>Entrar novamente</button>' : ""}
+      </div>
+    </div>
+  `;
+}
+
 function syncMeetingSubjectOptions(meetingSelect) {
   const form = meetingSelect.closest("form");
   const subjectSelect = form?.querySelector("[data-meeting-subject]");
@@ -694,6 +712,18 @@ async function handleDynamicClick(event) {
     if (window.innerWidth <= 900) {
       toggleSidebar(false);
     }
+    return;
+  }
+
+  const retryViewButton = event.target.closest("[data-retry-view]");
+  if (retryViewButton) {
+    await loadView(retryViewButton.dataset.retryView || state.currentView);
+    return;
+  }
+
+  const inlineLogoutButton = event.target.closest("[data-logout-inline]");
+  if (inlineLogoutButton) {
+    await handleLogout();
     return;
   }
 

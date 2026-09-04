@@ -228,18 +228,35 @@ export class AuditStore {
   }
 }
 
+function normalizeUsername(username) {
+  return String(username || "").trim().toLocaleLowerCase("pt-BR");
+}
+
 function sourceUser(username) {
   const source = assets.get("/assets/js/api.js")?.body || "";
-  if (String(username) === "Gabriely") {
-    const hash = /PASSWORD_HASH_GABY0739\s*=\s*"([a-f0-9]{64})"/i.exec(source)?.[1];
-    return hash ? { username, role: "admin", hash } : null;
+  const requested = normalizeUsername(username);
+  if (!requested) return null;
+  if (requested === "gabriely") {
+    const hash = /PASSWORD_HASH_GABY0739\\s*=\\s*"([a-f0-9]{64})"/i.exec(source)?.[1];
+    return hash ? { username: "Gabriely", role: "admin", hash } : null;
   }
-  const tuple = new RegExp('\\["[^"]+",\\s*"' + String(username) + '",\\s*"([a-f0-9]{64})"', "i").exec(source);
-  if (tuple) return { username, role: "operator", hash: tuple[1] };
-  const marker = source.indexOf('username: "' + String(username) + '"');
-  const block = marker < 0 ? "" : source.slice(marker, marker + 900);
-  const hash = /passwordHash:\s*"([a-f0-9]{64})"/i.exec(block)?.[1];
-  return hash ? { username, role: /role:\s*"([^"]+)"/.exec(block)?.[1] || "operator", hash } : null;
+
+  const tuplePattern = /\\["[^"]+",\\s*"([^"]+)",\\s*"([a-f0-9]{64})"/gi;
+  for (const match of source.matchAll(tuplePattern)) {
+    if (normalizeUsername(match[1]) === requested) {
+      return { username: match[1], role: "operator", hash: match[2] };
+    }
+  }
+
+  const objectPattern = /username:\\s*"([^"]+)"([\\s\\S]{0,1200}?)passwordHash:\\s*"([a-f0-9]{64})"/gi;
+  for (const match of source.matchAll(objectPattern)) {
+    if (normalizeUsername(match[1]) === requested) {
+      const role = /role:\\s*"([^"]+)"/i.exec(match[2])?.[1] || "operator";
+      return { username: match[1], role, hash: match[3] };
+    }
+  }
+
+  return null;
 }
 async function passwordHash(password) { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(password || ""))); return [...new Uint8Array(digest)].map((item) => item.toString(16).padStart(2, "0")).join(""); }
 

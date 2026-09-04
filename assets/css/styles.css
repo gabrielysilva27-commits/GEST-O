@@ -1640,6 +1640,13 @@ tbody td {
   text-align: center;
 }
 
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
 .toast-region {
   position: fixed;
   right: 22px;
