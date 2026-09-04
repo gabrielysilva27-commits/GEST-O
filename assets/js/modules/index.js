@@ -281,6 +281,7 @@ function actionStatusBadge(value = "open") {
   const labels = {
     open: "Parado",
     in_progress: "Em andamento",
+    overdue: "Atrasado",
     done: "Concluído"
   };
   return `<span class="badge ${badgeClass(value)}">${escapeHtml(labels[value] || formatValueLabel(value))}</span>`;
