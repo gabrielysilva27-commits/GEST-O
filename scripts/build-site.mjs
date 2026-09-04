@@ -510,7 +510,6 @@ export class SharedStore {
   async fetch(request) {
     await this.ready;
     const path = new URL(request.url).pathname;
-    if (path === "/api/central-import" && request.method === "POST") { const overlay = (await this.state.storage.get("centralImportOverlay")) || []; const keys = new Set(overlay.map((item) => item.legacyImportKey)); const base = (await this.state.storage.get("data")) || {}; const baseKeys = new Set((base.actionPlans || []).map((item) => item.legacyImportKey).filter(Boolean)); const batch = sharedActionImportSeed.filter((item) => !keys.has(item.importKey) && !baseKeys.has(item.importKey)).slice(0, 25).map(centralAction); if (batch.length) await this.state.storage.put("centralImportOverlay", [...overlay, ...batch]); return Response.json({ success: true, imported: batch.length, remaining: sharedActionImportSeed.length - keys.size - batch.length }); }
     if (path === "/api/session") {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
       if (!user || user.hash !== await passwordHash(body?.password)) return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
@@ -572,7 +571,7 @@ export default {
       return presence.fetch(request);
     }
 
-    if (pathname === "/api/central-import" || pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
+    if (pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
       return env.SHARED_STORE.getByName("lead-gestao-shared-store").fetch(request);
     }
 
