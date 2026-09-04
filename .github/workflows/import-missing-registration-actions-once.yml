@@ -39,6 +39,7 @@ jobs:
         run: |
           git checkout main
           git pull --ff-only origin main
+          node --check scripts/import-missing-registration-actions-once.mjs
           node scripts/import-missing-registration-actions-once.mjs
           npm run build
 
@@ -47,7 +48,8 @@ jobs:
         run: |
           rm -f .github/workflows/import-missing-registration-actions-once.yml
           rm -f scripts/import-missing-registration-actions-once.mjs
-          unexpected=$(git status --short | awk '{print $2}' | grep -Ev '^(scripts/build-site\.mjs|scripts/shared-action-import-20260904\.mjs|scripts/import-missing-registration-actions-once\.mjs|\.github/workflows/import-missing-registration-actions-once\.yml)$' || true)
+          rm -f scripts/import-payload-01.txt scripts/import-payload-02.txt scripts/import-payload-03.txt scripts/import-payload-04.txt
+          unexpected=$(git status --short | awk '{print $2}' | grep -Ev '^(scripts/build-site\.mjs|scripts/shared-action-import-20260904\.mjs|scripts/import-missing-registration-actions-once\.mjs|scripts/import-payload-[0-9][0-9]\.txt|\.github/workflows/import-missing-registration-actions-once\.yml)$' || true)
           if [ -n "$unexpected" ]; then
             echo "Arquivos inesperados alterados:"
             echo "$unexpected"
