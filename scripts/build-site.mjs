@@ -1,7 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
-import { SHARED_ACTION_IMPORT_20260904_V2 } from "./shared-action-import-20260904-v2.mjs";
 
 const SHARED_MEETING_SUBJECT_SEED_VERSION = 2;
 const SHARED_MEETING_SUBJECT_SEED = {
@@ -218,11 +217,22 @@ async function buildAssetMap() {
   return assets.sort((left, right) => left.route.localeCompare(right.route));
 }
 
-function renderServerModule(assets) {
+async function buildPendingSharedActionImport() {
+  const files = Array.from({ length: 11 }, (_, index) => path.join(sourceAssetsPath, "js", `imported-action-history-pending-${String(index + 1).padStart(2, "0")}.js`));
+  const parts = await Promise.all(files.map(async (file) => {
+    const source = await fs.readFile(file, "utf8");
+    const match = source.match(/=\s*([\s\S]*);\s*$/);
+    if (!match) throw new Error(`Não foi possível ler a importação central: ${file}`);
+    return JSON.parse(match[1]);
+  }));
+  return parts.flat().map((item) => ({ ...item, importKey: `retry20260904v2-row-${item.sourceRow}` }));
+}
+
+function renderServerModule(assets, sharedActionImport) {
   const serializedAssets = JSON.stringify(assets);
   const serializedAuditActions = JSON.stringify(AUDIT_ACTIONS);
   const serializedMeetingSubjectSeed = JSON.stringify(SHARED_MEETING_SUBJECT_SEED);
-  const serializedSharedActionImport = JSON.stringify(SHARED_ACTION_IMPORT_20260904_V2);
+  const serializedSharedActionImport = JSON.stringify(sharedActionImport);
   const serializedCentralMeetingSubjectSeed = JSON.stringify({"RPS Distribuição":["Atrasos","TML (pareto de motivos) + TI (aberto fis e fin)","TR","Aderência ao BEES","Devolução PDV","Devolução HL","On Time","Jornada Líquida"],"Pré e Pós Inventário_SPO + DPO":["DIF. DE ESTOQUE PA/AG"],"Reunião de Segurança":["GSD/GSA","Relatos de Segurança","Controle de multas","Prontuário do condutor - gestão CNH","Treinamento","Gestão de ASOs","Gestão no trajeto"],"Team Room God":["ILUMINAÇÃO NO ARMAZÉM","Relatos de Segurança","IV CRÍTICO -  ADERÊNCIA A MATRIZ DE PRIORIZAÇÃO","RETORNO DE ROTA","OTIF","MANUTENÇÃO DE PALETEIRAS","DISPONIBILIZAR 5 EMPILHADEIRAS","RONDA DE QUALIDADE","JORNADA LÍQUIDA","BLITZ DE CARREGAMENTO"],"Reunião DPO":["GOP"],"MPR Armazém_Controle":["RV Equipe de Armazém","Alerta de Qualidade","Erro de Carregamento","Atrasos","Quebras","CDP Falta de Produto","Aderência ao GSDP","Refugo"],"RPS Armazém_Controle":["Atrasos","Quebras","Matriz de Priorização","FEFO","OOR"],"MPR Distribuição":["Absenteísmo","Atrasos","Meu Cliente / Bees","Utilização TT"]});
 
   return `const assets = new Map(${serializedAssets}.map((entry) => [entry.route, entry]));
@@ -595,6 +605,7 @@ await fs.rm(distPath, { recursive: true, force: true });
 await fs.mkdir(distServerPath, { recursive: true });
 
 const assets = await buildAssetMap();
-const serverModule = renderServerModule(assets);
+const sharedActionImport = await buildPendingSharedActionImport();
+const serverModule = renderServerModule(assets, sharedActionImport);
 
 await fs.writeFile(path.join(distServerPath, "index.js"), serverModule, "utf8");
