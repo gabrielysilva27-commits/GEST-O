@@ -642,6 +642,8 @@ function actionPlansView(data, context) {
   const items = data.items || [];
   const meetings = data.meetings?.items || [];
   const canCreate = userCan(context, "meetings.manage") && userCan(context, "actionPlans.manage");
+  const normalizePerson = (value) => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const canManageRequested = (item) => { const id = toInt(context.user?.id); if ([toInt(item.ownerId), toInt(item.createdBy), toInt(item.requesterId)].includes(id)) return true; const requester = normalizePerson(item.requesterName || item.legacyRequesterName); return requester && [context.user?.name, context.user?.username, context.user?.title].map(normalizePerson).includes(requester); };
 
   if (context.actionWorkspace === "create") {
     return `
@@ -661,7 +663,7 @@ function actionPlansView(data, context) {
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
     const canComplete = toInt(item.ownerId) === toInt(context.user?.id) && item.status !== "done";
     const statusCell = `${actionStatusBadge(item.status || "open")}${canComplete ? ` <button class="button secondary action-complete-button" type="button" data-complete-action="${escapeHtml(item.id)}">Concluir</button>` : ""}`;
-    const ownerActions = toInt(item.ownerId) === toInt(context.user?.id) ? `<button class="gerot-icon-button" type="button" data-edit-owned-action="${escapeHtml(item.id)}" aria-label="Editar ação" title="Editar ação">✎</button><button class="gerot-icon-button danger" type="button" data-delete-owned-action="${escapeHtml(item.id)}" aria-label="Excluir ação" title="Excluir ação">🗑</button>` : "";
+    const ownerActions = canManageRequested(item) ? `<button class="gerot-icon-button" type="button" data-edit-owned-action="${escapeHtml(item.id)}" aria-label="Editar ação" title="Editar ação">✎</button><button class="gerot-icon-button danger" type="button" data-delete-owned-action="${escapeHtml(item.id)}" aria-label="Excluir ação" title="Excluir ação">🗑</button>` : "";
     const attachment = item.attachment?.data
       ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
       : `<span class="text-muted">Sem anexo</span>`;
