@@ -851,7 +851,12 @@ async function handleDynamicClick(event) {
       const csv = entity === "gerot"
         ? gerotCsv(state.dataCache.gerot?.areas || [])
         : await api.exportCsv(state.token, entity);
-      downloadCsv(entity === "gerot" ? "GEROT-completo.csv" : `lead-${entity}.csv`, csv);
+      const filename = entity === "gerot"
+        ? "GEROT-completo.csv"
+        : entity === "meetings"
+          ? "lead-reunioes-e-assuntos.csv"
+          : `lead-${entity}.csv`;
+      downloadCsv(filename, csv);
       showToast("Exportação concluída.");
     } catch (error) {
       handleError(error, "Não foi possível exportar o relatório.");

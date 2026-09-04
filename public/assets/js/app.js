@@ -397,7 +397,7 @@ async function handleDynamicClick(event) {
     try {
       const entity = exportButton.dataset.export;
       const csv = await api.exportCsv(state.token, entity);
-      downloadCsv(`lead-${entity}.csv`, csv);
+      downloadCsv(entity === "meetings" ? "lead-reunioes-e-assuntos.csv" : `lead-${entity}.csv`, csv);
       showToast("Exportação concluída.");
     } catch (error) {
       handleError(error, "Não foi possível exportar o relatório.");

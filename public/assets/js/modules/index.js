@@ -691,6 +691,9 @@ function administrationView(data, context) {
 
   return `
     ${moduleHeader("Administração", "Gerencie as reuniões cadastradas e os assuntos disponíveis no módulo Reuniões.")}
+    <div class="administration-export-actions">
+      <button class="button primary" type="button" data-export="meetings">Exportar reuniões e assuntos</button>
+    </div>
     <div class="split-layout administration-layout">
       ${tableCard("Reuniões cadastradas", "Cadastros disponíveis para condução de reuniões.", ["Reunião", "Assuntos", "Última execução", "Origem", "Ação"], rows)}
       ${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}

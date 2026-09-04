@@ -2714,6 +2714,21 @@ export const api = {
         };
       }));
     }
+    if (entity === "meetings") {
+      ensureGabrielyAdministration(user);
+      return toCsv(arrayValue(database.meetings).flatMap((meeting) => {
+        const subjects = arrayValue(meeting.subjects);
+        const baseRecord = {
+          reuniao: meeting.title || "",
+          ultimaExecucao: meeting.lastExecutionDate || "",
+          origem: meeting.importedFrom ? "Planilha" : "Manual"
+        };
+
+        return subjects.length
+          ? subjects.map((subject) => ({ ...baseRecord, assunto: subject }))
+          : [{ ...baseRecord, assunto: "" }];
+      }));
+    }
     ensurePermission(user, "reports.export");
 
     const map = {

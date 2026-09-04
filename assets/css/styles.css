@@ -1271,6 +1271,11 @@ button {
   align-items: start;
 }
 
+.administration-export-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .administration-form {
   position: sticky;
   top: 12px;

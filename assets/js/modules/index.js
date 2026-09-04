@@ -882,11 +882,16 @@ function administrationView(data, context) {
         <small>acessos liberados</small>
       </article>
     </section>
+    <div class="administration-export-actions">
+      <button class="button primary" type="button" data-export="meetings">Exportar reuniões e assuntos</button>
+    </div>
     <div class="split-layout administration-layout">
       ${tableCard("Reuniões cadastradas", "Cadastros disponíveis para condução de reuniões.", ["Reunião", "Assuntos", "Última execução", "Origem", "Ação"], rows, "administration-meetings")}
       <div class="administration-form">${formCard("Nova reunião", "Cadastre novas reuniões e seus assuntos correspondentes.", formContent)}</div>
     </div>
-    <div class="administration-user-actions"><button class="button secondary" type="button" data-export="users">Exportar usuários</button></div>
+    <div class="administration-user-actions">
+      <button class="button secondary" type="button" data-export="users">Exportar usuários</button>
+    </div>
     ${tableCard("Usuários cadastrados", "Informações dos usuários com acesso à plataforma.", ["Nome", "Usuário", "Setor"], userRows, "administration-users")}
   `;
 }
