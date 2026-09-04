@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
-import { SHARED_ACTION_IMPORT_20260904 } from "./shared-action-import-20260904.mjs";
+import { SHARED_ACTION_IMPORT_20260904_V2 } from "./shared-action-import-20260904-v2.mjs";
 
 const SHARED_MEETING_SUBJECT_SEED_VERSION = 2;
 const SHARED_MEETING_SUBJECT_SEED = {
@@ -222,7 +222,8 @@ function renderServerModule(assets) {
   const serializedAssets = JSON.stringify(assets);
   const serializedAuditActions = JSON.stringify(AUDIT_ACTIONS);
   const serializedMeetingSubjectSeed = JSON.stringify(SHARED_MEETING_SUBJECT_SEED);
-  const serializedSharedActionImport = JSON.stringify(SHARED_ACTION_IMPORT_20260904);
+  const serializedSharedActionImport = JSON.stringify(SHARED_ACTION_IMPORT_20260904_V2);
+  const serializedCentralMeetingSubjectSeed = JSON.stringify({"RPS Distribuição":["Atrasos","TML (pareto de motivos) + TI (aberto fis e fin)","TR","Aderência ao BEES","Devolução PDV","Devolução HL","On Time","Jornada Líquida"],"Pré e Pós Inventário_SPO + DPO":["DIF. DE ESTOQUE PA/AG"],"Reunião de Segurança":["GSD/GSA","Relatos de Segurança","Controle de multas","Prontuário do condutor - gestão CNH","Treinamento","Gestão de ASOs","Gestão no trajeto"],"Team Room God":["ILUMINAÇÃO NO ARMAZÉM","Relatos de Segurança","IV CRÍTICO -  ADERÊNCIA A MATRIZ DE PRIORIZAÇÃO","RETORNO DE ROTA","OTIF","MANUTENÇÃO DE PALETEIRAS","DISPONIBILIZAR 5 EMPILHADEIRAS","RONDA DE QUALIDADE","JORNADA LÍQUIDA","BLITZ DE CARREGAMENTO"],"Reunião DPO":["GOP"],"MPR Armazém_Controle":["RV Equipe de Armazém","Alerta de Qualidade","Erro de Carregamento","Atrasos","Quebras","CDP Falta de Produto","Aderência ao GSDP","Refugo"],"RPS Armazém_Controle":["Atrasos","Quebras","Matriz de Priorização","FEFO","OOR"],"MPR Distribuição":["Absenteísmo","Atrasos","Meu Cliente / Bees","Utilização TT"]});
 
   return `const assets = new Map(${serializedAssets}.map((entry) => [entry.route, entry]));
 const auditActionSeed = ${serializedAuditActions};
@@ -230,7 +231,8 @@ const auditSeedVersion = 1;
 const meetingSubjectSeed = ${serializedMeetingSubjectSeed};
 const meetingSubjectSeedVersion = ${SHARED_MEETING_SUBJECT_SEED_VERSION};
 const sharedActionImportSeed = ${serializedSharedActionImport};
-const sharedActionImportBatch = "missing-registration-retry-20260904";
+const centralMeetingSubjectSeed = ${serializedCentralMeetingSubjectSeed};
+const sharedActionImportBatch = "missing-registration-retry-20260904-v2";
 
 function decodeBase64(value) {
   const binary = atob(value);
@@ -403,7 +405,11 @@ export class SharedStore {
   applyMeetingSubjects(data) {
     if (!data || !Array.isArray(data.meetings)) return false;
     let changed = false;
-    for (const [title, subjects] of Object.entries(meetingSubjectSeed)) {
+    const subjectEntries = new Map(Object.entries(meetingSubjectSeed));
+    for (const [title, subjects] of Object.entries(centralMeetingSubjectSeed)) {
+      subjectEntries.set(title, [...new Set([...(subjectEntries.get(title) || []), ...subjects])]);
+    }
+    for (const [title, subjects] of subjectEntries) {
       const meeting = data.meetings.find((item) => String(item?.title || "") === title);
       if (!meeting) continue;
       const current = Array.isArray(meeting.subjects) ? meeting.subjects : [];
