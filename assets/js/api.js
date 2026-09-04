@@ -1,12 +1,13 @@
 import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
-import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260831-01";
-import { IMPORTED_ACTION_HISTORY_STANDARDIZED } from "./imported-action-history-standardized.js?v=20260904-01";
+import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260904-01";
+import { IMPORTED_ACTION_HISTORY_PENDING } from "./imported-action-history-pending.js?v=20260904-01";
+import { IMPORTED_MEETING_SUBJECTS } from "./imported-meeting-subjects.js?v=20260904-01";
 import { IMPORTED_GEROT_AREAS } from "./gerot-imports.js?v=20260902-01";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
 // A versão também executa a limpeza das notificações geradas pelo arquivo legado.
-const IMPORTED_ACTION_HISTORY_VERSION = 7;
+const IMPORTED_ACTION_HISTORY_VERSION = 8;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -289,91 +290,46 @@ const MEETING_TEMPLATES = [
     subjects: [
       "TRI",
       "Relato Incidente",
-      "Absenteísmo",
+      "Absente\u00edsmo",
       "TMA",
-      "Tempo médio de descarga de carreta",
-      "Aderência ao ressuprimento",
+      "Tempo m\u00e9dio de descarga de carreta",
+      "Ader\u00eancia ao ressuprimento",
       "Caixas reembaladas",
       "5S por área",
       "Tempo interno",
       "Pallets descarregados",
       "Caixas inspecionadas no refugo",
-      "Recomposição de garrafeiras até a 22hs",
+      "Recomposi\u00e7\u00e3o de garrafeiras at\u00e9 a 22hs",
       "Eficiência de carregamento",
       "Turno C: Carregar Certo*",
       "Eficiência de montagem",
-      "Pallets carregados",
-      "5S por area",
-      "Eficiencia de carregamento",
-      "Eficiencia de montagem"
+      "Pallets carregados"
     ]
   },
   {
     id: 5,
     title: "Pr\u00e9 Team Room Armaz\u00e9m",
-    subjects: [
-      "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
-    ]
+    subjects: []
   },
   {
     id: 6,
     title: "Team Room Mensal Armaz\u00e9m",
-    subjects: [
-      "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
-    ]
+    subjects: []
   },
   {
     id: 7,
     title: "Troca de Turno Frota",
-    subjects: [
-      "Disponibilidade de Frota",
-      "% de Caminhões abastecidos",
-      "Média de Consumo",
-      "% Caminhões Lavados",
-      "% Caminhões Calibrados",
-      "Estratificação do check list",
-      "Corretiva na Liberação - Impacto TML D-0",
-      "Caminhões/ Empilhadeiras em Corretiva",
-      "Caminhões/ Empilhadeiras em Preventiva",
-      "Socorro em rota"
-    ]
+    subjects: []
   },
   {
     id: 8,
     title: "RPS Frota",
-    subjects: [
-      "Disponibilidade de Frota",
-      "Média de Consumo e % de Caminhões Abastecidos",
-      "N° de Caminhões Lavados",
-      "Aderência ao Cronograma de Preventivas",
-      "Corretivas e Checklist",
-      "Socorro em rota",
-      "Multas",
-      "Gestão de Peças",
-      "Pneus",
-      "Calibragem e Milimetragem"
-    ]
+    subjects: []
   },
   {
     id: 9,
     title: "MPR Distribui\u00e7\u00e3o",
-    subjects: [
-      "% Atingimento de Metas Área",
-      "Pessoas Abaixo de 65%",
-      "Jornada Líquida (TML/ TR/ TI)",
-      "Aderência ao Tracking/Foxtrot",
-      "CDP/OTIF - sem falta",
-      "Devolução PDV",
-      "Devolução HL",
-      "DQI",
-      "Meu Cliente / Bees",
-      "Rating",
-      "TLP",
-      "Caixa Viagem",
-      "Utilização TT",
-      "ICV/ICE",
-      "IV Crítico"
-    ]
+    subjects: []
   },
   {
     id: 10,
@@ -390,78 +346,27 @@ const MEETING_TEMPLATES = [
   {
     id: 11,
     title: "Planejamento Di\u00e1rio Rota",
-    subjects: [
-      "TML (min e %) D0",
-      "TR (min e %) Previsto",
-      "Previsão de Jornada Líquida",
-      "% recargas",
-      "Disponibilidade",
-      "Jornada líquida",
-      "Disp KM",
-      "Disp Tempo",
-      "Aderência Foxtrot",
-      "Devolução PDV",
-      "IV crítico"
-    ]
+    subjects: []
   },
   {
     id: 12,
     title: "RPS Distribui\u00e7\u00e3o",
-    subjects: [
-      "TO",
-      "Absenteísmo",
-      "Rotinas OBZ Rota (Quinzenal)",
-      "TML (pareto de motivos) + TI (aberto fis e fin)",
-      "TR",
-      "4a) Dispersão de KM",
-      "4b) Dispersão de Tempo",
-      "4c) Telemetria",
-      "4d) PNP's",
-      "4e) Repasses",
-      "4f) Tempos de Entrega (Espera + Descarga)",
-      "Tracking e Foxtrot",
-      "Devolução PDV e HL + DQI",
-      "TLP e TTP + Fator Ajudante",
-      "Caixa Viagem",
-      "SAC SAVs + n° de reposições e trocas",
-      "Utilização",
-      "Rating",
-      "On Time",
-      "Prontuário do motorista",
-      "Disp. KM",
-      "Disp. Tempo",
-      "Devolução PDV (Logística)",
-      "Cx Viagem FF e Spot"
-    ]
+    subjects: []
   },
   {
     id: 13,
     title: "Pr\u00e9 Team Room Distribui\u00e7\u00e3o",
-    subjects: [
-      "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
-    ]
+    subjects: []
   },
   {
     id: 14,
     title: "Team Room Mensal Distribui\u00e7\u00e3o",
-    subjects: [
-      "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
-    ]
+    subjects: []
   },
   {
     id: 15,
     title: "Reuni\u00e3o de Seguran\u00e7a",
-    subjects: [
-      "SIF/LTI/TRI",
-      "Relatos de Segurança",
-      "Multas - aplicação da MDT",
-      "Telemetria",
-      "Status Frota Legal",
-      "GSD/GSA",
-      "Treinamento",
-      "GSP",
-      "Excessos de peso"
-    ]
+    subjects: []
   },
   {
     id: 16,
@@ -479,21 +384,7 @@ const MEETING_TEMPLATES = [
   {
     id: 17,
     title: "Reuni\u00e3o DPO",
-    subjects: [
-      "Caixa / Homem / Hora",
-      "Caixa / Viagem",
-      "% Utilização",
-      "Devolução Hl",
-      "CDP",
-      "ICV - Volume For a de Faixa",
-      "Warehouse Quality Index",
-      "WNP",
-      "WNP Empilhadeira",
-      "LTI",
-      "TRI",
-      "TO",
-      "Absenteísmo"
-    ]
+    subjects: []
   },
   {
     id: 18,
@@ -693,6 +584,7 @@ function ensureMeetingTemplates(database) {
   );
 
   MEETING_TEMPLATES.forEach((template) => {
+    const importedSubjects = arrayValue(IMPORTED_MEETING_SUBJECTS[template.title]);
     if (deletedTemplateIds.includes(template.id)) {
       return;
     }
@@ -703,14 +595,14 @@ function ensureMeetingTemplates(database) {
 
     if (existing) {
       existing.templateId = existing.templateId || template.id;
-      existing.subjects = Array.from(new Set([...arrayValue(existing.subjects), ...template.subjects]));
+      existing.subjects = Array.from(new Set([...arrayValue(existing.subjects), ...template.subjects, ...importedSubjects]));
       existing.importedFrom = existing.importedFrom || "TOR DPO Revendas_2023.xlsx";
       existing.updatedAt = existing.updatedAt || "2026-08-28T00:00:00.000Z";
       return;
     }
 
     database.sequence.meetings += 1;
-    database.meetings.push(buildMeetingTemplateRecord(template, database.sequence.meetings));
+    database.meetings.push(buildMeetingTemplateRecord({ ...template, subjects: [...template.subjects, ...importedSubjects] }, database.sequence.meetings));
   });
 }
 
@@ -738,7 +630,7 @@ function ensureImportedActionHistory(database) {
     ...database.actionPlans.map((item) => toInt(item.id))
   );
 
-  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS, ...IMPORTED_ACTION_HISTORY_STANDARDIZED].forEach((item) => {
+  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS, ...IMPORTED_ACTION_HISTORY_PENDING].forEach((item) => {
     const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
     if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
       return;
