@@ -16,6 +16,7 @@ const VALUE_LABELS = {
   pending: "Não iniciada",
   open: "Aberto",
   in_progress: "Em andamento",
+  overdue: "Atrasado",
   done: "Concluído",
   scheduled: "Agendada",
   held: "Realizada",
