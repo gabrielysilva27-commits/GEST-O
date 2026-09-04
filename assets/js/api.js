@@ -1704,8 +1704,8 @@ function createMeetingAction(database, user, payload) {
   ensurePermission(user, "meetings.manage");
   ensurePermission(user, "actionPlans.manage");
 
-  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.actionPlan?.trim() || !payload?.ownerId) {
-    throw new ApiError("Reunião, assunto, plano de ação e responsável são obrigatórios.", 400);
+  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.actionPlan?.trim() || !payload?.ownerId || !payload?.executionDate || !payload?.dueDate || !payload?.priority || !payload?.attachment) {
+    throw new ApiError("Preencha todos os campos obrigatórios da ação.", 400);
   }
 
   const meeting = database.meetings.find((item) => toInt(item.id) === toInt(payload.meetingId));
@@ -1746,8 +1746,8 @@ function createMeetingAction(database, user, payload) {
     id: nextId(database, "actionPlans"),
     title: subject,
     objective: payload.actionPlan.trim(),
-    status: "open",
-    priority: payload.priority || "medium",
+    status: "in_progress",
+    priority: payload.priority,
     companyId,
     unitId,
     ownerId: toInt(payload.ownerId || 0),
