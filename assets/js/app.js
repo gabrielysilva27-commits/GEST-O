@@ -61,6 +61,15 @@ let meetingTimerStartedAt = null;
 let auditRefreshInterval = null;
 const auditApi = createAuditApi(() => state.user);
 let passwordResetStep = "request";
+window.setInterval(async () => {
+  if (!state.token) return;
+  try {
+    const notifications = await api.list(state.token, "/notifications");
+    elements.notificationBadge.textContent = String(notifications.unreadCount || 0);
+  } catch {
+    // A atualização do sininho não interrompe o uso do sistema.
+  }
+}, 20000);
 
 function applyTheme(isDark) {
   document.body.classList.toggle("dark-mode", isDark);
