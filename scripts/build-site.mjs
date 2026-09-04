@@ -441,16 +441,8 @@ export class SharedStore {
     if (!data || !Array.isArray(data.meetings)) return false;
     data.actionPlans = Array.isArray(data.actionPlans) ? data.actionPlans : [];
     data.sequence = data.sequence && typeof data.sequence === "object" ? data.sequence : {};
-    const fp = (x) => [
-      String(x?.meetingTitle || ""),
-      String(x?.meetingSubject || x?.title || ""),
-      String(x?.requesterName || ""),
-      String(x?.legacyOwnerName || ""),
-      String(x?.objective || ""),
-      String(x?.dueDate || "")
-    ].join("␟");
     const keys = new Set(data.actionPlans.map((x)=>String(x?.legacyImportKey||"")).filter(Boolean));
-    const fps = new Set(data.actionPlans.map(fp));
+    const sourceRows = new Set(data.actionPlans.map((x)=>Number(x?.legacySourceRow||0)).filter(Boolean));
     let nextId = Math.max(Number(data.sequence.actionPlans || 0), 0, ...data.actionPlans.map((x)=>Number(x?.id||0)));
     let changed = false, imported = 0;
     for (const item of sharedActionImportSeed) {
@@ -468,7 +460,7 @@ export class SharedStore {
         objective: item.objective,
         dueDate
       };
-      if (keys.has(String(item.importKey)) || fps.has(fp(probe))) continue;
+      if (keys.has(String(item.importKey)) || sourceRows.has(Number(item.sourceRow))) continue;
       nextId += 1;
       const openedAt = item.openedAt || "2026-01-01";
       const executionDate = item.executionDate || openedAt;
@@ -502,7 +494,7 @@ export class SharedStore {
       };
       data.actionPlans.push(action);
       keys.add(String(item.importKey));
-      fps.add(fp(action));
+      sourceRows.add(Number(item.sourceRow));
       changed = true;
       imported += 1;
       if (imported >= 75) break;
