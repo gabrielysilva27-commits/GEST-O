@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
+import { SHARED_ACTION_IMPORT_20260904 } from "./shared-action-import-20260904.mjs";
 
 const SHARED_MEETING_SUBJECT_SEED_VERSION = 2;
 const SHARED_MEETING_SUBJECT_SEED = {
@@ -217,23 +218,11 @@ async function buildAssetMap() {
   return assets.sort((left, right) => left.route.localeCompare(right.route));
 }
 
-async function buildPendingSharedActionImport() {
-  const files = Array.from({ length: 11 }, (_, index) => path.join(sourceAssetsPath, "js", `imported-action-history-pending-${String(index + 1).padStart(2, "0")}.js`));
-  const parts = await Promise.all(files.map(async (file) => {
-    const source = await fs.readFile(file, "utf8");
-    const match = source.match(/=\s*([\s\S]*);\s*$/);
-    if (!match) throw new Error(`Não foi possível ler a importação central: ${file}`);
-    return JSON.parse(match[1]);
-  }));
-  return parts.flat().map((item) => ({ ...item, importKey: `retry20260904v2-row-${item.sourceRow}` }));
-}
-
-function renderServerModule(assets, sharedActionImport) {
+function renderServerModule(assets) {
   const serializedAssets = JSON.stringify(assets);
   const serializedAuditActions = JSON.stringify(AUDIT_ACTIONS);
   const serializedMeetingSubjectSeed = JSON.stringify(SHARED_MEETING_SUBJECT_SEED);
-  const serializedSharedActionImport = JSON.stringify(sharedActionImport);
-  const serializedCentralMeetingSubjectSeed = JSON.stringify({"RPS Distribuição":["Atrasos","TML (pareto de motivos) + TI (aberto fis e fin)","TR","Aderência ao BEES","Devolução PDV","Devolução HL","On Time","Jornada Líquida"],"Pré e Pós Inventário_SPO + DPO":["DIF. DE ESTOQUE PA/AG"],"Reunião de Segurança":["GSD/GSA","Relatos de Segurança","Controle de multas","Prontuário do condutor - gestão CNH","Treinamento","Gestão de ASOs","Gestão no trajeto"],"Team Room God":["ILUMINAÇÃO NO ARMAZÉM","Relatos de Segurança","IV CRÍTICO -  ADERÊNCIA A MATRIZ DE PRIORIZAÇÃO","RETORNO DE ROTA","OTIF","MANUTENÇÃO DE PALETEIRAS","DISPONIBILIZAR 5 EMPILHADEIRAS","RONDA DE QUALIDADE","JORNADA LÍQUIDA","BLITZ DE CARREGAMENTO"],"Reunião DPO":["GOP"],"MPR Armazém_Controle":["RV Equipe de Armazém","Alerta de Qualidade","Erro de Carregamento","Atrasos","Quebras","CDP Falta de Produto","Aderência ao GSDP","Refugo"],"RPS Armazém_Controle":["Atrasos","Quebras","Matriz de Priorização","FEFO","OOR"],"MPR Distribuição":["Absenteísmo","Atrasos","Meu Cliente / Bees","Utilização TT"]});
+  const serializedSharedActionImport = JSON.stringify(SHARED_ACTION_IMPORT_20260904);
 
   return `const assets = new Map(${serializedAssets}.map((entry) => [entry.route, entry]));
 const auditActionSeed = ${serializedAuditActions};
@@ -241,8 +230,7 @@ const auditSeedVersion = 1;
 const meetingSubjectSeed = ${serializedMeetingSubjectSeed};
 const meetingSubjectSeedVersion = ${SHARED_MEETING_SUBJECT_SEED_VERSION};
 const sharedActionImportSeed = ${serializedSharedActionImport};
-const centralMeetingSubjectSeed = ${serializedCentralMeetingSubjectSeed};
-const sharedActionImportBatch = "missing-registration-retry-20260904-v2";
+const sharedActionImportBatch = "missing-registration-retry-20260904";
 
 function decodeBase64(value) {
   const binary = atob(value);
@@ -415,11 +403,7 @@ export class SharedStore {
   applyMeetingSubjects(data) {
     if (!data || !Array.isArray(data.meetings)) return false;
     let changed = false;
-    const subjectEntries = new Map(Object.entries(meetingSubjectSeed));
-    for (const [title, subjects] of Object.entries(centralMeetingSubjectSeed)) {
-      subjectEntries.set(title, [...new Set([...(subjectEntries.get(title) || []), ...subjects])]);
-    }
-    for (const [title, subjects] of subjectEntries) {
+    for (const [title, subjects] of Object.entries(meetingSubjectSeed)) {
       const meeting = data.meetings.find((item) => String(item?.title || "") === title);
       if (!meeting) continue;
       const current = Array.isArray(meeting.subjects) ? meeting.subjects : [];
@@ -441,10 +425,18 @@ export class SharedStore {
     if (!data || !Array.isArray(data.meetings)) return false;
     data.actionPlans = Array.isArray(data.actionPlans) ? data.actionPlans : [];
     data.sequence = data.sequence && typeof data.sequence === "object" ? data.sequence : {};
+    const fp = (x) => [
+      String(x?.meetingTitle || ""),
+      String(x?.meetingSubject || x?.title || ""),
+      String(x?.requesterName || ""),
+      String(x?.legacyOwnerName || ""),
+      String(x?.objective || ""),
+      String(x?.dueDate || "")
+    ].join("␟");
     const keys = new Set(data.actionPlans.map((x)=>String(x?.legacyImportKey||"")).filter(Boolean));
-    const sourceRows = new Set(data.actionPlans.map((x)=>Number(x?.legacySourceRow||0)).filter(Boolean));
+    const fps = new Set(data.actionPlans.map(fp));
     let nextId = Math.max(Number(data.sequence.actionPlans || 0), 0, ...data.actionPlans.map((x)=>Number(x?.id||0)));
-    let changed = false, imported = 0;
+    let changed = false;
     for (const item of sharedActionImportSeed) {
       const meeting = data.meetings.find((m) =>
         Number(m?.templateId || 0) === Number(item.meetingTemplateId || 0) ||
@@ -460,7 +452,7 @@ export class SharedStore {
         objective: item.objective,
         dueDate
       };
-      if (keys.has(String(item.importKey)) || sourceRows.has(Number(item.sourceRow))) continue;
+      if (keys.has(String(item.importKey)) || fps.has(fp(probe))) continue;
       nextId += 1;
       const openedAt = item.openedAt || "2026-01-01";
       const executionDate = item.executionDate || openedAt;
@@ -494,10 +486,8 @@ export class SharedStore {
       };
       data.actionPlans.push(action);
       keys.add(String(item.importKey));
-      sourceRows.add(Number(item.sourceRow));
+      fps.add(fp(action));
       changed = true;
-      imported += 1;
-      if (imported >= 75) break;
     }
     if (changed) data.sequence.actionPlans = nextId;
     return changed;
@@ -599,7 +589,6 @@ await fs.rm(distPath, { recursive: true, force: true });
 await fs.mkdir(distServerPath, { recursive: true });
 
 const assets = await buildAssetMap();
-const sharedActionImport = await buildPendingSharedActionImport();
-const serverModule = renderServerModule(assets, sharedActionImport);
+const serverModule = renderServerModule(assets);
 
 await fs.writeFile(path.join(distServerPath, "index.js"), serverModule, "utf8");
