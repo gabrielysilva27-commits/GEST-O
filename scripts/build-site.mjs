@@ -405,6 +405,8 @@ function sourceUser(username) {
   return null;
 }
 async function passwordHash(password) { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(password || ""))); return [...new Uint8Array(digest)].map((item) => item.toString(16).padStart(2, "0")).join(""); }
+function centralAction(item) { const opened = item.openedAt || "2026-01-01", completed = item.executionDate || opened; return { id: 300000 + Number(item.sourceRow || 0), title: item.meetingSubject, objective: item.objective, status: "done", priority: item.priority || "medium", companyId: 0, unitId: 0, ownerId: 0, requesterId: 0, requesterName: item.requesterName, legacyOwnerName: item.ownerName, createdBy: 1, dueDate: item.dueDate || opened, meetingId: Number(item.meetingTemplateId || 0), meetingTitle: item.meetingTitle, meetingSubject: item.meetingSubject, meetingExecutionDate: item.executionDate || opened, source: "legacy_excel", sourceLabel: "ACOES_NAO_IMPORTADAS_APOS_PUBLICACAO(1).xlsx", legacySourceRow: Number(item.sourceRow || 0), legacyStatus: item.sourceStatus, legacyImportKey: item.importKey, createdAt: opened + "T12:00:00.000Z", updatedAt: opened + "T12:00:00.000Z", completedAt: completed + "T12:00:00.000Z" }; }
+async function withCentralImport(state, data) { const overlay = (await state.storage.get("centralImportOverlay")) || []; return data ? { ...data, actionPlans: [...(Array.isArray(data.actionPlans) ? data.actionPlans : []), ...overlay] } : data; }
 
 export class SharedStore {
   constructor(state, env) {
@@ -508,7 +510,7 @@ export class SharedStore {
   async fetch(request) {
     await this.ready;
     const path = new URL(request.url).pathname;
-    if (path === "/api/central-import" && request.method === "POST") { const data = (await this.state.storage.get("data")) || null; this.applyMeetingSubjects(data); const changed = this.applySharedActionImport(data); if (changed) await this.state.storage.put("data", data); return Response.json({ success: true, imported: changed }); }
+    if (path === "/api/central-import" && request.method === "POST") { const overlay = (await this.state.storage.get("centralImportOverlay")) || []; const keys = new Set(overlay.map((item) => item.legacyImportKey)); const base = (await this.state.storage.get("data")) || {}; const baseKeys = new Set((base.actionPlans || []).map((item) => item.legacyImportKey).filter(Boolean)); const batch = sharedActionImportSeed.filter((item) => !keys.has(item.importKey) && !baseKeys.has(item.importKey)).slice(0, 25).map(centralAction); if (batch.length) await this.state.storage.put("centralImportOverlay", [...overlay, ...batch]); return Response.json({ success: true, imported: batch.length, remaining: sharedActionImportSeed.length - keys.size - batch.length }); }
     if (path === "/api/session") {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
       if (!user || user.hash !== await passwordHash(body?.password)) return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
@@ -519,7 +521,8 @@ export class SharedStore {
     }
     if (path === "/api/shared-view") {
       if (request.method !== "GET") return Response.json({ error: "Método não permitido." }, { status: 405 });
-      const data = (await this.state.storage.get("data")) || null;
+      const storedData = (await this.state.storage.get("data")) || null;
+      const data = await withCentralImport(this.state, storedData);
       const fields = ["actionPlans", "meetings", "gerotWarehouse", "gerotAdditionalAreas", "meta"];
       const view = data ? Object.fromEntries(fields.filter((field) => field in data).map((field) => [field, data[field]])) : null;
       return Response.json({ data: view });
@@ -537,7 +540,7 @@ export class SharedStore {
       return this.env.AUDIT_STORE.getByName("lead-gestao-audit-actions").fetch(new Request(request, { headers }));
     }
     if (path === "/api/shared-data") {
-      if (request.method === "GET") return Response.json({ data: (await this.state.storage.get("data")) || null });
+      if (request.method === "GET") return Response.json({ data: await withCentralImport(this.state, (await this.state.storage.get("data")) || null) });
       if (request.method !== "PUT") return Response.json({ error: "Método não permitido." }, { status: 405 });
       const body = await request.json().catch(() => ({}));
       if (!body?.data || typeof body.data !== "object" || Array.isArray(body.data)) return Response.json({ error: "Dados inválidos." }, { status: 400 });
