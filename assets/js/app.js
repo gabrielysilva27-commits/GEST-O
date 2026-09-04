@@ -828,7 +828,7 @@ async function handleDynamicClick(event) {
   const deleteOwnedActionButton = event.target.closest("[data-delete-owned-action]");
   if (deleteOwnedActionButton) {
     const item = state.dataCache.actionPlans?.items?.find((entry) => String(entry.id) === String(deleteOwnedActionButton.dataset.deleteOwnedAction));
-    if (!item || Number(item.ownerId) !== Number(state.user?.id)) return;
+    if (!canManageRequestedAction(item, state.user)) return;
     if (!window.confirm("Excluir esta ação?")) return;
     try {
       await deleteOwnedAction(state.user, item.id);
