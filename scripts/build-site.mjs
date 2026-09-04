@@ -406,7 +406,7 @@ function sourceUser(username) {
 }
 async function passwordHash(password) { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(password || ""))); return [...new Uint8Array(digest)].map((item) => item.toString(16).padStart(2, "0")).join(""); }
 function centralAction(item) { const opened = item.openedAt || "2026-01-01", completed = item.executionDate || opened; return { id: 300000 + Number(item.sourceRow || 0), title: item.meetingSubject, objective: item.objective, status: "done", priority: item.priority || "medium", companyId: 0, unitId: 0, ownerId: 0, requesterId: 0, requesterName: item.requesterName, legacyOwnerName: item.ownerName, createdBy: 1, dueDate: item.dueDate || opened, meetingId: Number(item.meetingTemplateId || 0), meetingTitle: item.meetingTitle, meetingSubject: item.meetingSubject, meetingExecutionDate: item.executionDate || opened, source: "legacy_excel", sourceLabel: "ACOES_NAO_IMPORTADAS_APOS_PUBLICACAO(1).xlsx", legacySourceRow: Number(item.sourceRow || 0), legacyStatus: item.sourceStatus, legacyImportKey: item.importKey, createdAt: opened + "T12:00:00.000Z", updatedAt: opened + "T12:00:00.000Z", completedAt: completed + "T12:00:00.000Z" }; }
-async function withCentralImport(state, data) { const overlay = (await state.storage.get("centralImportOverlay")) || []; return data ? { ...data, meta: { ...(data.meta || {}), importedActionHistoryVersion: 8 }, actionPlans: [...(Array.isArray(data.actionPlans) ? data.actionPlans : []), ...overlay] } : data; }
+async function withCentralImport(state, data) { const overlay = (await state.storage.get("centralImportOverlay")) || [], live = (await state.storage.get("liveActions")) || [], liveNotifications = (await state.storage.get("liveNotifications")) || []; return data ? { ...data, meta: { ...(data.meta || {}), importedActionHistoryVersion: 8 }, actionPlans: [...(Array.isArray(data.actionPlans) ? data.actionPlans : []), ...overlay, ...live], notifications: [...(Array.isArray(data.notifications) ? data.notifications : []), ...liveNotifications] } : data; }
 
 export class SharedStore {
   constructor(state, env) {
@@ -532,6 +532,7 @@ export class SharedStore {
     const claim = await this.session(request);
     if (!claim) return Response.json({ error: "Sessão inválida." }, { status: 401 });
 
+    if (path === "/api/live-actions") { if (request.method !== "POST") return Response.json({ error: "Método não permitido." }, { status: 405 }); const body = await request.json().catch(() => ({})); const item = body?.item; if (!item || typeof item !== "object" || !item.id) return Response.json({ error: "Ação inválida." }, { status: 400 }); const live = (await this.state.storage.get("liveActions")) || []; const existing = live.findIndex((entry) => Number(entry.id) === Number(item.id)); if (existing >= 0) live[existing] = item; else live.push(item); await this.state.storage.put("liveActions", live); const notifications = (await this.state.storage.get("liveNotifications")) || []; if (Number(item.ownerId) && item.status !== "done" && !notifications.some((entry) => Number(entry.actionPlanId) === Number(item.id))) { notifications.push({ id: "live-" + item.id, userId: Number(item.ownerId), actionPlanId: Number(item.id), title: "Ação sob sua responsabilidade", message: item.title || item.objective || "Nova ação atribuída.", level: "info", link: "actionPlans", read: false, createdAt: new Date().toISOString() }); await this.state.storage.put("liveNotifications", notifications); } return Response.json({ success: true }); }
     if (path === "/api/audit-actions") {
       const headers = new Headers(request.headers);
       headers.set("x-lead-username", claim.username);
@@ -571,7 +572,7 @@ export default {
       return presence.fetch(request);
     }
 
-    if (pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
+    if (pathname === "/api/session" || pathname === "/api/live-actions" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
       return env.SHARED_STORE.getByName("lead-gestao-shared-store").fetch(request);
     }
 
