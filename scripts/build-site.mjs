@@ -452,7 +452,7 @@ export class SharedStore {
     const keys = new Set(data.actionPlans.map((x)=>String(x?.legacyImportKey||"")).filter(Boolean));
     const fps = new Set(data.actionPlans.map(fp));
     let nextId = Math.max(Number(data.sequence.actionPlans || 0), 0, ...data.actionPlans.map((x)=>Number(x?.id||0)));
-    let changed = false;
+    let changed = false, imported = 0;
     for (const item of sharedActionImportSeed) {
       const meeting = data.meetings.find((m) =>
         Number(m?.templateId || 0) === Number(item.meetingTemplateId || 0) ||
@@ -504,6 +504,8 @@ export class SharedStore {
       keys.add(String(item.importKey));
       fps.add(fp(action));
       changed = true;
+      imported += 1;
+      if (imported >= 75) break;
     }
     if (changed) data.sequence.actionPlans = nextId;
     return changed;
