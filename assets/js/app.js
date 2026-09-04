@@ -1,6 +1,6 @@
 import { api as localApi, ApiError } from "./api.js?v=20260902-02";
 import { createSharedApi } from "./shared-api.js?v=20260903-01";
-import { createAuditApi } from "./audit-api.js?v=20260902-02";
+import { createAuditApi } from "./audit-api.js?v=20260904-01";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260902-13";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260903-02";
