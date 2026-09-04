@@ -256,6 +256,13 @@ export class SharedStore {
       await this.state.storage.put("sessions", sessions);
       return Response.json({ token });
     }
+    if (path === "/api/shared-view") {
+      if (request.method !== "GET") return Response.json({ error: "Método não permitido." }, { status: 405 });
+      const data = (await this.state.storage.get("data")) || null;
+      const fields = ["meetings", "gerotWarehouse", "gerotAdditionalAreas", "meta"];
+      const view = data ? Object.fromEntries(fields.filter((field) => field in data).map((field) => [field, data[field]])) : null;
+      return Response.json({ data: view });
+    }
     const claim = await this.session(request);
     if (!claim) return Response.json({ error: "Sessão inválida." }, { status: 401 });
 
@@ -296,7 +303,11 @@ export default {
       return presence.fetch(request);
     }
 
-    if (pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
+    if (pathname === "/api/audit-actions" && request.method === "GET") {
+      return env.AUDIT_STORE.getByName("lead-gestao-audit-actions").fetch(request);
+    }
+
+    if (pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
       return env.SHARED_STORE.getByName("lead-gestao-shared-store").fetch(request);
     }
 

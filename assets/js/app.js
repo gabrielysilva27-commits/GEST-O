@@ -1,5 +1,5 @@
 import { api as localApi, ApiError } from "./api.js?v=20260902-02";
-import { createSharedApi } from "./shared-api.js?v=20260903-01";
+import { createSharedApi } from "./shared-api.js?v=20260904-02";
 import { createAuditApi } from "./audit-api.js?v=20260904-01";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260902-13";
@@ -237,7 +237,10 @@ function setLoggedInUi() {
 }
 
 function getAllowedViews() {
-  return (state.lookups?.navigation || []).filter((item) => state.user.permissions.includes(item.permission));
+  const commonReadModules = new Set(["audit", "meetings", "gerot"]);
+  return (state.lookups?.navigation || []).filter((item) =>
+    commonReadModules.has(item.id) || state.user.permissions.includes(item.permission)
+  );
 }
 
 function renderNavigation() {
