@@ -1704,7 +1704,7 @@ function createMeetingAction(database, user, payload) {
   ensurePermission(user, "meetings.manage");
   ensurePermission(user, "actionPlans.manage");
 
-  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.actionPlan?.trim() || !payload?.ownerId || !payload?.executionDate || !payload?.dueDate || !payload?.priority || !payload?.attachment) {
+  if (!payload?.meetingId || !payload?.subject?.trim() || !payload?.actionPlan?.trim() || !payload?.ownerId || !payload?.executionDate || !payload?.dueDate || !payload?.priority) {
     throw new ApiError("Preencha todos os campos obrigatórios da ação.", 400);
   }
 
