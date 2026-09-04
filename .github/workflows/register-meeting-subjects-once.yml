@@ -1,4 +1,4 @@
-name: Cadastrar reuniões e assuntos TOR DPO - execução única
+name: Cadastrar reuniões e assuntos TOR DPO - execução única (retry)
 
 on:
   push:
