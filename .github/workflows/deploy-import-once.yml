@@ -1,0 +1,94 @@
+name: Publicar importação das ações - execução única
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deploy-import-once.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  deploy-and-confirm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter versão definitiva
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Cancelar deploy automático concorrente
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            run_id=$(gh run list --repo "${GITHUB_REPOSITORY}" --workflow deploy-worker.yml --commit "${GITHUB_SHA}" --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)
+            if [ -n "$run_id" ]; then
+              gh run cancel "$run_id" --repo "${GITHUB_REPOSITORY}" || true
+              break
+            fi
+            sleep 5
+          done
+
+      - name: Validar que somente o lote definitivo está presente
+        shell: bash
+        run: |
+          test -f scripts/shared-action-import-20260904.mjs
+          test ! -f scripts/import-missing-registration-actions-once.mjs
+          npm run build
+
+      - name: Publicar Worker no Cloudflare preservando segredos existentes
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          preCommands: npm run build
+
+      - name: Confirmar 44 ações no ambiente publicado
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const moduleUrl = new URL("./scripts/shared-action-import-20260904.mjs", `file://${process.cwd()}/`);
+          const { SHARED_ACTION_IMPORT_20260904: expected } = await import(moduleUrl.href + `?v=${Date.now()}`);
+          if (expected.length !== 44) throw new Error(`Lote inesperado: ${expected.length}`);
+          const expectedKeys = new Set(expected.map((item) => String(item.importKey)));
+          let last;
+          for (let attempt=0; attempt<18; attempt++) {
+            try {
+              const response = await fetch(`https://lead-gestao.gabrielysilva27.workers.dev/api/shared-view?verify=${Date.now()}`, {cache:"no-store"});
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const payload = await response.json();
+              const actions = Array.isArray(payload?.data?.actionPlans) ? payload.data.actionPlans : [];
+              const batch = actions.filter((item) => item?.legacyImportBatch === "missing-registration-retry-20260904");
+              const keys = new Set(batch.map((item) => String(item?.legacyImportKey || "")));
+              const missing = [...expectedKeys].filter((key) => !keys.has(key));
+              if (batch.length === 44 && missing.length === 0) {
+                console.log("CONFIRMED: 44 ações publicadas e visíveis no compartilhamento.");
+                process.exit(0);
+              }
+              last = new Error(`Esperadas 44; encontradas ${batch.length}; chaves faltantes ${missing.length}`);
+            } catch (error) {
+              last = error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+          }
+          throw last || new Error("Falha de confirmação da importação");
+          NODE
+
+      - name: Remover rotina temporária de publicação
+        if: success()
+        shell: bash
+        run: |
+          rm -f .github/workflows/deploy-import-once.yml
+          git config user.name "gabrielysilva27-commits"
+          git config user.email "gabrielysilva27@icloud.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Remove rotina temporária da importação"
+            git push origin main
+          fi
