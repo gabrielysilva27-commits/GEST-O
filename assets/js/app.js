@@ -4,7 +4,7 @@ import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
 import { views } from "./modules/index.js?v=20260902-13";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
-import { deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260903-01";
+import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260904-02";
 
 const api = createSharedApi(localApi);
 
@@ -808,7 +808,7 @@ async function handleDynamicClick(event) {
   const editOwnedActionButton = event.target.closest("[data-edit-owned-action]");
   if (editOwnedActionButton) {
     const item = state.dataCache.actionPlans?.items?.find((entry) => String(entry.id) === String(editOwnedActionButton.dataset.editOwnedAction));
-    if (!item || Number(item.ownerId) !== Number(state.user?.id)) return;
+    if (!canManageRequestedAction(item, state.user)) return;
     const objective = window.prompt("Plano de ação:", item.objective || item.title || "");
     if (objective === null) return;
     const dueDate = window.prompt("Prazo (AAAA-MM-DD):", item.dueDate || "");
