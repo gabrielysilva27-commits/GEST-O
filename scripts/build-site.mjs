@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
 
-const SHARED_MEETING_SUBJECT_SEED_VERSION = 1;
+const SHARED_MEETING_SUBJECT_SEED_VERSION = 2;
 const SHARED_MEETING_SUBJECT_SEED = {
   "Team Room Armazém": [
     "5S por area",
@@ -396,25 +396,31 @@ export class SharedStore {
     this.env = env;
     this.ready = state.blockConcurrencyWhile(() => this.ensureMeetingSubjects());
   }
-  async ensureMeetingSubjects() {
-    const version = Number((await this.state.storage.get("meetingSubjectSeedVersion")) || 0);
-    if (version >= meetingSubjectSeedVersion) return;
-    const data = (await this.state.storage.get("data")) || null;
-    if (!data || !Array.isArray(data.meetings)) return;
+  applyMeetingSubjects(data) {
+    if (!data || !Array.isArray(data.meetings)) return false;
     let changed = false;
     for (const [title, subjects] of Object.entries(meetingSubjectSeed)) {
       const meeting = data.meetings.find((item) => String(item?.title || "") === title);
       if (!meeting) continue;
       const current = Array.isArray(meeting.subjects) ? meeting.subjects : [];
       const merged = Array.from(new Set([...current, ...subjects]));
-      if (merged.length !== current.length) { meeting.subjects = merged; changed = true; }
+      if (merged.length !== current.length) {
+        meeting.subjects = merged;
+        changed = true;
+      }
     }
-    if (changed) await this.state.storage.put("data", data);
+    return changed;
+  }
+  async ensureMeetingSubjects() {
+    const data = (await this.state.storage.get("data")) || null;
+    if (!this.applyMeetingSubjects(data)) return;
+    await this.state.storage.put("data", data);
     await this.state.storage.put("meetingSubjectSeedVersion", meetingSubjectSeedVersion);
   }
   async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
   async fetch(request) {
     await this.ready;
+    await this.ensureMeetingSubjects();
     const path = new URL(request.url).pathname;
     if (path === "/api/session") {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
@@ -448,6 +454,7 @@ export class SharedStore {
       if (request.method !== "PUT") return Response.json({ error: "Método não permitido." }, { status: 405 });
       const body = await request.json().catch(() => ({}));
       if (!body?.data || typeof body.data !== "object" || Array.isArray(body.data)) return Response.json({ error: "Dados inválidos." }, { status: 400 });
+      this.applyMeetingSubjects(body.data);
       await this.state.storage.put("data", body.data);
       return Response.json({ success: true });
     }
