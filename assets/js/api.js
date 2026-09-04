@@ -826,6 +826,7 @@ function sanitizeDatabase(database) {
     ...sanitized.users.map((item) => toInt(item.id, 0))
   );
   ensureMeetingTemplates(sanitized);
+  refreshActionStatuses(sanitized);
   ensureImportedActionHistory(sanitized);
   ensureActionOwnerNotifications(sanitized);
   return sanitized;
@@ -1254,6 +1255,8 @@ function buildProgressSeries(items) {
     progress: Math.round((toInt(item.value) / max) * 100)
   }));
 }
+
+function refreshActionStatuses(database) { arrayValue(database.actionPlans).forEach((action) => { if (action.status === "done") return; action.status = isPastDue(action.dueDate) ? "overdue" : "in_progress"; }); }
 
 function isPastDue(value) {
   if (!value) {
