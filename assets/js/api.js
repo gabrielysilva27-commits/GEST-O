@@ -1,11 +1,12 @@
 import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
 import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260831-01";
+import { IMPORTED_ACTION_HISTORY_STANDARDIZED } from "./imported-action-history-standardized.js?v=20260904-01";
 import { IMPORTED_GEROT_AREAS } from "./gerot-imports.js?v=20260902-01";
 
 const STORAGE_KEY = "lead-gestao-db-v2";
 const SESSION_DURATION_HOURS = 12;
 // A versão também executa a limpeza das notificações geradas pelo arquivo legado.
-const IMPORTED_ACTION_HISTORY_VERSION = 6;
+const IMPORTED_ACTION_HISTORY_VERSION = 7;
 
 const ROLE_LABELS = {
   admin: "Administrador",
@@ -627,7 +628,7 @@ function ensureImportedActionHistory(database) {
     ...database.actionPlans.map((item) => toInt(item.id))
   );
 
-  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS].forEach((item) => {
+  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS, ...IMPORTED_ACTION_HISTORY_STANDARDIZED].forEach((item) => {
     const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
     if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
       return;
