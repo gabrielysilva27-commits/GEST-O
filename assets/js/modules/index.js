@@ -622,12 +622,12 @@ function actionCreationForm(meetings, context) {
         <label class="field"><span>Assunto</span><select name="subject" data-meeting-subject ${initialSubjects.length ? "" : "disabled"} required>${initialSubjects.length ? valueOptions(initialSubjects) : "<option value=\"\">Nenhum assunto cadastrado</option>"}</select></label>
         <label class="field full"><span>Plano de ação</span><textarea name="actionPlan" placeholder="Descreva o plano de ação definido na reunião" required></textarea></label>
         <label class="field"><span>Responsável pela ação</span><select name="ownerId" data-action-field required><option value="">Selecionar</option>${meetingResponsibleOptionList(context.lookups?.responsibleUsers || context.lookups?.users || [])}</select></label>
-        <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field></label>
-        <label class="field"><span>Prioridade</span><select name="priority" data-action-field><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
+        <label class="field"><span>Prazo da ação</span><input type="date" name="dueDate" data-action-field required></label>
+        <label class="field"><span>Prioridade</span><select name="priority" data-action-field required><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></label>
       </div>
       <label class="field full attachment-field">
         <span>Documento da ação (PDF ou foto)</span>
-        <input type="file" name="attachment" accept="application/pdf,image/jpeg,image/png" data-action-field>
+        <input type="file" name="attachment" accept="application/pdf,image/jpeg,image/png" data-action-field required>
         <small>Formatos aceitos: PDF, JPG, JPEG ou PNG. Limite de 5 MB.</small>
       </label>
       <div class="form-actions">
