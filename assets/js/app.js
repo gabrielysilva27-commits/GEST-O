@@ -1158,7 +1158,7 @@ function applyAuditFilters() {
 }
 
 function handleError(error, fallback) {
-  const message = error instanceof ApiError ? error.message : fallback;
+  const message = error?.message || fallback;
   showToast(message, "error");
   showStatus(message);
 }

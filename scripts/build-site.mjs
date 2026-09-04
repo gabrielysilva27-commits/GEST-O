@@ -245,7 +245,7 @@ async function passwordHash(password) { const digest = await crypto.subtle.diges
 
 export class SharedStore {
   constructor(state, env) { this.state = state; this.env = env; }
-  async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
+  async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
   async fetch(request) {
     const path = new URL(request.url).pathname;
     if (path === "/api/session") {
@@ -304,10 +304,6 @@ export default {
     if (pathname === "/api/presence") {
       const presence = env.PRESENCE.getByName("lead-gestao-presence");
       return presence.fetch(request);
-    }
-
-    if (pathname === "/api/audit-actions" && request.method === "GET") {
-      return env.AUDIT_STORE.getByName("lead-gestao-audit-actions").fetch(request);
     }
 
     if (pathname === "/api/session" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {

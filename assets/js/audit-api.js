@@ -31,13 +31,19 @@ export function createAuditApi(getUser) {
 
   return {
     async auditActions() {
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        throw new Error("Sua sessão de sincronização expirou. Saia e entre novamente para acessar as ações de auditoria.");
+      }
       const response = await fetch("/api/audit-actions", { headers: userHeaders(), cache: "no-store" });
-      if (!response.ok) throw new Error("Não foi possível sincronizar o painel de auditoria.");
-      const payload = await response.json();
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "Não foi possível sincronizar o painel de auditoria.");
       payload.unreadCount = notificationCount(payload.items || []);
       return payload;
     },
     async updateAuditAction(_token, actionId, status) {
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        throw new Error("Sua sessão de sincronização expirou. Saia e entre novamente antes de atualizar esta ação.");
+      }
       const response = await fetch("/api/audit-actions", { method: "PATCH", headers: userHeaders(true), body: JSON.stringify({ actionId, status }) });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Não foi possível atualizar a ação.");
