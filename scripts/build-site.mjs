@@ -2,6 +2,133 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AUDIT_ACTIONS } from "../assets/js/audit-actions-data.js";
 
+const SHARED_MEETING_SUBJECT_SEED_VERSION = 1;
+const SHARED_MEETING_SUBJECT_SEED = {
+  "Team Room Armazém": [
+    "5S por area",
+    "Eficiencia de carregamento",
+    "Eficiencia de montagem"
+  ],
+  "Pré Team Room Armazém": [
+    "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
+  ],
+  "Team Room Mensal Armazém": [
+    "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
+  ],
+  "Troca de Turno Frota": [
+    "Disponibilidade de Frota",
+    "% de Caminhões abastecidos",
+    "Média de Consumo",
+    "% Caminhões Lavados",
+    "% Caminhões Calibrados",
+    "Estratificação do check list",
+    "Corretiva na Liberação - Impacto TML D-0",
+    "Caminhões/ Empilhadeiras em Corretiva",
+    "Caminhões/ Empilhadeiras em Preventiva",
+    "Socorro em rota"
+  ],
+  "RPS Frota": [
+    "Disponibilidade de Frota",
+    "Média de Consumo e % de Caminhões Abastecidos",
+    "N° de Caminhões Lavados",
+    "Aderência ao Cronograma de Preventivas",
+    "Corretivas e Checklist",
+    "Socorro em rota",
+    "Multas",
+    "Gestão de Peças",
+    "Pneus",
+    "Calibragem e Milimetragem"
+  ],
+  "MPR Distribuição": [
+    "% Atingimento de Metas Área",
+    "Pessoas Abaixo de 65%",
+    "Jornada Líquida (TML/ TR/ TI)",
+    "Aderência ao Tracking/Foxtrot",
+    "CDP/OTIF - sem falta",
+    "Devolução PDV",
+    "Devolução HL",
+    "DQI",
+    "Meu Cliente / Bees",
+    "Rating",
+    "TLP",
+    "Caixa Viagem",
+    "Utilização TT",
+    "ICV/ICE",
+    "IV Crítico"
+  ],
+  "Planejamento Diário Rota": [
+    "TML (min e %) D0",
+    "TR (min e %) Previsto",
+    "Previsão de Jornada Líquida",
+    "% recargas",
+    "Disponibilidade",
+    "Jornada líquida",
+    "Disp KM",
+    "Disp Tempo",
+    "Aderência Foxtrot",
+    "Devolução PDV",
+    "IV crítico"
+  ],
+  "RPS Distribuição": [
+    "TO",
+    "Absenteísmo",
+    "Rotinas OBZ Rota (Quinzenal)",
+    "TML (pareto de motivos) + TI (aberto fis e fin)",
+    "TR",
+    "4a) Dispersão de KM",
+    "4b) Dispersão de Tempo",
+    "4c) Telemetria",
+    "4d) PNP's",
+    "4e) Repasses",
+    "4f) Tempos de Entrega (Espera + Descarga)",
+    "Tracking e Foxtrot",
+    "Devolução PDV e HL + DQI",
+    "TLP e TTP + Fator Ajudante",
+    "Caixa Viagem",
+    "SAC SAVs + n° de reposições e trocas",
+    "Utilização",
+    "Rating",
+    "On Time",
+    "Prontuário do motorista",
+    "Disp. KM",
+    "Disp. Tempo",
+    "Devolução PDV (Logística)",
+    "Cx Viagem FF e Spot"
+  ],
+  "Pré Team Room Distribuição": [
+    "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
+  ],
+  "Team Room Mensal Distribuição": [
+    "GEROT com todos os KPI's da área (Distribuição ou Armazém)"
+  ],
+  "Reunião de Segurança": [
+    "SIF/LTI/TRI",
+    "Relatos de Segurança",
+    "Multas - aplicação da MDT",
+    "Telemetria",
+    "Status Frota Legal",
+    "GSD/GSA",
+    "Treinamento",
+    "GSP",
+    "Excessos de peso"
+  ],
+  "Reunião DPO": [
+    "Caixa / Homem / Hora",
+    "Caixa / Viagem",
+    "% Utilização",
+    "Devolução Hl",
+    "CDP",
+    "ICV - Volume For a de Faixa",
+    "Warehouse Quality Index",
+    "WNP",
+    "WNP Empilhadeira",
+    "LTI",
+    "TRI",
+    "TO",
+    "Absenteísmo"
+  ]
+};
+
 const projectRoot = process.cwd();
 const sourceIndexPath = path.join(projectRoot, "index.html");
 const sourceAssetsPath = path.join(projectRoot, "assets");
@@ -93,10 +220,13 @@ async function buildAssetMap() {
 function renderServerModule(assets) {
   const serializedAssets = JSON.stringify(assets);
   const serializedAuditActions = JSON.stringify(AUDIT_ACTIONS);
+  const serializedMeetingSubjectSeed = JSON.stringify(SHARED_MEETING_SUBJECT_SEED);
 
   return `const assets = new Map(${serializedAssets}.map((entry) => [entry.route, entry]));
 const auditActionSeed = ${serializedAuditActions};
 const auditSeedVersion = 1;
+const meetingSubjectSeed = ${serializedMeetingSubjectSeed};
+const meetingSubjectSeedVersion = ${SHARED_MEETING_SUBJECT_SEED_VERSION};
 
 function decodeBase64(value) {
   const binary = atob(value);
@@ -261,9 +391,30 @@ function sourceUser(username) {
 async function passwordHash(password) { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(password || ""))); return [...new Uint8Array(digest)].map((item) => item.toString(16).padStart(2, "0")).join(""); }
 
 export class SharedStore {
-  constructor(state, env) { this.state = state; this.env = env; }
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+    this.ready = state.blockConcurrencyWhile(() => this.ensureMeetingSubjects());
+  }
+  async ensureMeetingSubjects() {
+    const version = Number((await this.state.storage.get("meetingSubjectSeedVersion")) || 0);
+    if (version >= meetingSubjectSeedVersion) return;
+    const data = (await this.state.storage.get("data")) || null;
+    if (!data || !Array.isArray(data.meetings)) return;
+    let changed = false;
+    for (const [title, subjects] of Object.entries(meetingSubjectSeed)) {
+      const meeting = data.meetings.find((item) => String(item?.title || "") === title);
+      if (!meeting) continue;
+      const current = Array.isArray(meeting.subjects) ? meeting.subjects : [];
+      const merged = Array.from(new Set([...current, ...subjects]));
+      if (merged.length !== current.length) { meeting.subjects = merged; changed = true; }
+    }
+    if (changed) await this.state.storage.put("data", data);
+    await this.state.storage.put("meetingSubjectSeedVersion", meetingSubjectSeedVersion);
+  }
   async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
   async fetch(request) {
+    await this.ready;
     const path = new URL(request.url).pathname;
     if (path === "/api/session") {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);

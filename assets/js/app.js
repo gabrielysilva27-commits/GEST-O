@@ -1,4 +1,4 @@
-import { api as localApi, ApiError } from "./api.js?v=20260904-05";
+import { api as localApi, ApiError } from "./api.js?v=20260904-06";
 import { createSharedApi } from "./shared-api.js?v=20260904-04";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
