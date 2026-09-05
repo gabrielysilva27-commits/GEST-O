@@ -1,3 +1,4 @@
+import { databaseStorage as localStorage } from './database-storage.js';
 import { removeLiveAction, syncOperationalData, upsertLiveAction } from "./shared-api.js?v=20260905-09";
 const KEY="lead-gestao-db-v2",SYNC_ERROR="Não foi possível confirmar a sincronização compartilhada. Nenhuma alteração foi aplicada.";
 function database(){const value=JSON.parse(localStorage.getItem(KEY)||"null");if(!value||!Array.isArray(value.actionPlans))throw new Error("Não foi possível acessar as ações.");return value;}

@@ -1,9 +1,18 @@
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';
 let runtime=await fs.readFile('recovered/runtime.js','utf8');
 const entries=JSON.parse(await fs.readFile('recovered/live-assets.json','utf8'));
 entries.push({route:'/assets/js/dto-controls.js',kind:'text',contentType:'application/javascript; charset=utf-8',body:''});
+for (const route of ['/assets/js/database-storage.js','/assets/js/vendor/lz-string.js']) entries.push({route,kind:'text',contentType:'application/javascript; charset=utf-8',body:''});
 for(const entry of entries){const file=entry.route==='/'?'index.html':entry.route.slice(1);const bytes=await fs.readFile(file);entry.body=entry.kind==='base64'?bytes.toString('base64'):bytes.toString('utf8');}
+// Version the complete module graph together so existing browsers also migrate.
+const release=createHash('sha256').update(entries.map(e=>e.body).join('')).digest('hex').slice(0,12);
+for(const entry of entries){
+  if(entry.kind==='text' && (entry.route==='/' || entry.route.endsWith('.js'))){
+    entry.body=entry.body.replace(/(["'])(\.{0,2}\/[^"'\s]+\.js|assets\/[^"'\s]+\.js)(?:\?[^"'\s]*)?\1/g,(_,quote,path)=>`${quote}${path}?v=${release}${quote}`);
+  }
+}
 const api=entries.find(e=>e.route==='/assets/js/api.js').body;
 const start=api.indexOf('const ADDITIONAL_SEEDED_USERS =');
 const end=api.indexOf('\n];',api.indexOf('const SEEDED_USERS =',start))+3;

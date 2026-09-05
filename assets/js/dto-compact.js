@@ -1,3 +1,4 @@
+import { databaseStorage as localStorage } from './database-storage.js';
 const DB_KEY = "lead-gestao-db-v2";
 
 function readDb() {

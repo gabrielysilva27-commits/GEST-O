@@ -1,3 +1,4 @@
+import { databaseStorage as localStorage } from './database-storage.js';
 import { IMPORTED_MEETING_SUBJECTS } from "./imported-meeting-subjects.js?v=20260904-01";
 import { IMPORTED_GEROT_AREAS } from "./gerot-imports.js?v=20260902-01";
 

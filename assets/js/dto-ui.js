@@ -1,3 +1,4 @@
+import { databaseStorage as localStorage } from './database-storage.js';
 const SYNC_TOKEN_KEY="lead-gestao-sync-token"; let remoteRecords=[];
 import {installControls} from './dto-controls.js?v=dto-controls-1';
 

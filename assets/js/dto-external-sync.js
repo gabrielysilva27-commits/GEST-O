@@ -1,3 +1,4 @@
+import { databaseStorage as localStorage } from './database-storage.js';
 import { state } from "./state.js";
 import { loadDtoExternalData } from "./dto-external-data.js?v=20260905-01";
 import { syncOperationalData } from "./shared-api.js?v=20260905-12";

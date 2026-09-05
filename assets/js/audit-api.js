@@ -1,3 +1,4 @@
+import { databaseStorage as localStorage } from './database-storage.js';
 const STORAGE_KEY = "lead-gestao-db-v2";
 const TOKEN_KEY = "lead-gestao-sync-token";
 
