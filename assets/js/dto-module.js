@@ -1,7 +1,8 @@
 import { state } from "./state.js";
-import { persistOperationalData, syncOperationalData } from "./shared-api.js?v=20260905-11";
+import { syncOperationalData } from "./shared-api.js?v=20260905-11";
 
 const DB_KEY = "lead-gestao-db-v2";
+const SYNC_TOKEN_KEY = "lead-gestao-sync-token";
 const RECURRENCE_DAYS = 60;
 const TEMPLATES = [{
   id: "qualidade",
@@ -34,10 +35,24 @@ const date = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? new Date(`${v}
 const fmt = (v) => { const d = date(v); return d ? `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}` : "—"; };
 const addDays = (v, n) => { const d = date(v); if (!d) return ""; d.setDate(d.getDate()+n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const daysUntil = (v) => { const a = date(v), b = date(today()); return a && b ? Math.round((a-b)/86400000) : null; };
-const users = () => (read()?.users || []).filter((u) => (u.status || "active") === "active").sort((a,b) => String(a.name || a.username).localeCompare(String(b.name || b.username), "pt-BR"));
+
+function shortPersonName(value = "") {
+  const parts = String(value).trim().split(/\s+/).filter(Boolean);
+  const formatPart = (part = "") => {
+    const lower = String(part).toLocaleLowerCase("pt-BR");
+    return lower ? lower.charAt(0).toLocaleUpperCase("pt-BR") + lower.slice(1) : "";
+  };
+  if (!parts.length) return "";
+  if (parts.length === 1) return formatPart(parts[0]);
+  return `${formatPart(parts[0])} ${formatPart(parts[parts.length - 1])}`;
+}
+
+const users = () => (read()?.users || [])
+  .filter((u) => (u.status || "active") === "active")
+  .sort((a,b) => shortPersonName(a.name || a.username).localeCompare(shortPersonName(b.name || b.username), "pt-BR"));
 const applications = () => (read()?.dtoRecords || []).filter((r) => r?.recordType === "dto_application" && r.dtoTemplateId);
 const latest = (id) => applications().filter((r) => String(r.dtoTemplateId) === String(id)).sort((a,b) => String(b.applicationDate || b.createdAt || "").localeCompare(String(a.applicationDate || a.createdAt || "")))[0] || null;
-const responsibleName = (record) => record?.applicatorName || users().find((u) => Number(u.id) === Number(record?.applicatorId || record?.ownerId))?.name || "—";
+const responsibleName = (record) => shortPersonName(record?.applicatorName || users().find((u) => Number(u.id) === Number(record?.applicatorId || record?.ownerId))?.name || "") || "—";
 
 function deadline(record) {
   if (!record) return { due: "", text: "Pendente", cls: "pending" };
@@ -61,7 +76,7 @@ function dashboard() {
 }
 
 function userOptions() {
-  return users().map((u) => `<option value="${esc(u.id)}" ${Number(u.id) === Number(state.user?.id) ? "selected" : ""}>${esc(u.name || u.username)}</option>`).join("");
+  return users().map((u) => `<option value="${esc(u.id)}" ${Number(u.id) === Number(state.user?.id) ? "selected" : ""}>${esc(shortPersonName(u.name || u.username))}</option>`).join("");
 }
 
 function chooseDto() {
@@ -80,6 +95,30 @@ function render() {
   root().innerHTML = screen === "choose" ? chooseDto() : template ? applyForm(template) : dashboard();
 }
 
+function dtoSyncId() {
+  if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+  return `dto-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function saveSharedDto(item) {
+  const token = localStorage.getItem(SYNC_TOKEN_KEY);
+  if (!token) throw new Error("Sua sessão de sincronização expirou. Saia e entre novamente no LEAD antes de concluir o DTO.");
+  let response;
+  try {
+    response = await fetch("/api/dto-applications", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ item })
+    });
+  } catch {
+    throw new Error("Não foi possível conectar à base compartilhada do DTO.");
+  }
+  const payload = await response.json().catch(() => ({}));
+  if (response.status === 401) throw new Error("Sua sessão de sincronização expirou. Saia e entre novamente no LEAD antes de concluir o DTO.");
+  if (!response.ok) throw new Error(payload.error || "Não foi possível salvar o DTO na base compartilhada.");
+  return payload.item;
+}
+
 async function save(form) {
   const template = TEMPLATES.find((t) => t.id === form.dataset.template);
   const applicationDate = form.elements.applicationDate.value;
@@ -88,18 +127,40 @@ async function save(form) {
   if (!template || !applicationDate || !applicatorId || !employeeName) throw new Error("Preencha todos os dados da aplicação.");
   const answers = template.questions.map((q) => ({ questionId: q.id, question: q.label, result: form.querySelector(`input[name="answer_${CSS.escape(q.id)}"]:checked`)?.value || "" }));
   if (answers.some((a) => !a.result)) throw new Error("Responda todas as perguntas antes de concluir.");
-  await syncOperationalData();
+
+  const synced = await syncOperationalData();
+  if (!synced && !localStorage.getItem(SYNC_TOKEN_KEY)) throw new Error("Sua sessão de sincronização expirou. Saia e entre novamente no LEAD antes de concluir o DTO.");
   const db = read();
-  if (!db) throw new Error("Não foi possível acessar a base compartilhada.");
-  db.dtoRecords = Array.isArray(db.dtoRecords) ? db.dtoRecords : [];
-  db.sequence = db.sequence || {};
-  const id = Math.max(Number(db.sequence.dtoRecords || 0), ...db.dtoRecords.map((r) => Number(r.id || 0)), 0) + 1;
+  if (!db) throw new Error("Não foi possível acessar os dados do DTO.");
   const applicator = users().find((u) => Number(u.id) === applicatorId);
   const ok = answers.filter((a) => a.result === "OK").length;
-  db.dtoRecords.push({ id, recordType: "dto_application", dtoTemplateId: template.id, dtoName: template.name, title: template.name, applicationDate, nextDueDate: addDays(applicationDate, RECURRENCE_DAYS), recurrenceDays: RECURRENCE_DAYS, applicatorId, applicatorName: applicator?.name || applicator?.username || "", ownerId: applicatorId, employeeName, answers, actionPlan: String(form.elements.actionPlan.value || "").trim(), complianceRate: Math.round(ok/answers.length*100), nokCount: answers.length-ok, status: "completed", source: "dto_module", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-  db.sequence.dtoRecords = id;
+  const item = {
+    syncId: dtoSyncId(),
+    recordType: "dto_application",
+    dtoTemplateId: template.id,
+    dtoName: template.name,
+    title: template.name,
+    applicationDate,
+    nextDueDate: addDays(applicationDate, RECURRENCE_DAYS),
+    recurrenceDays: RECURRENCE_DAYS,
+    applicatorId,
+    applicatorName: shortPersonName(applicator?.name || applicator?.username || ""),
+    ownerId: applicatorId,
+    employeeName,
+    answers,
+    actionPlan: String(form.elements.actionPlan.value || "").trim(),
+    complianceRate: Math.round(ok / answers.length * 100),
+    nokCount: answers.length - ok,
+    status: "completed",
+    source: "dto_module"
+  };
+
+  const saved = await saveSharedDto(item);
+  db.dtoRecords = Array.isArray(db.dtoRecords) ? db.dtoRecords.filter((record) => String(record?.syncId || "") !== String(saved.syncId || "")) : [];
+  db.dtoRecords.push(saved);
+  db.sequence = db.sequence || {};
+  db.sequence.dtoRecords = Math.max(Number(db.sequence.dtoRecords || 0), Number(saved.id || 0));
   write(db);
-  if (!await persistOperationalData()) throw new Error("Não foi possível confirmar a gravação compartilhada do DTO.");
   await syncOperationalData();
 }
 
