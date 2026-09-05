@@ -2493,11 +2493,11 @@ function patchPath(database, user, path, body = {}) {
     return completeActionPlan(database, user, completeActionMatch[1]);
   }
 
-  const notificationMatch = path.match(/^\/notifications\/(\d+)\/read$/);
+  const notificationMatch = path.match(/^\/notifications\/([^/]+)\/read$/);
   if (notificationMatch) {
     ensurePermission(user, "notifications.view");
-    const notificationId = toInt(notificationMatch[1]);
-    const notification = database.notifications.find((item) => toInt(item.id) === notificationId);
+    const notificationId = notificationMatch[1];
+    const notification = database.notifications.find((item) => String(item.id) === String(notificationId));
     if (!notification || toInt(notification.userId) !== toInt(user.id)) {
       throw new ApiError("Notificação não encontrada.", 404);
     }
