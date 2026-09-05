@@ -2,7 +2,7 @@ import { api as localApi, ApiError } from "./api.js?v=20260905-06";
 import { createSharedApi } from "./shared-api.js?v=20260905-05";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260905-05";
+import { views } from "./modules/index.js?v=20260905-07";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
 import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260905-05";
 
@@ -1029,6 +1029,19 @@ async function handleDynamicClick(event) {
     } catch (error) {
       handleError(error, "Não foi possível atualizar a notificação.");
     }
+  }
+
+  const completeNotificationButton = event.target.closest("[data-complete-notification]");
+  if (completeNotificationButton) {
+    try {
+      await api.patch(state.token, `/action-plans/${completeNotificationButton.dataset.actionPlanId}/complete`);
+      await api.patch(state.token, `/notifications/${completeNotificationButton.dataset.completeNotification}/read`);
+      await loadView("notifications");
+      showToast("Ação concluída com sucesso.");
+    } catch (error) {
+      handleError(error, "Não foi possível concluir a ação.");
+    }
+    return;
   }
 
   const approveResetButton = event.target.closest("[data-approve-password-reset]");

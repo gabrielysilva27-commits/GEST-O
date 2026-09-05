@@ -507,7 +507,9 @@ function notificationsView(data) {
     escapeHtml(formatDate(item.createdAt)),
     item.read
       ? "<span class=\"badge success\">Lida</span>"
-      : `<button class="button secondary" type="button" data-read-notification="${item.id}">Marcar como lida</button>`
+      : Number(item.actionPlanId)
+        ? `<button class="button secondary" type="button" data-complete-notification="${item.id}" data-action-plan-id="${item.actionPlanId}">Concluir ação</button>`
+        : `<button class="button secondary" type="button" data-read-notification="${item.id}">Marcar como lida</button>`
   ]);
 
   return `

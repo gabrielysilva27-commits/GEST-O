@@ -506,7 +506,7 @@ export class SharedStore {
     if (!this.applySharedActionImport(data)) return;
     await this.state.storage.put("data", data);
   }
-  async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) > Date.now() ? claim : null; }
+  async session(request) { const token = String(request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, ""); const sessions = (await this.state.storage.get("sessions")) || {}; const claim = sessions[token]; return claim && Number(claim.expiresAt) + 30 * 86400000 > Date.now() ? claim : null; }
   async fetch(request) {
     await this.ready;
     const path = new URL(request.url).pathname;
@@ -514,7 +514,7 @@ export class SharedStore {
       const body = await request.json().catch(() => ({})), user = sourceUser(body?.username);
       if (!user || user.hash !== await passwordHash(body?.password)) return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
       const sessions = (await this.state.storage.get("sessions")) || {}, token = crypto.randomUUID() + crypto.randomUUID();
-      sessions[token] = { username: user.username, role: user.role, expiresAt: Date.now() + 43200000 };
+      sessions[token] = { username: user.username, role: user.role, expiresAt: Date.now() + 30 * 86400000 };
       await this.state.storage.put("sessions", sessions);
       return Response.json({ token });
     }
