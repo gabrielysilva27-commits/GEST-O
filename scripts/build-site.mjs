@@ -414,7 +414,7 @@ function sourceUser(username) {
 }
 async function passwordHash(password) { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(password || ""))); return [...new Uint8Array(digest)].map((item) => item.toString(16).padStart(2, "0")).join(""); }
 function centralAction(item) { const opened = item.openedAt || "2026-01-01", completed = item.executionDate || opened; return { id: 300000 + Number(item.sourceRow || 0), title: item.meetingSubject, objective: item.objective, status: "done", priority: item.priority || "medium", companyId: 0, unitId: 0, ownerId: 0, requesterId: 0, requesterName: item.requesterName, legacyOwnerName: item.ownerName, createdBy: 1, dueDate: item.dueDate || opened, meetingId: Number(item.meetingTemplateId || 0), meetingTitle: item.meetingTitle, meetingSubject: item.meetingSubject, meetingExecutionDate: item.executionDate || opened, source: "legacy_excel", sourceLabel: "ACOES_NAO_IMPORTADAS_APOS_PUBLICACAO(1).xlsx", legacySourceRow: Number(item.sourceRow || 0), legacyStatus: item.sourceStatus, legacyImportKey: item.importKey, createdAt: opened + "T12:00:00.000Z", updatedAt: opened + "T12:00:00.000Z", completedAt: completed + "T12:00:00.000Z" }; }
-async function withCentralImport(state, data) { const overlay = (await state.storage.get("centralImportOverlay")) || [], live = (await state.storage.get("liveActions")) || [], deleted = new Set((await state.storage.get("deletedLiveActionIds")) || []), liveNotifications = (await state.storage.get("liveNotifications")) || []; if (!data) return data; const base = [...(Array.isArray(data.actionPlans) ? data.actionPlans : []), ...overlay].filter((item) => !deleted.has(Number(item?.id))); const byId = new Map(base.map((item) => [Number(item.id), item])); const activeLive = live.filter((item) => !deleted.has(Number(item?.id))); activeLive.forEach((item) => byId.set(Number(item.id), item)); const notifications = [...(Array.isArray(data.notifications) ? data.notifications : []), ...liveNotifications].filter((item) => !deleted.has(Number(item?.actionPlanId))); const actionSequence = Math.max(Number(data.sequence?.actionPlans || 0), ...activeLive.filter((item) => item.source !== "legacy_excel").map((item) => Number(item.id) || 0)); return { ...data, sequence: { ...(data.sequence || {}), actionPlans: actionSequence }, meta: { ...(data.meta || {}), importedActionHistoryVersion: 8 }, actionPlans: [...byId.values()], notifications }; }
+async function withCentralImport(state, data) { const overlay = (await state.storage.get("centralImportOverlay")) || [], live = (await state.storage.get("liveActions")) || [], deleted = new Set((await state.storage.get("deletedLiveActionIds")) || []), liveNotifications = (await state.storage.get("liveNotifications")) || [], gerotData = (await state.storage.get("gerotData")) || null; if (!data) return data; const base = [...(Array.isArray(data.actionPlans) ? data.actionPlans : []), ...overlay].filter((item) => !deleted.has(Number(item?.id))); const byId = new Map(base.map((item) => [Number(item.id), item])); const activeLive = live.filter((item) => !deleted.has(Number(item?.id))); activeLive.forEach((item) => byId.set(Number(item.id), item)); const notifications = [...(Array.isArray(data.notifications) ? data.notifications : []), ...liveNotifications].filter((item) => !deleted.has(Number(item?.actionPlanId))); const actionSequence = Math.max(Number(data.sequence?.actionPlans || 0), ...activeLive.filter((item) => item.source !== "legacy_excel").map((item) => Number(item.id) || 0)); return { ...data, gerotWarehouse: gerotData?.gerotWarehouse || data.gerotWarehouse, gerotAdditionalAreas: { ...(data.gerotAdditionalAreas || {}), ...(gerotData?.gerotAdditionalAreas || {}) }, sequence: { ...(data.sequence || {}), actionPlans: actionSequence }, meta: { ...(data.meta || {}), importedActionHistoryVersion: 8 }, actionPlans: [...byId.values()], notifications }; }
 
 export class SharedStore {
   constructor(state, env) {
@@ -564,7 +564,9 @@ export class SharedStore {
       const area = String(body?.area || "ARMAZÉM").toUpperCase();
       const data = (await this.state.storage.get("data")) || null;
       if (!data) return Response.json({ error: "Dados compartilhados ainda não estão disponíveis." }, { status: 409 });
-      const record = area === "ARMAZÉM" ? data.gerotWarehouse : data.gerotAdditionalAreas?.[area];
+      const savedGerot = (await this.state.storage.get("gerotData")) || {};
+      const source = area === "ARMAZÉM" ? savedGerot.gerotWarehouse || data.gerotWarehouse : savedGerot.gerotAdditionalAreas?.[area] || data.gerotAdditionalAreas?.[area];
+      const record = source && structuredClone(source);
       if (!record || !Array.isArray(record.rows) || !Array.isArray(body?.rows)) return Response.json({ error: "Área do GEROT não encontrada." }, { status: 404 });
       for (const update of body.rows) {
         const row = record.rows.find((item) => String(item?.id) === String(update?.id));
@@ -578,7 +580,10 @@ export class SharedStore {
       record.updatedAt = new Date().toISOString();
       record.updatedBy = claim.username;
       record.calculatedYtd = true;
-      await this.state.storage.put("data", data);
+      const nextGerot = area === "ARMAZÉM"
+        ? { ...savedGerot, gerotWarehouse: record }
+        : { ...savedGerot, gerotAdditionalAreas: { ...(savedGerot.gerotAdditionalAreas || {}), [area]: record } };
+      await this.state.storage.put("gerotData", nextGerot);
       return Response.json({ success: true, area, updatedAt: record.updatedAt });
     }
     if (path === "/api/gerot-overrides") {
