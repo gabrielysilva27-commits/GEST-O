@@ -32,3 +32,7 @@ export function clearSession() {
   state.lookups = null;
   state.dataCache = {};
 }
+
+queueMicrotask(() => {
+  import("./dto-module.js?v=20260905-01").catch(() => {});
+});
