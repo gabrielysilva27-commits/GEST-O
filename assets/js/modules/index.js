@@ -643,7 +643,10 @@ function registeredUserName(lookups, id, fallbackName = "") {
   if (byId) return byId.name;
   const fallbackKey = actionPersonKey(fallbackName);
   const matchingUser = users.find((user) => actionPersonKey(user.name) === fallbackKey || actionPersonKey(user.username) === fallbackKey);
-  return matchingUser?.name || String(fallbackName || "Não informado").trim();
+  if (matchingUser) return matchingUser.name;
+  const firstName = fallbackKey.split(" ")[0];
+  const sameFirstName = users.filter((user) => actionPersonKey(user.name).split(" ")[0] === firstName);
+  return sameFirstName.length === 1 ? sameFirstName[0].name : String(fallbackName || "Não informado").trim();
 }
 
 function actionPersonOptions(items, selector) {
