@@ -1682,6 +1682,19 @@ tbody td {
   color: var(--danger);
 }
 
+.toast.warning {
+  color: #8a5c11;
+}
+
+.button.is-busy {
+  cursor: progress;
+  opacity: 0.78;
+}
+
+.page-content.is-refreshing {
+  transition: opacity 140ms ease;
+}
+
 .mobile-only {
   display: none;
 }

@@ -60,6 +60,7 @@ let meetingTimerInterval = null;
 let meetingTimerStartedAt = null;
 let auditRefreshInterval = null;
 let dashboardRefreshInterval = null;
+let activeViewLoad = 0;
 const auditApi = createAuditApi(() => state.user);
 let passwordResetStep = "request";
 window.setInterval(async () => {
@@ -179,11 +180,35 @@ function addGerotEditorControls(data) {
 }
 
 function showToast(message, tone = "success") {
+  const duplicate = [...elements.toastRegion.children].find((item) => item.dataset.message === message && item.dataset.tone === tone);
+  if (duplicate) {
+    return;
+  }
   const node = document.createElement("div");
   node.className = `toast ${tone}`;
   node.textContent = message;
+  node.dataset.message = message;
+  node.dataset.tone = tone;
   elements.toastRegion.appendChild(node);
   setTimeout(() => node.remove(), 3600);
+}
+
+function setButtonBusy(button, label = "Salvando...") {
+  if (!button || button.dataset.busy === "true") {
+    return null;
+  }
+  const text = button.textContent;
+  button.dataset.busy = "true";
+  button.disabled = true;
+  button.classList.add("is-busy");
+  button.textContent = label;
+  return () => {
+    if (!button.isConnected) return;
+    button.disabled = false;
+    button.classList.remove("is-busy");
+    delete button.dataset.busy;
+    button.textContent = text;
+  };
 }
 
 function showStatus(message) {
@@ -355,6 +380,7 @@ async function loadView(viewId) {
   if (!view) {
     return;
   }
+  const requestId = ++activeViewLoad;
 
   if (viewId !== "meetings") {
     stopMeetingTimer();
@@ -379,26 +405,33 @@ async function loadView(viewId) {
   }
 
   state.currentView = viewId;
-  try {
-    await api.presence(state.token, viewId);
-  } catch {
-    // A presença não impede o uso dos módulos se a conexão oscilar.
-  }
+  api.presence(state.token, viewId).catch(() => {});
   renderNavigation();
   elements.pageTitle.textContent = view.title;
-  elements.pageContent.innerHTML = `
-    <div class="empty-state">
-      <div>
-        <h2>Carregando...</h2>
-        <p>Buscando dados do módulo selecionado.</p>
+  const cachedData = state.dataCache[viewId];
+  if (cachedData) {
+    elements.pageContent.classList.add("is-refreshing");
+    elements.pageContent.innerHTML = view.render(cachedData, state);
+    if (viewId === "gerot") addGerotEditorControls(cachedData);
+  } else {
+    elements.pageContent.innerHTML = `
+      <div class="empty-state">
+        <div>
+          <h2>Carregando...</h2>
+          <p>Preparando as informações.</p>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
 
   try {
     const loadedData = await view.load(viewId === "audit" ? auditApi : api, state.token);
+    if (requestId !== activeViewLoad || state.currentView !== viewId) return;
     const data = viewId === "gerot" ? applyGerotAdminChanges(loadedData, await loadGerotAdminChanges()) : loadedData;
+    if (requestId !== activeViewLoad || state.currentView !== viewId) return;
     state.dataCache[viewId] = data;
+    hideStatus();
+    elements.pageContent.classList.remove("is-refreshing");
     elements.pageContent.innerHTML = view.render(data, state);
     if (viewId === "gerot") addGerotEditorControls(data);
 
@@ -448,6 +481,12 @@ async function loadView(viewId) {
       }, 10000);
     }
   } catch (error) {
+    if (requestId !== activeViewLoad || state.currentView !== viewId) return;
+    elements.pageContent.classList.remove("is-refreshing");
+    if (cachedData) {
+      showToast("Não foi possível atualizar agora. Os últimos dados continuam disponíveis.", "warning");
+      return;
+    }
     renderModuleError(viewId, view.title, error, "Não foi possível abrir o módulo selecionado.");
     handleError(error, "Não foi possível abrir o módulo selecionado.");
   }
@@ -610,6 +649,9 @@ async function handleDynamicSubmit(event) {
     return;
   }
 
+  const restoreSubmit = setButtonBusy(form.querySelector('button[type="submit"]'));
+  if (!restoreSubmit) return;
+
   try {
     const payload = getFormData(form);
     if (formName === "meetingActions" && payload.attachment instanceof File && payload.attachment.size > 0) {
@@ -653,6 +695,8 @@ async function handleDynamicSubmit(event) {
     form.reset();
   } catch (error) {
     handleError(error, "Não foi possível salvar o registro.");
+  } finally {
+    restoreSubmit();
   }
 }
 
@@ -665,13 +709,12 @@ function escapeOption(value = "") {
 }
 
 function renderModuleError(viewId, title, error, fallback) {
-  const message = error?.message || fallback;
   const isSessionExpired = error?.isSessionExpired || error?.status === 401;
   elements.pageContent.innerHTML = `
     <div class="empty-state module-error-state">
       <div>
-        <h2>Não foi possível abrir ${escapeOption(title || "o módulo")}.</h2>
-        <p>${escapeOption(message)}</p>
+        <h2>Atualização temporariamente indisponível.</h2>
+        <p>${escapeOption(isSessionExpired ? "Entre novamente para continuar." : fallback)}</p>
       </div>
       <div class="empty-state-actions">
         <button class="button secondary" type="button" data-retry-view="${escapeOption(viewId)}">Tentar novamente</button>
@@ -722,6 +765,9 @@ async function closeMeetingFromForm(form) {
     return;
   }
 
+  const restoreButton = setButtonBusy(form.querySelector("[data-close-meeting]"), "Encerrando...");
+  if (!restoreButton) return;
+
   try {
     await api.patch(state.token, `/meetings/${payload.meetingId}/close`, {
       executionDate: payload.executionDate
@@ -732,6 +778,8 @@ async function closeMeetingFromForm(form) {
     await loadView("meetings");
   } catch (error) {
     handleError(error, "Não foi possível encerrar a reunião.");
+  } finally {
+    restoreButton();
   }
 }
 
@@ -1011,6 +1059,8 @@ async function handleDynamicClick(event) {
 
   const completeActionButton = event.target.closest("[data-complete-action]");
   if (completeActionButton) {
+    const restoreButton = setButtonBusy(completeActionButton, "Concluindo...");
+    if (!restoreButton) return;
     try {
       await api.patch(state.token, `/action-plans/${completeActionButton.dataset.completeAction}/complete`);
       showToast("Ação concluída com sucesso.");
@@ -1018,23 +1068,32 @@ async function handleDynamicClick(event) {
       await loadView("actionPlans");
     } catch (error) {
       handleError(error, "Não foi possível concluir a ação.");
+    } finally {
+      restoreButton();
     }
     return;
   }
 
   const readButton = event.target.closest("[data-read-notification]");
   if (readButton) {
+    const restoreButton = setButtonBusy(readButton, "Atualizando...");
+    if (!restoreButton) return;
     try {
       await api.patch(state.token, `/notifications/${readButton.dataset.readNotification}/read`);
       await loadView("notifications");
       showToast("Notificação marcada como lida.");
     } catch (error) {
       handleError(error, "Não foi possível atualizar a notificação.");
+    } finally {
+      restoreButton();
     }
+    return;
   }
 
   const completeNotificationButton = event.target.closest("[data-complete-notification]");
   if (completeNotificationButton) {
+    const restoreButton = setButtonBusy(completeNotificationButton, "Concluindo...");
+    if (!restoreButton) return;
     try {
       await api.patch(state.token, `/action-plans/${completeNotificationButton.dataset.actionPlanId}/complete`);
       await api.patch(state.token, `/notifications/${completeNotificationButton.dataset.completeNotification}/read`);
@@ -1042,6 +1101,8 @@ async function handleDynamicClick(event) {
       showToast("Ação concluída com sucesso.");
     } catch (error) {
       handleError(error, "Não foi possível concluir a ação.");
+    } finally {
+      restoreButton();
     }
     return;
   }
@@ -1232,9 +1293,10 @@ function applyAuditFilters() {
 }
 
 function handleError(error, fallback) {
-  const message = error?.message || fallback;
+  const technicalError = /endpoint|network|fetch|json|sincroniza[çc][ãa]o compartilhada/i.test(String(error?.message || ""));
+  const message = error instanceof ApiError && !technicalError ? error.message : fallback;
   showToast(message, "error");
-  showStatus(message);
+  showStatus("Não foi possível concluir agora. Você pode continuar usando a plataforma e tentar novamente.");
 }
 
 function toggleSidebar(force) {
