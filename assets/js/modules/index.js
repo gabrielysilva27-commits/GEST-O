@@ -716,7 +716,7 @@ function actionPlansView(data, context) {
   const meetings = data.meetings?.items || [];
   const canCreate = userCan(context, "meetings.manage") && userCan(context, "actionPlans.manage");
   const normalizePerson = (value) => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const canManageRequested = (item) => { const id = toInt(context.user?.id); if ([toInt(item.createdBy), toInt(item.requesterId)].includes(id)) return true; const requester = normalizePerson(item.requesterName || item.legacyRequesterName); return requester && [context.user?.name, context.user?.username, context.user?.title].map(normalizePerson).includes(requester); };
+  const canManageRequested = (item) => { if (context.user?.role === "admin") return true; const id = toInt(context.user?.id); if ([toInt(item.createdBy), toInt(item.requesterId), toInt(item.ownerId)].includes(id)) return true; const identities = [context.user?.name, context.user?.username, context.user?.title].map(normalizePerson); return [item.requesterName, item.legacyRequesterName, item.legacyOwnerName].map(normalizePerson).some((name) => name && identities.includes(name)); };
 
   if (context.actionWorkspace === "create") {
     return `

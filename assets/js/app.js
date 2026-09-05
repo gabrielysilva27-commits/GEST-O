@@ -2,9 +2,9 @@ import { api as localApi, ApiError } from "./api.js?v=20260905-13";
 import { createSharedApi } from "./shared-api.js?v=20260905-12";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
-import { gerotLivePreview, views } from "./modules/index.js?v=filters-20260905-07";
+import { gerotLivePreview, views } from "./modules/index.js?v=filters-20260905-08";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
-import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260905-09";
+import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260905-10";
 
 const api = createSharedApi(localApi);
 
