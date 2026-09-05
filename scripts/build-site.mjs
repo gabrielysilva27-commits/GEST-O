@@ -558,6 +558,29 @@ export class SharedStore {
       await this.state.storage.put("data", body.data);
       return Response.json({ success: true });
     }
+    if (path === "/api/gerot-data") {
+      if (request.method !== "PUT") return Response.json({ error: "Método não permitido." }, { status: 405 });
+      const body = await request.json().catch(() => ({}));
+      const area = String(body?.area || "ARMAZÉM").toUpperCase();
+      const data = (await this.state.storage.get("data")) || null;
+      if (!data) return Response.json({ error: "Dados compartilhados ainda não estão disponíveis." }, { status: 409 });
+      const record = area === "ARMAZÉM" ? data.gerotWarehouse : data.gerotAdditionalAreas?.[area];
+      if (!record || !Array.isArray(record.rows) || !Array.isArray(body?.rows)) return Response.json({ error: "Área do GEROT não encontrada." }, { status: 404 });
+      for (const update of body.rows) {
+        const row = record.rows.find((item) => String(item?.id) === String(update?.id));
+        const hasFormula = area === "ARMAZÉM" ? Array.isArray(row?.formulaInputs) && row.formulaInputs.length > 0 : Array.isArray(row?.formulas) && row.formulas.some(Boolean);
+        if (!row || hasFormula || !Array.isArray(update?.monthly)) continue;
+        row.monthly = Array.from({ length: 12 }, (_, index) => {
+          const value = update.monthly[index];
+          return value === "" || value === null || typeof value === "undefined" ? null : Number(value);
+        });
+      }
+      record.updatedAt = new Date().toISOString();
+      record.updatedBy = claim.username;
+      record.calculatedYtd = true;
+      await this.state.storage.put("data", data);
+      return Response.json({ success: true, area, updatedAt: record.updatedAt });
+    }
     if (path === "/api/gerot-overrides") {
       if (request.method === "GET") return Response.json({ store: (await this.state.storage.get("gerotOverrides")) || {} });
       if (request.method !== "PATCH") return Response.json({ error: "Método não permitido." }, { status: 405 });
@@ -581,7 +604,7 @@ export default {
       return presence.fetch(request);
     }
 
-    if (pathname === "/api/session" || pathname.startsWith("/api/live-actions/") || pathname === "/api/live-actions" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
+    if (pathname === "/api/session" || pathname.startsWith("/api/live-actions/") || pathname === "/api/live-actions" || pathname === "/api/shared-data" || pathname === "/api/shared-view" || pathname === "/api/gerot-data" || pathname === "/api/gerot-overrides" || pathname === "/api/audit-actions") {
       return env.SHARED_STORE.getByName("lead-gestao-shared-store").fetch(request);
     }
 

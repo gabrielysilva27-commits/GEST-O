@@ -1,5 +1,5 @@
 import { api as localApi, ApiError } from "./api.js?v=20260905-13";
-import { createSharedApi } from "./shared-api.js?v=20260905-09";
+import { createSharedApi } from "./shared-api.js?v=20260905-10";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
 import { gerotLivePreview, views } from "./modules/index.js?v=20260905-14";
