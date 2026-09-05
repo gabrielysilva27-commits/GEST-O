@@ -76,6 +76,30 @@ function installCompactStyles() {
       line-height: 1.2 !important;
     }
 
+    .dto2-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .dto2-card-actions [data-dto2-count] {
+      color: var(--text-muted);
+      font-size: .56rem !important;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .dto2-card-actions .button {
+      min-height: 29px !important;
+      height: 29px !important;
+      padding: 4px 10px !important;
+      font-size: .6rem !important;
+      border-radius: 6px !important;
+      white-space: nowrap;
+    }
+
     .dto2-card .table-scroll {
       margin: 0 !important;
       padding: 0 !important;
@@ -201,6 +225,26 @@ function installCompactStyles() {
       .dto2-filters {
         grid-template-columns: 1fr 1fr !important;
       }
+
+      .dto2-cardhead {
+        align-items: flex-start !important;
+      }
+
+      .dto2-card-actions {
+        gap: 6px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .dto2-cardhead {
+        flex-wrap: wrap;
+      }
+
+      .dto2-card-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 2px;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -238,9 +282,53 @@ function addEmployeeToDeadlineTable() {
   table.dataset.dtoEmployeeColumn = "1";
 }
 
+function cardByTitle(title) {
+  return [...document.querySelectorAll("#page-content .dto2-card")].find(
+    (card) => card.querySelector(".dto2-cardhead h2")?.textContent.trim() === title
+  );
+}
+
+function organizeDashboard() {
+  if (location.hash !== "#dto") return;
+
+  const view = document.querySelector("#page-content .dto2-view[data-dto-enhanced]");
+  if (!view) return;
+
+  const appliedCard = cardByTitle("DTOs aplicados");
+  const deadlineCard = cardByTitle("Controle de vencimentos");
+  if (!appliedCard || !deadlineCard) return;
+
+  if (view.dataset.dtoCompactLayout !== "1") {
+    view.insertBefore(appliedCard, deadlineCard);
+    view.dataset.dtoCompactLayout = "1";
+  }
+
+  const toolbar = view.querySelector(":scope > .dto2-toolbar");
+  const applyButton = toolbar?.querySelector("[data-dto-apply]");
+  const cardHead = appliedCard.querySelector(".dto2-cardhead");
+
+  if (cardHead && !cardHead.querySelector(".dto2-card-actions")) {
+    const actions = document.createElement("div");
+    actions.className = "dto2-card-actions";
+
+    const resultCount = cardHead.querySelector("[data-dto2-count]");
+    if (resultCount) actions.appendChild(resultCount);
+    if (applyButton) actions.appendChild(applyButton);
+
+    cardHead.appendChild(actions);
+  } else if (cardHead && applyButton) {
+    cardHead.querySelector(".dto2-card-actions")?.appendChild(applyButton);
+  }
+
+  if (toolbar && !toolbar.querySelector("[data-dto-apply]")) {
+    toolbar.remove();
+  }
+}
+
 function compactDto() {
   installCompactStyles();
   addEmployeeToDeadlineTable();
+  organizeDashboard();
 }
 
 const observer = new MutationObserver(() => compactDto());
