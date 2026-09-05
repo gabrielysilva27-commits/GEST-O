@@ -575,6 +575,20 @@ function todaysDateKey() {
   return date;
 }
 
+function calendarDate(value) {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(`${value}T12:00:00`);
+  }
+  return new Date(value);
+}
+
+function futureDateKey(days) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 function ensureMeetingTemplates(database) {
   database.meetings = arrayValue(database.meetings);
   const deletedTemplateIds = arrayValue(database.meta?.deletedMeetingTemplateIds).map((item) => toInt(item));
@@ -1276,7 +1290,7 @@ function isPastDue(value) {
     return false;
   }
 
-  const date = new Date(value);
+  const date = calendarDate(value);
   if (Number.isNaN(date.getTime())) {
     return false;
   }
@@ -1575,7 +1589,7 @@ function createActionPlan(database, user, payload) {
     unitId: toInt(unit.id),
     ownerId: toInt(payload.ownerId),
     createdBy: toInt(user.id),
-    dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    dueDate: payload.dueDate || futureDateKey(5),
     source: "platform",
     notificationCreated: true,
     createdAt: nowIso(),
@@ -1783,7 +1797,7 @@ function createMeetingAction(database, user, payload) {
     requesterId: toInt(user.id),
     requesterName: user.name,
     createdBy: toInt(user.id),
-    dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    dueDate: payload.dueDate || futureDateKey(5),
     meetingId: toInt(meeting.id),
     meetingTitle: meeting.title,
     meetingSubject: subject,
@@ -1923,7 +1937,7 @@ function createDtoRecord(database, user, payload) {
     unitId: toInt(unit.id),
     ownerId: toInt(payload.ownerId),
     createdBy: toInt(user.id),
-    dueDate: payload.dueDate || new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10),
+    dueDate: payload.dueDate || futureDateKey(4),
     createdAt: nowIso(),
     updatedAt: nowIso()
   };
@@ -1976,7 +1990,7 @@ function createAnomalyReport(database, user, payload) {
     reportedBy: toInt(user.id),
     description: payload.description?.trim() || "",
     createdAt: nowIso(),
-    dueDate: payload.dueDate || new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
+    dueDate: payload.dueDate || futureDateKey(3)
   };
 
   if (!testCollectionScope("anomalyReports", record, user)) {
@@ -2026,7 +2040,7 @@ function createGerotRecord(database, user, payload) {
     unitId: toInt(unit.id),
     ownerId: toInt(payload.ownerId),
     createdBy: toInt(user.id),
-    dueDate: payload.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    dueDate: payload.dueDate || futureDateKey(5),
     createdAt: nowIso(),
     updatedAt: nowIso()
   };
@@ -2074,7 +2088,7 @@ function createTask(database, user, payload) {
     description: payload.description?.trim() || "",
     status: payload.status || "open",
     priority: payload.priority || "medium",
-    dueDate: payload.dueDate || new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    dueDate: payload.dueDate || futureDateKey(3),
     companyId: resolveCompanyIdForRecord(database, user, unit.companyId, unit.id),
     unitId: toInt(unit.id),
     assigneeId: toInt(payload.assigneeId),
@@ -2185,7 +2199,7 @@ function createSafetyReport(database, user, payload) {
     reportedBy: toInt(user.id),
     description: payload.description?.trim() || "",
     createdAt: nowIso(),
-    dueDate: payload.dueDate || new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
+    dueDate: payload.dueDate || futureDateKey(3)
   };
 
   if (!testCollectionScope("safetyReports", record, user)) {
@@ -2302,7 +2316,7 @@ function createTicket(database, user, payload) {
     ownerId: payload.ownerId ? toInt(payload.ownerId) : toInt(user.id),
     description: payload.description?.trim() || "",
     openedAt: nowIso(),
-    dueDate: payload.dueDate || new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)
+    dueDate: payload.dueDate || futureDateKey(2)
   };
 
   if (!testCollectionScope("tickets", record, user)) {
