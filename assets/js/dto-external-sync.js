@@ -4,17 +4,20 @@ import { loadDtoExternalData } from "./dto-external-data.js?v=20260905-01";
 
 const DB_KEY = "lead-gestao-db-v2";
 const TOKEN_KEY = "lead-gestao-sync-token";
-const IMPORT_VERSION = 2;
+const DELETED_KEY = "lead-dto-external-deleted-v1";
+const IMPORT_VERSION = 3;
 const IMPORT_PREFIX = "dto1-20260905-row-";
 const SHARED_FIELDS = ["companies","units","actionPlans","meetings","gapaRecords","dtoRecords","anomalyReports","tickets","tasks","checklists","safetyReports","trainings","notifications","history","gerotWarehouse","gerotAdditionalAreas","meta"];
 let importing = false;
 let deleting = false;
+let externalData = null;
+let EXTERNAL_SEED = [];
+let EXTERNAL_KEYS = new Set();
 
-const readDb = () => {
-  try { return JSON.parse(localStorage.getItem(DB_KEY) || "null"); }
-  catch { return null; }
-};
+const readDb = () => { try { return JSON.parse(localStorage.getItem(DB_KEY) || "null"); } catch { return null; } };
 const writeDb = (data) => localStorage.setItem(DB_KEY, JSON.stringify(data));
+const readDeletedKeys = () => { try { const value = JSON.parse(localStorage.getItem(DELETED_KEY) || "[]"); return Array.isArray(value) ? value.map(String) : []; } catch { return []; } };
+const writeDeletedKeys = (keys) => localStorage.setItem(DELETED_KEY, JSON.stringify([...new Set([...keys].map(String))]));
 const addDays = (value, amount) => {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? new Date(`${value}T12:00:00`) : null;
   if (!date) return "";
@@ -34,11 +37,7 @@ function projectShared(data) {
 }
 
 async function putShared(data) {
-  const response = await fetch("/api/shared-data", {
-    method: "PUT",
-    headers: tokenHeaders(true),
-    body: JSON.stringify({ data: projectShared(data) })
-  });
+  const response = await fetch("/api/shared-data", { method: "PUT", headers: tokenHeaders(true), body: JSON.stringify({ data: projectShared(data) }) });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || "Não foi possível gravar os DTOs na base compartilhada.");
   return payload;
@@ -50,10 +49,6 @@ async function getShared() {
   if (!response.ok) throw new Error(payload.error || "Não foi possível confirmar os DTOs na base compartilhada.");
   return payload.data || null;
 }
-
-let externalData = null;
-let EXTERNAL_SEED = [];
-let EXTERNAL_KEYS = new Set();
 
 function buildImportedRecord(row, source) {
   const [sourceRow, templateId, applicationDate, employeeName, resultBits, actionPlan] = row;
@@ -97,27 +92,27 @@ function buildImportedRecord(row, source) {
 async function ensureSeed() {
   if (EXTERNAL_SEED.length) return;
   externalData = externalData || await loadDtoExternalData();
-  EXTERNAL_SEED = externalData.rows.map((row) => buildImportedRecord(row, externalData)).filter(Boolean);
+  EXTERNAL_SEED = (externalData.rows || []).map((row) => buildImportedRecord(row, externalData)).filter(Boolean);
   EXTERNAL_KEYS = new Set(EXTERNAL_SEED.map((item) => item.externalImportKey));
 }
 
 function materializeExternal(data) {
   if (!data || typeof data !== "object") return { changed: false, added: 0 };
   data.meta = data.meta && typeof data.meta === "object" ? data.meta : {};
-  const deleted = new Set(Array.isArray(data.meta.dtoExternalDeletedKeys) ? data.meta.dtoExternalDeletedKeys.map(String) : []);
+  const deleted = new Set([
+    ...readDeletedKeys(),
+    ...(Array.isArray(data.meta.dtoExternalDeletedKeys) ? data.meta.dtoExternalDeletedKeys.map(String) : [])
+  ]);
+  writeDeletedKeys(deleted);
   const records = Array.isArray(data.dtoRecords) ? data.dtoRecords : [];
   let changed = false;
   let added = 0;
 
   const kept = records.filter((item) => {
     const key = String(item?.externalImportKey || "");
-    if (key && EXTERNAL_KEYS.has(key) && deleted.has(key)) {
-      changed = true;
-      return false;
-    }
+    if (key && EXTERNAL_KEYS.has(key) && deleted.has(key)) { changed = true; return false; }
     return true;
   });
-
   const existingKeys = new Set(kept.map((item) => String(item?.externalImportKey || "")).filter(Boolean));
   const existingSyncIds = new Set(kept.map((item) => String(item?.syncId || "")).filter(Boolean));
   for (const item of EXTERNAL_SEED) {
@@ -130,16 +125,19 @@ function materializeExternal(data) {
     added += 1;
   }
 
+  const deletedList = [...deleted];
+  if (JSON.stringify(data.meta.dtoExternalDeletedKeys || []) !== JSON.stringify(deletedList)) {
+    data.meta.dtoExternalDeletedKeys = deletedList;
+    changed = true;
+  }
   if (Number(data.meta.dtoExternalImportVersion || 0) !== IMPORT_VERSION) {
     data.meta.dtoExternalImportVersion = IMPORT_VERSION;
     changed = true;
   }
-  if (!Array.isArray(data.meta.dtoExternalDeletedKeys)) data.meta.dtoExternalDeletedKeys = [...deleted];
-
   if (changed) {
     data.dtoRecords = kept;
     data.sequence = data.sequence && typeof data.sequence === "object" ? data.sequence : {};
-    data.sequence.dtoRecords = Math.max(Number(data.sequence.dtoRecords || 0), ...kept.map((item) => Number(item?.id || 0)));
+    data.sequence.dtoRecords = Math.max(Number(data.sequence.dtoRecords || 0), 0, ...kept.map((item) => Number(item?.id || 0)));
   }
   return { changed, added };
 }
@@ -153,39 +151,40 @@ function mergeSharedIntoLocal(shared) {
   return merged;
 }
 
-function materializeLocal() {
-  if (!EXTERNAL_SEED.length) return false;
-  const data = readDb();
-  if (!data) return false;
-  const result = materializeExternal(data);
-  if (result.changed) writeDb(data);
-  return result.changed;
-}
-
 async function ensureExternalImport() {
-  if (importing || deleting || location.hash !== "#dto" || !localStorage.getItem(TOKEN_KEY)) return;
+  if (importing || deleting || location.hash !== "#dto") return;
   importing = true;
   try {
     await ensureSeed();
-    await syncOperationalData();
-    const data = readDb();
+    let data = readDb();
     if (!data) return;
-    const result = materializeExternal(data);
-    if (result.changed) writeDb(data);
 
-    const activeExpected = EXTERNAL_SEED.filter((item) => !(data.meta?.dtoExternalDeletedKeys || []).map(String).includes(item.externalImportKey)).length;
+    const localResult = materializeExternal(data);
+    if (localResult.changed) writeDb(data);
+
+    if (localResult.added > 0 && sessionStorage.getItem("dto-external-local-reload-v3") !== "1") {
+      sessionStorage.setItem("dto-external-local-reload-v3", "1");
+      location.reload();
+      return;
+    }
+
+    if (!localStorage.getItem(TOKEN_KEY)) return;
+
+    await syncOperationalData();
+    data = readDb();
+    if (!data) return;
+    const sharedResult = materializeExternal(data);
+    if (sharedResult.changed) writeDb(data);
+
+    const deleted = new Set(readDeletedKeys());
+    const activeExpected = EXTERNAL_SEED.filter((item) => !deleted.has(item.externalImportKey)).length;
     const currentExternal = (data.dtoRecords || []).filter((item) => EXTERNAL_KEYS.has(String(item?.externalImportKey || ""))).length;
-    if (result.changed || currentExternal < activeExpected) await putShared(data);
+    if (sharedResult.changed || currentExternal < activeExpected) await putShared(data);
 
     const shared = await getShared();
     const merged = mergeSharedIntoLocal(shared);
-    const confirmed = (merged?.dtoRecords || []).filter((item) => EXTERNAL_KEYS.has(String(item?.externalImportKey || ""))).length;
+    const confirmed = (merged?.dtoRecords || []).filter((item) => EXTERNAL_KEYS.has(String(item?.externalImportKey || "")) && !deleted.has(String(item?.externalImportKey || ""))).length;
     if (confirmed < activeExpected) throw new Error(`A importação foi incompleta: ${confirmed} de ${activeExpected} DTOs externos confirmados.`);
-
-    if (result.added > 0 && sessionStorage.getItem("dto-external-reload-v2") !== "1") {
-      sessionStorage.setItem("dto-external-reload-v2", "1");
-      location.reload();
-    }
   } catch (error) {
     console.error("Falha na importação externa de DTOs:", error);
   } finally {
@@ -207,42 +206,44 @@ async function deleteDto(recordId) {
   if (!before) { alert("DTO não encontrado."); return; }
   if (!canDelete(before)) { alert("Somente o responsável pela aplicação pode excluir este DTO."); return; }
   if (!confirm(`Excluir a aplicação de ${before.dtoName || before.title || "DTO"} de ${before.applicationDate || ""}?`)) return;
-  if (!localStorage.getItem(TOKEN_KEY)) {
-    alert("Sua sessão de sincronização expirou. Saia e entre novamente antes de excluir o DTO.");
-    return;
-  }
 
   deleting = true;
   try {
-    await syncOperationalData();
-    const data = readDb();
+    let data = readDb();
     if (!data) throw new Error("Não foi possível acessar a base do DTO.");
+
+    if (localStorage.getItem(TOKEN_KEY)) {
+      await syncOperationalData();
+      data = readDb() || data;
+    }
+
     const record = (data.dtoRecords || []).find((item) => Number(item?.id) === Number(recordId)) || before;
     if (!canDelete(record)) throw new Error("Somente o responsável pela aplicação pode excluir este DTO.");
 
     data.dtoRecords = (data.dtoRecords || []).filter((item) => Number(item?.id) !== Number(recordId));
     data.meta = data.meta && typeof data.meta === "object" ? data.meta : {};
     if (record.externalImportKey) {
-      const deleted = new Set(Array.isArray(data.meta.dtoExternalDeletedKeys) ? data.meta.dtoExternalDeletedKeys.map(String) : []);
+      const deleted = new Set([...readDeletedKeys(), ...(Array.isArray(data.meta.dtoExternalDeletedKeys) ? data.meta.dtoExternalDeletedKeys.map(String) : [])]);
       deleted.add(String(record.externalImportKey));
       data.meta.dtoExternalDeletedKeys = [...deleted];
+      writeDeletedKeys(deleted);
     }
     writeDb(data);
-    await putShared(data);
 
-    const shared = await getShared();
-    const stillExists = (shared?.dtoRecords || []).some((item) =>
-      Number(item?.id) === Number(recordId) ||
-      (record.externalImportKey && String(item?.externalImportKey || "") === String(record.externalImportKey))
-    );
-    if (stillExists) throw new Error("A base compartilhada não confirmou a exclusão do DTO.");
-    mergeSharedIntoLocal(shared);
+    if (localStorage.getItem(TOKEN_KEY)) {
+      await putShared(data);
+      const shared = await getShared();
+      const stillExists = (shared?.dtoRecords || []).some((item) =>
+        Number(item?.id) === Number(recordId) ||
+        (record.externalImportKey && String(item?.externalImportKey || "") === String(record.externalImportKey))
+      );
+      if (stillExists) throw new Error("A base compartilhada não confirmou a exclusão do DTO.");
+      mergeSharedIntoLocal(shared);
+    }
     location.reload();
   } catch (error) {
     console.error("Falha ao excluir DTO:", error);
     alert(error?.message || "Não foi possível excluir o DTO.");
-    await syncOperationalData().catch(() => false);
-    materializeLocal();
   } finally {
     deleting = false;
   }
@@ -272,9 +273,7 @@ function markCompactTables() {
   if (location.hash !== "#dto") return;
   const cards = [...document.querySelectorAll("#page-content .dto2-card")];
   for (const card of cards) {
-    if ([...card.querySelectorAll("th")].some((th) => th.textContent.trim() === "Próximo vencimento")) {
-      card.querySelector("table")?.classList.add("dto2-deadline-compact");
-    }
+    if ([...card.querySelectorAll("th")].some((th) => th.textContent.trim() === "Próximo vencimento")) card.querySelector("table")?.classList.add("dto2-deadline-compact");
   }
 }
 
@@ -331,12 +330,7 @@ document.addEventListener("click", (event) => {
   deleteDto(button.dataset.dtoDelete);
 }, true);
 
-window.addEventListener("hashchange", () => {
-  if (location.hash === "#dto") requestAnimationFrame(enhance);
-});
-window.addEventListener("storage", () => {
-  if (location.hash === "#dto") requestAnimationFrame(enhance);
-});
+window.addEventListener("hashchange", () => { if (location.hash === "#dto") requestAnimationFrame(enhance); });
+window.addEventListener("storage", () => { if (location.hash === "#dto") requestAnimationFrame(enhance); });
 document.addEventListener("DOMContentLoaded", () => requestAnimationFrame(enhance));
-
 if (document.readyState !== "loading") requestAnimationFrame(enhance);
