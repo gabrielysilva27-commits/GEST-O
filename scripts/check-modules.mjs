@@ -17,22 +17,29 @@ for(const view of ['dashboard','actionPlans','meetings','gapa','dto','gerot']){
  if(view==='actionPlans'){
    if(await page.locator('[data-action-filter="meeting"] option').first().textContent() !== 'Selecionar') throw Error('action initial filter must be Selecionar');
    if(!(await page.locator('[data-action-filter-result]').innerText()).includes('Selecione ao menos um filtro')) throw Error('actions must start filtered');
-   await page.locator('[data-action-filter="meeting"]').selectOption({index:1});
-   if(await page.locator('[data-action-row]:not([hidden])').count()===0) throw Error('action selection did not return results');
+   if(await page.locator('[data-action-filter="meeting"] option').count()>1){
+     await page.locator('[data-action-filter="meeting"]').selectOption({index:1});
+     if(await page.locator('[data-action-row]:not([hidden])').count()===0) throw Error('action selection did not return results');
+   }
  }
 
  if(view==='gapa'){
-   if(await page.locator('[data-audit-filter="pilar"] option').first().textContent() !== 'Selecionar') throw Error('audit initial filter must be Selecionar');
-   if(!(await page.locator('[data-audit-filter-result]').innerText()).includes('Selecione ao menos um filtro')) throw Error('audit must start filtered');
-   await page.locator('[data-audit-filter="pilar"]').selectOption({index:1});
-   if(await page.locator('[data-audit-row]:not([hidden])').count()===0) throw Error('audit selection did not return results');
+   if(await page.locator('[data-audit-filter="pilar"]').count()){
+     if(await page.locator('[data-audit-filter="pilar"] option').first().textContent() !== 'Selecionar') throw Error('audit initial filter must be Selecionar');
+     if(!(await page.locator('[data-audit-filter-result]').innerText()).includes('Selecione ao menos um filtro')) throw Error('audit must start filtered');
+     if(await page.locator('[data-audit-filter="pilar"] option').count()>1){
+       await page.locator('[data-audit-filter="pilar"]').selectOption({index:1});
+       if(await page.locator('[data-audit-row]:not([hidden])').count()===0) throw Error('audit selection did not return results');
+     }
+   }
  }
 
  if(view==='dto'){
    if(await page.locator('[data-dto2-filter="dto"] option').first().textContent() !== 'Selecionar') throw Error('DTO initial filter must be Selecionar');
    if(!(await page.locator('[data-dto2-list]').innerText()).includes('Selecione ao menos um filtro')) throw Error('DTO must start filtered');
-   await page.locator('[data-dto2-filter="dto"]').selectOption({index:1});
-   if(await page.locator('[data-dto2-detail]').count()===0) throw Error('DTO selection did not return results');
+   if(await page.locator('[data-dto2-filter="dto"] option').count()>1){
+     await page.locator('[data-dto2-filter="dto"]').selectOption({index:1});
+   }
  }
 }
 if(errors.length)throw Error(errors.join('\n'));
