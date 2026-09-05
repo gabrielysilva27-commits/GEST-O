@@ -1222,6 +1222,31 @@ function gerotCalculatedValue(row, rows, monthIndex, calculatedYtd = false) {
   }
 }
 
+export function gerotLivePreview(area, inputValues = {}) {
+  const rows = arrayValue(area?.rows).map((row) => ({ ...row, monthly: [...arrayValue(row.monthly)] }));
+  Object.entries(inputValues).forEach(([id, months]) => {
+    const row = rows.find((item) => String(item.id) === String(id));
+    if (!row) return;
+    Object.entries(months || {}).forEach(([month, value]) => {
+      const index = Number(month);
+      if (index >= 0 && index < 12) row.monthly[index] = value === "" || value === null ? null : Number(value);
+    });
+  });
+  return rows.map((row) => {
+    const monthly = GEROT_MONTHS.map((_, index) => {
+      const formula = arrayValue(row.formulas)[index];
+      const value = formula
+        ? gerotSpreadsheetFormula(row, rows, formula, index)
+        : arrayValue(row.formulaInputs).length
+          ? gerotCalculatedValue(row, rows, index, true)
+          : row.monthly?.[index];
+      return { value, display: gerotNumber(value, row.unit, row.displayFormat), status: gerotGoalClass(row, value) };
+    });
+    const ytd = gerotYtd(row, rows, true);
+    return { id: String(row.id), ytd: { value: ytd, display: gerotNumber(ytd, row.unit, row.displayFormat), status: gerotGoalClass(row, ytd) }, monthly };
+  });
+}
+
 function gerotGoalClass(row, value) {
   if (row.goalMode === "none") return "neutral";
   if (!Number.isFinite(Number(value))) return "neutral";
@@ -1298,17 +1323,17 @@ function gerotWarehouseView(data, context = {}) {
       const value = calculated ?? row.monthly?.[index];
       const status = gerotGoalClass(row, value);
       const editable = !arrayValue(row.formulaInputs).length && !arrayValue(row.formulas).some(Boolean);
-      return `<td class="gerot-value ${status}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;
+      return `<td class="gerot-value ${status}" data-gerot-row-value="${escapeHtml(row.id)}" data-gerot-month-value="${index}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;
     }).join("");
     const indicatorActions = isAdmin && !row.calculationInput ? `<td class="gerot-indicator-actions"><button class="gerot-icon-button" type="button" data-gerot-indicator-edit="${escapeHtml(row.id)}" data-gerot-indicator-area="${escapeHtml(data.area)}" aria-label="Editar indicador" title="Editar indicador">✎</button><button class="gerot-icon-button danger" type="button" data-gerot-indicator-delete="${escapeHtml(row.id)}" data-gerot-indicator-area="${escapeHtml(data.area)}" aria-label="Excluir indicador" title="Excluir indicador">🗑</button></td>` : isAdmin ? "<td></td>" : "";
-    return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}${indicatorActions}</tr>`;
+    return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}" data-gerot-ytd="${escapeHtml(row.id)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}${indicatorActions}</tr>`;
   }).join("");
   const canEdit = Boolean(data.canEdit);
   const ytdSummary = data.calculatedYtd ? "Acumulado recalculado a partir das memórias preenchidas." : "Acumulado inicial espelhado da planilha de referência.";
   return `
     ${data.embedded ? "" : moduleHeader("GEROT", "Quadro geral de indicadores operacionais.")}
     ${data.embedded ? "" : `<section class="gerot-toolbar gerot-consultation"><div class="gerot-title-block"><span class="eyebrow">QUADRO DE CONSULTA</span><strong data-gerot-title>${escapeHtml(data.area || "ARMAZÉM")} · GEROT ${escapeHtml(data.year || 2026)}</strong><small data-gerot-summary data-gerot-default-summary="${escapeHtml(ytdSummary)}">${escapeHtml(ytdSummary)}</small></div><div class="gerot-toolbar-actions">${canEdit ? `<div class="gerot-editor-actions"><button class="button secondary" type="button" data-gerot-edit><span>Editar mês</span></button><button class="button primary" type="button" data-gerot-save hidden>Salvar alterações</button></div>` : ""}</div></section>`}
-    <section class="gerot-summary-strip" data-gerot-details><span><strong>${indicatorCount}</strong> indicadores</span><span><strong>${escapeHtml(data.year || 2026)}</strong> competência</span><span>Visualização para todos os usuários</span>${!canEdit ? `<span>Edição exclusiva: ${escapeHtml(data.area || "Armazém")} e Gabriely</span>` : ""}</section>
+    <section class="gerot-summary-strip" data-gerot-details><span><strong>${indicatorCount}</strong> indicadores</span><span><strong>${escapeHtml(data.year || 2026)}</strong> competência</span><span>Visualização para todos os usuários</span><span class="gerot-live-status" data-gerot-live-preview hidden></span>${!canEdit ? `<span>Edição exclusiva: ${escapeHtml(data.area || "Armazém")} e Gabriely</span>` : ""}</section>
     <section data-gerot-details><p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Metas avaliadas conforme direção ou faixa definida na planilha.</span></p>
     <section class="table-card gerot-card"><div class="table-scroll"><table class="gerot-table"><thead><tr><th>Tipo</th><th>Indicador</th><th>Unidade</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}${isAdmin ? "<th aria-label=\"Ações\"></th>" : ""}</tr></thead><tbody>${rows}</tbody></table></div></section></section>
   `;

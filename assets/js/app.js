@@ -2,7 +2,7 @@ import { api as localApi, ApiError } from "./api.js?v=20260905-13";
 import { createSharedApi } from "./shared-api.js?v=20260905-09";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260905-11";
+import { gerotLivePreview, views } from "./modules/index.js?v=20260905-14";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
 import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260905-09";
 
@@ -60,6 +60,10 @@ let meetingTimerInterval = null;
 let meetingTimerStartedAt = null;
 let auditRefreshInterval = null;
 let dashboardRefreshInterval = null;
+let gerotRefreshInterval = null;
+let gerotPreviewFrame = null;
+let gerotAutoSaveTimer = null;
+let gerotAutoSaveRunning = false;
 let activeViewLoad = 0;
 const auditApi = createAuditApi(() => state.user);
 let passwordResetStep = "request";
@@ -177,6 +181,102 @@ function addGerotEditorControls(data) {
       tableRow.appendChild(cell);
     });
   });
+}
+
+function gerotEditorArea(scope) {
+  const name = scope.closest("[data-gerot-panel]")?.dataset.gerotPanel;
+  return state.dataCache.gerot?.areas?.find((area) => area.area === name) || null;
+}
+
+function gerotEditorRows(scope) {
+  const rows = new Map();
+  scope.querySelectorAll("[data-gerot-input]").forEach((input) => {
+    const id = input.dataset.gerotRow;
+    if (!rows.has(id)) rows.set(id, { id, monthly: Array(12).fill(null) });
+    rows.get(id).monthly[Number(input.dataset.gerotMonth)] = input.value === "" ? null : Number(input.value);
+  });
+  return [...rows.values()];
+}
+
+function refreshGerotPreview(scope) {
+  const area = gerotEditorArea(scope);
+  if (!area) return;
+  const values = Object.fromEntries(gerotEditorRows(scope).map((row) => [row.id, row.monthly]));
+  const preview = new Map(gerotLivePreview(area, values).map((row) => [row.id, row]));
+  scope.querySelectorAll("[data-gerot-row-value]").forEach((cell) => {
+    const row = preview.get(cell.dataset.gerotRowValue);
+    const value = row?.monthly[Number(cell.dataset.gerotMonthValue)];
+    if (!value) return;
+    cell.classList.remove("success", "danger");
+    if (value.status) cell.classList.add(value.status);
+    const result = cell.querySelector(".gerot-result");
+    if (result) result.textContent = value.display;
+    else if (!cell.querySelector("input")) cell.textContent = value.display;
+  });
+  scope.querySelectorAll("[data-gerot-ytd]").forEach((cell) => {
+    const value = preview.get(cell.dataset.gerotYtd)?.ytd;
+    if (!value) return;
+    cell.classList.remove("success", "danger");
+    if (value.status) cell.classList.add(value.status);
+    cell.textContent = value.display;
+  });
+  const status = scope.querySelector("[data-gerot-live-preview]");
+  if (status) {
+    status.hidden = false;
+    status.textContent = "Resultados atualizados em tempo real · sincronizando";
+  }
+}
+
+async function saveGerotEditor(scope, { reload = false, silent = false } = {}) {
+  const area = scope.closest("[data-gerot-panel]")?.dataset.gerotPanel || "ARMAZÉM";
+  await api.patch(state.token, "/gerot/warehouse", { area, rows: gerotEditorRows(scope) });
+  const status = scope.querySelector("[data-gerot-live-preview]");
+  if (status) {
+    status.hidden = false;
+    status.textContent = "Resultados compartilhados com todos os usuários";
+  }
+  if (!silent) showToast(`GEROT ${area} atualizado com sucesso.`);
+  if (reload) await loadView("gerot");
+}
+
+function gerotSignature(data) {
+  return JSON.stringify((data?.areas || []).map((area) => [area.area, area.updatedAt, (area.rows || []).map((row) => [row.id, row.monthly, row.updatedAt])]));
+}
+
+async function refreshGerotFromShared() {
+  if (state.currentView !== "gerot" || elements.pageContent.querySelector(".gerot-card.is-editing")) return;
+  const loaded = await views.gerot.load(api, state.token);
+  const data = applyGerotAdminChanges(loaded, await loadGerotAdminChanges());
+  if (gerotSignature(data) === gerotSignature(state.dataCache.gerot)) return;
+  const selectedArea = elements.pageContent.querySelector("[data-gerot-area]")?.value || "GERAL";
+  state.dataCache.gerot = data;
+  elements.pageContent.innerHTML = views.gerot.render(data, state);
+  addGerotEditorControls(data);
+  const selector = elements.pageContent.querySelector("[data-gerot-area]");
+  if (selector) {
+    selector.value = selectedArea;
+    selector.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+
+function scheduleGerotSharedSave(scope) {
+  window.clearTimeout(gerotAutoSaveTimer);
+  gerotAutoSaveTimer = window.setTimeout(async () => {
+    if (state.currentView !== "gerot" || !scope.isConnected) return;
+    if (gerotAutoSaveRunning) {
+      scheduleGerotSharedSave(scope);
+      return;
+    }
+    gerotAutoSaveRunning = true;
+    try {
+      await saveGerotEditor(scope, { silent: true });
+    } catch {
+      const status = scope.querySelector("[data-gerot-live-preview]");
+      if (status) status.textContent = "Não foi possível compartilhar agora. As alterações continuam nesta tela.";
+    } finally {
+      gerotAutoSaveRunning = false;
+    }
+  }, 750);
 }
 
 function showToast(message, tone = "success") {
@@ -396,6 +496,11 @@ async function loadView(viewId) {
     dashboardRefreshInterval = null;
   }
 
+  if (gerotRefreshInterval) {
+    window.clearInterval(gerotRefreshInterval);
+    gerotRefreshInterval = null;
+  }
+
   if (viewId !== "actionPlans") {
     state.actionWorkspace = "list";
   }
@@ -479,6 +584,12 @@ async function loadView(viewId) {
           // A tela continua disponível se a sincronização oscilar.
         }
       }, 10000);
+    }
+
+    if (viewId === "gerot") {
+      gerotRefreshInterval = window.setInterval(() => {
+        refreshGerotFromShared().catch(() => {});
+      }, 4000);
     }
   } catch (error) {
     if (requestId !== activeViewLoad || state.currentView !== viewId) return;
@@ -936,20 +1047,17 @@ async function handleDynamicClick(event) {
 
   const gerotSaveButton = event.target.closest("[data-gerot-save]");
   if (gerotSaveButton) {
+    const restoreButton = setButtonBusy(gerotSaveButton, "Compartilhando...");
+    if (!restoreButton) return;
     try {
       const actionArea = gerotSaveButton.dataset.gerotActionArea;
       const scope = (actionArea && [...elements.pageContent.querySelectorAll("[data-gerot-panel]")].find((panel) => panel.dataset.gerotPanel === actionArea)) || gerotSaveButton.closest("[data-gerot-panel]") || elements.pageContent;
-      const rows = new Map();
-      scope.querySelectorAll("[data-gerot-input]").forEach((input) => {
-        const id = input.dataset.gerotRow;
-        if (!rows.has(id)) rows.set(id, { id, monthly: Array(12).fill(null) });
-        rows.get(id).monthly[Number(input.dataset.gerotMonth)] = input.value === "" ? null : Number(input.value);
-      });
-      await api.patch(state.token, "/gerot/warehouse", { area: actionArea || scope.dataset.gerotPanel || "ARMAZÉM", rows: [...rows.values()] });
-      showToast(`GEROT ${actionArea || scope.dataset.gerotPanel || "Armazém"} atualizado com sucesso.`);
-      await loadView("gerot");
+      window.clearTimeout(gerotAutoSaveTimer);
+      await saveGerotEditor(scope, { reload: true });
     } catch (error) {
       handleError(error, "Não foi possível atualizar o GEROT.");
+    } finally {
+      restoreButton();
     }
     return;
   }
@@ -1262,6 +1370,15 @@ function applyMeetingHistoryFilters() {
 }
 
 function handleDynamicInput(event) {
+  if (event.target.matches("[data-gerot-input]")) {
+    const scope = event.target.closest(".gerot-card");
+    if (scope) {
+      window.cancelAnimationFrame(gerotPreviewFrame);
+      gerotPreviewFrame = window.requestAnimationFrame(() => refreshGerotPreview(scope));
+      scheduleGerotSharedSave(scope);
+    }
+  }
+
   if (event.target.matches("[data-action-filter]")) {
     applyActionFilters();
   }
