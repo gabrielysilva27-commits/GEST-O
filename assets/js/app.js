@@ -544,6 +544,7 @@ async function loadView(viewId) {
     elements.pageContent.classList.add("is-refreshing");
     elements.pageContent.innerHTML = view.render(cachedData, state);
     if (viewId === "gerot") addGerotEditorControls(cachedData);
+    applyInitialFilters(viewId);
   } else {
     elements.pageContent.innerHTML = `
       <div class="empty-state">
@@ -565,6 +566,7 @@ async function loadView(viewId) {
     elements.pageContent.classList.remove("is-refreshing");
     elements.pageContent.innerHTML = view.render(data, state);
     if (viewId === "gerot") addGerotEditorControls(data);
+    applyInitialFilters(viewId);
 
     if (viewId === "audit") {
       elements.notificationBadge.textContent = String(data.unreadCount || 0);
@@ -1163,7 +1165,7 @@ async function handleDynamicClick(event) {
   const clearMeetingHistoryButton = event.target.closest("[data-meeting-history-clear]");
   if (clearMeetingHistoryButton) {
     elements.pageContent.querySelectorAll("[data-meeting-history-filter]").forEach((field) => { field.value = ""; });
-    elements.pageContent.dataset.meetingHistoryPeriod = "all";
+    elements.pageContent.dataset.meetingHistoryPeriod = "";
     applyMeetingHistoryFilters();
     return;
   }
@@ -1323,6 +1325,12 @@ function normalizeFilterValue(value = "") {
   return String(value).trim().toLocaleLowerCase("pt-BR");
 }
 
+function applyInitialFilters(viewId) {
+  if (viewId === "actionPlans") applyActionFilters();
+  if (viewId === "audit") applyAuditFilters();
+  if (viewId === "meetings" && state.meetingWorkspace === "history") applyMeetingHistoryFilters();
+}
+
 function applyActionFilters() {
   const filterRoot = elements.pageContent.querySelector("[data-action-filters]");
   if (!filterRoot) {
@@ -1333,6 +1341,7 @@ function applyActionFilters() {
     [...filterRoot.querySelectorAll("[data-action-filter]")].map((field) => [field.dataset.actionFilter, normalizeFilterValue(field.value)])
   );
   const rows = [...elements.pageContent.querySelectorAll("[data-action-row]")];
+  const hasFilters = Object.values(filters).some(Boolean);
   let visible = 0;
 
   rows.forEach((row) => {
@@ -1343,15 +1352,15 @@ function applyActionFilters() {
       (!filters.owner || normalizeFilterValue(row.dataset.owner) === filters.owner) &&
       (!filters.status || row.dataset.status === filters.status) &&
       (!filters.executionMonth || row.dataset.executionMonth === filters.executionMonth);
-    row.hidden = !matches;
-    if (matches) {
+    row.hidden = !hasFilters || !matches;
+    if (hasFilters && matches) {
       visible += 1;
     }
   });
 
   const output = elements.pageContent.querySelector("[data-action-filter-result]");
   if (output) {
-    output.textContent = `${visible} ${visible === 1 ? "ação encontrada" : "ações encontradas"}`;
+    output.textContent = hasFilters ? `${visible} ${visible === 1 ? "ação encontrada" : "ações encontradas"}` : "Selecione ao menos um filtro para ver as ações.";
   }
 }
 
@@ -1374,7 +1383,8 @@ function applyMeetingHistoryFilters() {
 
   const text = normalizeFilterValue(elements.pageContent.querySelector('[data-meeting-history-filter="text"]')?.value);
   const date = elements.pageContent.querySelector('[data-meeting-history-filter="date"]')?.value || "";
-  const period = elements.pageContent.dataset.meetingHistoryPeriod || "all";
+  const period = elements.pageContent.dataset.meetingHistoryPeriod || "";
+  const hasFilters = Boolean(text || date || period);
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
@@ -1386,13 +1396,13 @@ function applyMeetingHistoryFilters() {
       (!text || normalizeFilterValue(`${row.dataset.title} ${row.dataset.subjects}`).includes(text)) &&
       (!date || row.dataset.date === date) &&
       (period !== "month" || (rowDate && rowDate >= monthStart));
-    row.hidden = !matches;
-    if (matches) visible += 1;
+    row.hidden = !hasFilters || !matches;
+    if (hasFilters && matches) visible += 1;
   });
 
   const output = elements.pageContent.querySelector("[data-meeting-history-result]");
   if (output) {
-    output.textContent = `${visible} ${visible === 1 ? "reunião executada encontrada" : "reuniões executadas encontradas"}`;
+    output.textContent = hasFilters ? `${visible} ${visible === 1 ? "reunião executada encontrada" : "reuniões executadas encontradas"}` : "Selecione ao menos um filtro para ver as reuniões.";
   }
 }
 
@@ -1423,17 +1433,18 @@ function applyAuditFilters() {
   const root = elements.pageContent.querySelector("[data-audit-filters]");
   if (!root) return;
   const values = Object.fromEntries([...root.querySelectorAll("[data-audit-filter]")].map((field) => [field.dataset.auditFilter, normalizeFilterValue(field.value)]));
+  const hasFilters = Object.values(values).some(Boolean);
   let visible = 0;
   elements.pageContent.querySelectorAll("[data-audit-row]").forEach((row) => {
     const matches = (!values.text || normalizeFilterValue(row.dataset.search).includes(values.text))
       && (!values.pilar || normalizeFilterValue(row.dataset.pilar) === values.pilar)
       && (!values.owner || normalizeFilterValue(row.dataset.owner) === values.owner)
       && (!values.status || row.dataset.status === values.status);
-    row.hidden = !matches;
-    if (matches) visible += 1;
+    row.hidden = !hasFilters || !matches;
+    if (hasFilters && matches) visible += 1;
   });
   const output = root.querySelector("[data-audit-filter-result]");
-  if (output) output.textContent = `${visible} ${visible === 1 ? "ação encontrada" : "ações encontradas"}`;
+  if (output) output.textContent = hasFilters ? `${visible} ${visible === 1 ? "ação encontrada" : "ações encontradas"}` : "Selecione ao menos um filtro para ver as ações.";
 }
 
 function handleError(error, fallback) {

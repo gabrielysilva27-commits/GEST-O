@@ -9,23 +9,31 @@ await page.locator('#login-form input[name=username]').fill(process.env.TEST_USE
 await page.locator('#login-form input[name=password]').fill(process.env.TEST_PASSWORD);
 await page.locator('#login-form button[type=submit]').click();
 await page.waitForFunction(()=>document.querySelector('#loginRoot')?.hidden===true,{},{timeout:30000});
-await page.locator('[data-dto2-detail]').first().waitFor({timeout:30000});
-await page.locator('[data-dto2-detail]').first().click();
-await page.getByRole('button',{name:'Editar DTO',exact:true}).waitFor();
-await page.getByRole('button',{name:'Excluir DTO',exact:true}).waitFor();
-await page.getByRole('button',{name:'Editar DTO',exact:true}).click();
-await page.locator('dialog[open] textarea[name=actionPlan]').waitFor();
-if(!process.env.TEST_SITE){
- await page.locator('dialog textarea').fill('Correção de execução — teste local');
- await page.getByRole('button',{name:'Salvar DTO',exact:true}).click();
- await page.locator('.dto2-action').filter({hasText:'Correção de execução — teste local'}).waitFor();
- await page.reload();
- await page.locator('[data-dto2-detail]').first().click();
- await page.locator('.dto2-action').filter({hasText:'Correção de execução — teste local'}).waitFor();
- page.once('dialog',d=>d.accept());
- await page.getByRole('button',{name:'Excluir DTO',exact:true}).click();
- await page.waitForFunction(()=>!document.querySelector('[data-dto2-detail]'));
-}else await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+await page.locator('[data-dto2-filter="dto"]').waitFor({timeout:30000});
+if(await page.locator('[data-dto2-filter="dto"] option').nth(0).textContent() !== 'Selecionar') throw Error('DTO initial filter must be Selecionar');
+if(!await page.locator('[data-dto2-list]').getByText('Selecione ao menos um filtro para ver os DTOs.').count()) throw Error('DTO list must start filtered');
+await page.locator('[data-dto2-filter="dto"]').selectOption({index:1});
+await page.waitForFunction(()=>!document.querySelector('[data-dto2-list]')?.innerText.includes('Selecione ao menos um filtro'),{},{timeout:30000});
+const detailRows=page.locator('[data-dto2-detail]');
+if(await detailRows.count()){
+ await detailRows.first().click();
+ await page.getByRole('button',{name:'Editar DTO',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Excluir DTO',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Editar DTO',exact:true}).click();
+ await page.locator('dialog[open] textarea[name=actionPlan]').waitFor();
+ if(!process.env.TEST_SITE){
+  await page.locator('dialog textarea').fill('Correção de execução — teste local');
+  await page.getByRole('button',{name:'Salvar DTO',exact:true}).click();
+  await page.locator('.dto2-action').filter({hasText:'Correção de execução — teste local'}).waitFor();
+  await page.reload();
+  await page.locator('[data-dto2-filter="dto"]').selectOption({index:1});
+  await page.locator('[data-dto2-detail]').first().click();
+  await page.locator('.dto2-action').filter({hasText:'Correção de execução — teste local'}).waitFor();
+  page.once('dialog',d=>d.accept());
+  await page.getByRole('button',{name:'Excluir DTO',exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector('[data-dto2-detail]'));
+ }else await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+} else if(process.env.TEST_SITE) throw Error('DTO filter returned no production records');
 if(errors.length)throw Error(errors.join('\n'));
 console.log('Browser login, DTO detail, Edit/Delete controls and editor verified');
 await browser.close();

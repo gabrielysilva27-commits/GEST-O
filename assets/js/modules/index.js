@@ -402,9 +402,9 @@ function auditPanelView(data, context) {
       <div class="action-filter-heading"><div><h3>Localizar ações</h3></div><button class="button secondary" type="button" data-clear-audit-filters>Limpar</button></div>
       <div class="action-filter-grid audit-filter-grid">
         <label class="field"><span>Buscar</span><input data-audit-filter="text" placeholder="Questão, ação ou meta"></label>
-        <label class="field"><span>Pilar</span><select data-audit-filter="pilar"><option value="">Todos</option>${pilarOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>
-        ${canSeeTeam ? `<label class="field"><span>Responsável</span><select data-audit-filter="owner"><option value="">Todos</option>${ownerOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>` : ""}
-        <label class="field"><span>Status</span><select data-audit-filter="status"><option value="">Todos</option><option value="pending">Não iniciada</option><option value="in_progress">Em andamento</option><option value="done">Concluída</option></select></label>
+        <label class="field"><span>Pilar</span><select data-audit-filter="pilar"><option value="">Selecionar</option>${pilarOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>
+        ${canSeeTeam ? `<label class="field"><span>Responsável</span><select data-audit-filter="owner"><option value="">Selecionar</option>${ownerOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select></label>` : ""}
+        <label class="field"><span>Status</span><select data-audit-filter="status"><option value="">Selecionar</option><option value="pending">Não iniciada</option><option value="in_progress">Em andamento</option><option value="done">Concluída</option></select></label>
       </div>
       <p class="action-filter-result" data-audit-filter-result>${items.length} ações encontradas</p>
     </section>
@@ -693,11 +693,11 @@ function actionPlansView(data, context) {
         <div class="action-filter-heading"><strong>Filtros</strong><button class="button ghost" type="button" data-clear-action-filters>Limpar filtros</button></div>
         <div class="action-filter-grid" data-action-filters>
           <label class="field"><span>Buscar assunto</span><input type="search" data-action-filter="text" placeholder="Assunto ou plano de ação"></label>
-          <label class="field"><span>Reunião</span><select data-action-filter="meeting"><option value="">Todas</option>${actionFilterOptions(items, (item) => item.meetingTitle)}</select></label>
-          <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Todos</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
-          <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Todos</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
-          <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Todos</option><option value="overdue">Atrasado</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
-          <label class="field"><span>Data de execução</span><select data-action-filter="executionMonth"><option value="">Todos os meses</option>${executionMonthOptions(items)}</select></label>
+          <label class="field"><span>Reunião</span><select data-action-filter="meeting"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => item.meetingTitle)}</select></label>
+          <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
+          <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
+          <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Selecionar</option><option value="overdue">Atrasado</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
+          <label class="field"><span>Data de execução</span><select data-action-filter="executionMonth"><option value="">Selecionar</option>${executionMonthOptions(items)}</select></label>
         </div>
         <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
       </section>
@@ -723,7 +723,7 @@ function meetingHistoryView(data, context) {
       <label class="field"><span>Pesquisar reunião</span><input type="search" data-meeting-history-filter="text" placeholder="Nome ou assunto"></label>
       <label class="field"><span>Data da execução</span><input type="date" data-meeting-history-filter="date"></label>
       <div class="meeting-history-actions">
-        <button class="button secondary" type="button" data-meeting-history-period="all">Todas</button>
+        <button class="button secondary" type="button" data-meeting-history-period="all">Exibir todas</button>
         <button class="button ghost" type="button" data-meeting-history-period="month">Este mês</button>
         <button class="button ghost" type="button" data-meeting-history-clear>Limpar filtros</button>
         <button class="button ghost" type="button" data-show-active-meetings>Voltar para reuniões</button>
