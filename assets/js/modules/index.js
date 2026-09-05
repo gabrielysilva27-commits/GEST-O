@@ -628,6 +628,37 @@ function actionSubjectOptions(items) {
     .join("");
 }
 
+function actionPersonKey(value = "") {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function registeredUserName(lookups, id, fallbackName = "") {
+  const users = lookups?.users || [];
+  const byId = users.find((user) => String(user.id) === String(id));
+  if (byId) return byId.name;
+  const fallbackKey = actionPersonKey(fallbackName);
+  const matchingUser = users.find((user) => actionPersonKey(user.name) === fallbackKey || actionPersonKey(user.username) === fallbackKey);
+  return matchingUser?.name || String(fallbackName || "Não informado").trim();
+}
+
+function actionPersonOptions(items, selector) {
+  const people = new Map();
+  items.forEach((item) => {
+    const label = String(selector(item) || "").trim();
+    const key = actionPersonKey(label);
+    if (key && !people.has(key)) people.set(key, label);
+  });
+  return [...people.entries()]
+    .sort(([, left], [, right]) => left.localeCompare(right, "pt-BR"))
+    .map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`)
+    .join("");
+}
+
 function executionMonthKey(value = "") {
   const match = String(value).match(/^\d{4}-\d{2}/);
   return match ? match[0] : "";
@@ -697,15 +728,15 @@ function actionPlansView(data, context) {
   }
 
   const rows = items.map((item) => {
-    const requester = item.requesterName || item.legacyRequesterName || "Não informado";
-    const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
+    const requester = registeredUserName(context.lookups, item.requesterId, item.requesterName || item.legacyRequesterName);
+    const owner = registeredUserName(context.lookups, item.ownerId, item.legacyOwnerName);
     const canComplete = toInt(item.ownerId) === toInt(context.user?.id) && item.status !== "done";
     const statusCell = `${actionStatusBadge(item.status || "open")}${canComplete ? ` <button class="button secondary action-complete-button" type="button" data-complete-action="${escapeHtml(item.id)}">Concluir</button>` : ""}`;
     const ownerActions = canManageRequested(item) ? `<button class="gerot-icon-button" type="button" data-edit-owned-action="${escapeHtml(item.id)}" aria-label="Editar ação" title="Editar ação">✎</button><button class="gerot-icon-button danger" type="button" data-delete-owned-action="${escapeHtml(item.id)}" aria-label="Excluir ação" title="Excluir ação">🗑</button>` : "";
     const attachment = item.attachment?.data
       ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
       : `<span class="text-muted">Sem anexo</span>`;
-    return `<tr data-action-row data-action-subject="${escapeHtml(actionSubjectKey(canonicalActionSubject(item.meetingSubject || item.title)))}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
+    return `<tr data-action-row data-action-subject="${escapeHtml(actionSubjectKey(canonicalActionSubject(item.meetingSubject || item.title)))}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(actionPersonKey(requester))}" data-owner="${escapeHtml(actionPersonKey(owner))}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
       <td class="action-date-cell" data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
       <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
       <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
@@ -730,8 +761,8 @@ function actionPlansView(data, context) {
         <div class="action-filter-grid" data-action-filters>
           <label class="field"><span>Assunto</span><select data-action-filter="subject"><option value="">Selecionar</option>${actionSubjectOptions(items)}</select></label>
           <label class="field"><span>Reunião</span><select data-action-filter="meeting"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => item.meetingTitle)}</select></label>
-          <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
-          <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
+          <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Selecionar</option>${actionPersonOptions(items, (item) => registeredUserName(context.lookups, item.requesterId, item.requesterName || item.legacyRequesterName))}</select></label>
+          <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Selecionar</option>${actionPersonOptions(items, (item) => registeredUserName(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
           <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Selecionar</option><option value="overdue">Atrasado</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
           <label class="field"><span>Data de execução</span><select data-action-filter="executionMonth"><option value="">Selecionar</option>${executionMonthOptions(items)}</select></label>
         </div>
