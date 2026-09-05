@@ -603,7 +603,7 @@ function actionSubjectKey(value = "") {
 function canonicalActionSubject(value = "") {
   const key = actionSubjectKey(value);
   if (/\bcdps?\b/.test(key)) return "CDP";
-  if (/\bdif(?:erenca)? estoque\b/.test(key)) return "Dif. Estoque";
+  if (/\bdif(?:erenca)?(?: de)? estoque\b/.test(key)) return "Dif. Estoque";
   if (/\bfefo\b/.test(key)) return "FEFO";
   if (/\bjornada liquida\b/.test(key)) return "Jornada líquida";
   if (/\brelatos?\b/.test(key)) return "Relatos";
