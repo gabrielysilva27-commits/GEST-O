@@ -828,6 +828,12 @@ function sanitizeDatabase(database) {
   ensureMeetingTemplates(sanitized);
   refreshActionStatuses(sanitized);
   ensureImportedActionHistory(sanitized);
+  // Uma ação excluída não pode deixar alerta pendente: além de confundir a
+  // pessoa notificada, esse alerta apontava para um registro inexistente.
+  const currentActionIds = new Set(sanitized.actionPlans.map((item) => toInt(item.id)));
+  sanitized.notifications = sanitized.notifications.filter((item) =>
+    !toInt(item.actionPlanId) || currentActionIds.has(toInt(item.actionPlanId))
+  );
   ensureActionOwnerNotifications(sanitized);
   return sanitized;
 }
@@ -1273,11 +1279,22 @@ function isPastDue(value) {
   return date < today;
 }
 
+function isDashboardAction(item) {
+  const status = String(item?.status || "open").toLowerCase();
+  if (["done", "completed", "closed", "cancelled", "canceled"].includes(status)) {
+    return false;
+  }
+  return ["in_progress", "open", "overdue"].includes(status) || isPastDue(item?.dueDate);
+}
+
 function buildDashboard(database, user) {
   // O dashboard é coletivo: qualquer usuário autenticado acompanha os mesmos
   // itens ativos, independentemente de autoria ou responsabilidade.
   const actionPlans = arrayValue(database.actionPlans);
-  const openActions = actionPlans.filter((item) => item.status !== "done");
+  // A carteira do Dashboard é coletiva e mostra somente o trabalho que exige
+  // acompanhamento: ações em andamento ou atrasadas. Não depende de quem
+  // recebeu a notificação nem de qual usuário abriu a ação.
+  const openActions = actionPlans.filter(isDashboardAction);
   const inProgressActions = actionPlans.filter((item) => item.status === "in_progress");
   const meetings = arrayValue(database.meetings);
   const activeMeetings = meetings.filter(
@@ -1290,7 +1307,7 @@ function buildDashboard(database, user) {
   const notifications = getScopedCollection(database, user, "notifications");
   const overdueItems = [
     ...actionPlans
-      .filter((item) => item.status !== "done" && isPastDue(item.dueDate))
+      .filter((item) => isDashboardAction(item) && isPastDue(item.dueDate))
       .map((item) => ({
         title: item.title,
         module: "Ações",

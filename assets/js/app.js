@@ -1,10 +1,10 @@
-import { api as localApi, ApiError } from "./api.js?v=20260904-06";
-import { createSharedApi } from "./shared-api.js?v=20260904-04";
+import { api as localApi, ApiError } from "./api.js?v=20260905-05";
+import { createSharedApi } from "./shared-api.js?v=20260905-05";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
-import { views } from "./modules/index.js?v=20260902-13";
+import { views } from "./modules/index.js?v=20260905-05";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
-import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260904-02";
+import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260905-05";
 
 const api = createSharedApi(localApi);
 
@@ -59,6 +59,7 @@ const formRoutes = {
 let meetingTimerInterval = null;
 let meetingTimerStartedAt = null;
 let auditRefreshInterval = null;
+let dashboardRefreshInterval = null;
 const auditApi = createAuditApi(() => state.user);
 let passwordResetStep = "request";
 window.setInterval(async () => {
@@ -364,6 +365,11 @@ async function loadView(viewId) {
     auditRefreshInterval = null;
   }
 
+  if (dashboardRefreshInterval) {
+    window.clearInterval(dashboardRefreshInterval);
+    dashboardRefreshInterval = null;
+  }
+
   if (viewId !== "actionPlans") {
     state.actionWorkspace = "list";
   }
@@ -426,6 +432,20 @@ async function loadView(viewId) {
 
     if (viewId === "dashboard") {
       elements.notificationBadge.textContent = String(data.highlights?.unreadNotifications || 0);
+      dashboardRefreshInterval = window.setInterval(async () => {
+        if (state.currentView !== "dashboard" || !state.token) return;
+        try {
+          const refreshed = await views.dashboard.load(api, state.token);
+          const previous = state.dataCache.dashboard;
+          const signature = (value) => JSON.stringify({ actions: (value?.actionPlans || []).map((item) => [item.id, item.status, item.dueDate, item.updatedAt]), unread: value?.highlights?.unreadNotifications || 0 });
+          if (signature(previous) === signature(refreshed)) return;
+          state.dataCache.dashboard = refreshed;
+          elements.pageContent.innerHTML = views.dashboard.render(refreshed, state);
+          elements.notificationBadge.textContent = String(refreshed.highlights?.unreadNotifications || 0);
+        } catch {
+          // A tela continua disponível se a sincronização oscilar.
+        }
+      }, 10000);
     }
   } catch (error) {
     renderModuleError(viewId, view.title, error, "Não foi possível abrir o módulo selecionado.");

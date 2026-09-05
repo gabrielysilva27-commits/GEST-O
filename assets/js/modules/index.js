@@ -279,7 +279,7 @@ function statusBadge(value) {
 
 function actionStatusBadge(value = "open") {
   const labels = {
-    open: "Parado",
+    open: "Atrasado",
     in_progress: "Em andamento",
     overdue: "Atrasado",
     done: "Concluído"
@@ -696,7 +696,7 @@ function actionPlansView(data, context) {
           <label class="field"><span>Reunião</span><select data-action-filter="meeting"><option value="">Todas</option>${actionFilterOptions(items, (item) => item.meetingTitle)}</select></label>
           <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Todos</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
           <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Todos</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>
-          <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Todos</option><option value="open">Parado</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
+          <label class="field"><span>Status</span><select data-action-filter="status"><option value="">Todos</option><option value="overdue">Atrasado</option><option value="in_progress">Em andamento</option><option value="done">Concluído</option></select></label>
           <label class="field"><span>Data de execução</span><select data-action-filter="executionMonth"><option value="">Todos os meses</option>${executionMonthOptions(items)}</select></label>
         </div>
         <p class="action-filter-result" data-action-filter-result>${items.length} ações encontradas</p>
