@@ -2,7 +2,7 @@ import { api as localApi, ApiError } from "./api.js?v=20260905-13";
 import { createSharedApi } from "./shared-api.js?v=20260905-12";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
-import { gerotLivePreview, views } from "./modules/index.js?v=filters-20260905-02";
+import { gerotLivePreview, views } from "./modules/index.js?v=filters-20260905-03";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
 import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260905-09";
 
@@ -1325,6 +1325,10 @@ function normalizeFilterValue(value = "") {
   return String(value).trim().toLocaleLowerCase("pt-BR");
 }
 
+function normalizeActionSubject(value = "") {
+  return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function applyInitialFilters(viewId) {
   if (viewId === "actionPlans") applyActionFilters();
   if (viewId === "audit") applyAuditFilters();
@@ -1346,7 +1350,7 @@ function applyActionFilters() {
 
   rows.forEach((row) => {
     const matches =
-      (!filters.subject || normalizeFilterValue(row.dataset.actionSubject) === filters.subject) &&
+      (!filters.subject || normalizeActionSubject(row.dataset.actionSubject) === normalizeActionSubject(filters.subject)) &&
       (!filters.meeting || normalizeFilterValue(row.dataset.meeting) === filters.meeting) &&
       (!filters.requester || normalizeFilterValue(row.dataset.requester) === filters.requester) &&
       (!filters.owner || normalizeFilterValue(row.dataset.owner) === filters.owner) &&
