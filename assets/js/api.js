@@ -870,6 +870,13 @@ function nextId(database, collectionName) {
   return nextValue;
 }
 
+function actionSyncId() {
+  if (globalThis.crypto?.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `action-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function getInitials(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) {
@@ -1559,6 +1566,7 @@ function createActionPlan(database, user, payload) {
 
   const record = {
     id: nextId(database, "actionPlans"),
+    syncId: actionSyncId(),
     title: payload.title.trim(),
     objective: payload.objective?.trim() || "",
     status: payload.status || "open",
@@ -1764,6 +1772,7 @@ function createMeetingAction(database, user, payload) {
     : toInt(user.companyId || meeting.companyId || 0);
   const record = {
     id: nextId(database, "actionPlans"),
+    syncId: actionSyncId(),
     title: subject,
     objective: payload.actionPlan.trim(),
     status: "in_progress",
