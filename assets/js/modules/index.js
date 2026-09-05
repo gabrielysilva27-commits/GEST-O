@@ -600,10 +600,21 @@ function actionSubjectKey(value = "") {
     .trim();
 }
 
+function canonicalActionSubject(value = "") {
+  const key = actionSubjectKey(value);
+  if (/\bcdps?\b/.test(key)) return "CDP";
+  if (/\bdif(?:erenca)? estoque\b/.test(key)) return "Dif. Estoque";
+  if (/\bfefo\b/.test(key)) return "FEFO";
+  if (/\bjornada liquida\b/.test(key)) return "Jornada líquida";
+  if (/\brelatos?\b/.test(key)) return "Relatos";
+  if (/\btml\b/.test(key)) return "TML";
+  return String(value).trim();
+}
+
 function actionSubjectOptions(items) {
   const subjects = new Map();
   items.forEach((item) => {
-    const label = String(item.meetingSubject || item.title || "").trim();
+    const label = canonicalActionSubject(item.meetingSubject || item.title);
     const key = actionSubjectKey(label);
     if (!key) return;
     const current = subjects.get(key);
@@ -694,7 +705,7 @@ function actionPlansView(data, context) {
     const attachment = item.attachment?.data
       ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
       : `<span class="text-muted">Sem anexo</span>`;
-    return `<tr data-action-row data-action-subject="${escapeHtml(actionSubjectKey(item.meetingSubject || item.title))}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
+    return `<tr data-action-row data-action-subject="${escapeHtml(actionSubjectKey(canonicalActionSubject(item.meetingSubject || item.title)))}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
       <td class="action-date-cell" data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
       <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
       <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
