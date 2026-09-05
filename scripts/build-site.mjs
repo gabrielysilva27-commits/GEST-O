@@ -565,7 +565,7 @@ export class SharedStore {
       const data = (await this.state.storage.get("data")) || null;
       if (!data) return Response.json({ error: "Dados compartilhados ainda não estão disponíveis." }, { status: 409 });
       const savedGerot = (await this.state.storage.get("gerotData")) || {};
-      const source = area === "ARMAZÉM" ? savedGerot.gerotWarehouse || data.gerotWarehouse : savedGerot.gerotAdditionalAreas?.[area] || data.gerotAdditionalAreas?.[area];
+      const source = area === "ARMAZÉM" ? savedGerot.gerotWarehouse || data.gerotWarehouse || body?.areaData : savedGerot.gerotAdditionalAreas?.[area] || data.gerotAdditionalAreas?.[area] || body?.areaData;
       const record = source && structuredClone(source);
       if (!record || !Array.isArray(record.rows) || !Array.isArray(body?.rows)) return Response.json({ error: "Área do GEROT não encontrada." }, { status: 404 });
       for (const update of body.rows) {

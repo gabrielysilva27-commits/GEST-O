@@ -1,5 +1,5 @@
 import { api as localApi, ApiError } from "./api.js?v=20260905-13";
-import { createSharedApi } from "./shared-api.js?v=20260905-10";
+import { createSharedApi } from "./shared-api.js?v=20260905-11";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
 import { gerotLivePreview, views } from "./modules/index.js?v=20260905-14";
@@ -227,16 +227,42 @@ function refreshGerotPreview(scope) {
   }
 }
 
-async function saveGerotEditor(scope, { reload = false, silent = false } = {}) {
+function storeGerotEditorRows(areaName, rows) {
+  const area = state.dataCache.gerot?.areas?.find((item) => item.area === areaName);
+  if (!area) return;
+  const updates = new Map(rows.map((row) => [String(row.id), row.monthly]));
+  area.rows = area.rows.map((row) => updates.has(String(row.id)) ? { ...row, monthly: [...updates.get(String(row.id))] } : row);
+  area.updatedAt = new Date().toISOString();
+  area.calculatedYtd = true;
+}
+
+function finishGerotEditing(scope, area) {
+  const table = scope.querySelector(".gerot-table");
+  scope.querySelector("[data-gerot-display-board]")?.remove();
+  if (table) {
+    delete table.dataset.boardReady;
+    createGerotBoard(table, area);
+  }
+  scope.querySelector(".gerot-card")?.classList.remove("is-editing");
+  scope.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = true; });
+  const actions = elements.pageContent.querySelector("[data-gerot-master-actions]");
+  const editButton = actions?.querySelector("[data-gerot-edit]");
+  const saveButton = actions?.querySelector("[data-gerot-save]");
+  if (editButton) editButton.hidden = false;
+  if (saveButton) saveButton.hidden = true;
+}
+
+async function saveGerotEditor(scope, { silent = false } = {}) {
   const area = scope.closest("[data-gerot-panel]")?.dataset.gerotPanel || "ARMAZÉM";
-  await api.patch(state.token, "/gerot/warehouse", { area, rows: gerotEditorRows(scope) });
+  const rows = gerotEditorRows(scope);
+  await api.patch(state.token, "/gerot/warehouse", { area, rows });
+  storeGerotEditorRows(area, rows);
   const status = scope.querySelector("[data-gerot-live-preview]");
   if (status) {
     status.hidden = false;
     status.textContent = "Resultados compartilhados com todos os usuários";
   }
   if (!silent) showToast(`GEROT ${area} atualizado com sucesso.`);
-  if (reload) await loadView("gerot");
 }
 
 function gerotSignature(data) {
@@ -1053,7 +1079,8 @@ async function handleDynamicClick(event) {
       const actionArea = gerotSaveButton.dataset.gerotActionArea;
       const scope = (actionArea && [...elements.pageContent.querySelectorAll("[data-gerot-panel]")].find((panel) => panel.dataset.gerotPanel === actionArea)) || gerotSaveButton.closest("[data-gerot-panel]") || elements.pageContent;
       window.clearTimeout(gerotAutoSaveTimer);
-      await saveGerotEditor(scope, { reload: true });
+      await saveGerotEditor(scope);
+      finishGerotEditing(scope, actionArea || scope.closest("[data-gerot-panel]")?.dataset.gerotPanel || "ARMAZÉM");
     } catch (error) {
       handleError(error, "Não foi possível atualizar o GEROT.");
     } finally {
