@@ -1,6 +1,3 @@
-import { IMPORTED_ACTION_HISTORY } from "./imported-action-history.js?v=20260828-10";
-import { IMPORTED_ACTION_HISTORY_ADDITIONS } from "./imported-action-history-additions.js?v=20260904-01";
-import { IMPORTED_ACTION_HISTORY_PENDING } from "./imported-action-history-pending.js?v=20260904-01";
 import { IMPORTED_MEETING_SUBJECTS } from "./imported-meeting-subjects.js?v=20260904-01";
 import { IMPORTED_GEROT_AREAS } from "./gerot-imports.js?v=20260902-01";
 
@@ -621,72 +618,9 @@ function ensureMeetingTemplates(database) {
 }
 
 function ensureImportedActionHistory(database) {
-  const importedVersion = toInt(database.meta?.importedActionHistoryVersion, 0);
-  if (importedVersion >= IMPORTED_ACTION_HISTORY_VERSION) {
-    return;
-  }
-
-  database.actionPlans = arrayValue(database.actionPlans);
-  const previousLegacyActionIds = new Set(
-    database.actionPlans.filter((item) => item.source === "legacy_excel").map((item) => toInt(item.id))
-  );
-  // Versões anteriores criaram uma notificação por linha do arquivo. Elas não
-  // representam ações novas da plataforma e precisam ser descartadas.
-  database.notifications = arrayValue(database.notifications).filter((item) => {
-    const isPreviousLegacyAction = previousLegacyActionIds.has(toInt(item.actionPlanId));
-    const isLegacyAssignmentAlert = item.link === "actionPlans" && item.title === "Ação sob sua responsabilidade";
-    return !isPreviousLegacyAction && !isLegacyAssignmentAlert;
-  });
-  // Replace only spreadsheet history; manually created actions remain intact.
-  database.actionPlans = database.actionPlans.filter((item) => item.source !== "legacy_excel");
-  database.sequence.actionPlans = Math.max(
-    toInt(database.sequence?.actionPlans, 0),
-    ...database.actionPlans.map((item) => toInt(item.id))
-  );
-
-  [...IMPORTED_ACTION_HISTORY, ...IMPORTED_ACTION_HISTORY_ADDITIONS, ...IMPORTED_ACTION_HISTORY_PENDING].forEach((item) => {
-    const meeting = database.meetings.find((record) => toInt(record.templateId) === toInt(item.meetingTemplateId));
-    if (!meeting || !arrayValue(meeting.subjects).includes(item.meetingSubject)) {
-      return;
-    }
-
-    database.sequence.actionPlans += 1;
-    database.actionPlans.push({
-      id: database.sequence.actionPlans,
-      title: item.meetingSubject,
-      objective: item.objective,
-      // A planilha é histórico: nenhuma de suas ações fica pendente no sistema.
-      status: "done",
-      priority: item.priority,
-      companyId: 0,
-      unitId: 0,
-      ownerId: findUserIdByLegacyName(database, item.ownerName),
-      requesterId: 0,
-      requesterName: item.requesterName,
-      legacyOwnerName: item.ownerName,
-      createdBy: 1,
-      dueDate: item.dueDate || item.openedAt,
-      meetingId: toInt(meeting.id),
-      meetingTitle: meeting.title,
-      meetingSubject: item.meetingSubject,
-      meetingExecutionDate: item.executionDate || item.openedAt,
-      source: "legacy_excel",
-      sourceLabel: "AÇÕES.xlsx",
-      legacySourceRow: toInt(item.sourceRow),
-      legacyStatus: item.sourceStatus,
-      createdAt: `${item.openedAt || "2026-01-01"}T12:00:00.000Z`,
-      updatedAt: `${item.openedAt || "2026-01-01"}T12:00:00.000Z`,
-      completedAt: `${item.executionDate || item.openedAt || "2026-01-01"}T12:00:00.000Z`
-    });
-  });
-
-  // Notificações pertencem somente às ações abertas dentro da plataforma.
-  const currentLegacyActionIds = new Set(
-    database.actionPlans.filter((item) => item.source === "legacy_excel").map((item) => toInt(item.id))
-  );
-  database.notifications = arrayValue(database.notifications).filter(
-    (item) => !currentLegacyActionIds.has(toInt(item.actionPlanId))
-  );
+  // O histórico de planilhas é incorporado pela base compartilhada. Mantê-lo
+  // também no navegador fazia cada acesso baixar e processar megabytes antes
+  // da primeira tela. Os registros já recebidos da base central são mantidos.
   database.meta.importedActionHistoryVersion = IMPORTED_ACTION_HISTORY_VERSION;
 }
 

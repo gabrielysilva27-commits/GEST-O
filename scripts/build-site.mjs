@@ -136,6 +136,11 @@ const distPath = path.join(projectRoot, "dist");
 const distServerPath = path.join(distPath, "server");
 
 const textExtensions = new Set([".html", ".css", ".js", ".json", ".svg", ".txt"]);
+const omittedClientAssets = new Set([
+  "assets/js/imported-action-history.js",
+  "assets/js/imported-action-history-additions.js",
+  "assets/js/imported-action-history-standardized.js"
+]);
 
 function contentTypeFor(filePath) {
   switch (path.extname(filePath).toLowerCase()) {
@@ -193,6 +198,9 @@ async function buildAssetMap() {
 
   for (const filePath of files) {
     const relativePath = path.relative(projectRoot, filePath).split(path.sep).join("/");
+    if (omittedClientAssets.has(relativePath) || relativePath.startsWith("assets/js/imported-action-history-pending")) {
+      continue;
+    }
     const route = `/${relativePath}`;
     const contentType = contentTypeFor(filePath);
 
