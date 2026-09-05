@@ -800,11 +800,11 @@ function meetingsView(data, context) {
         <div class="form-grid">
           <label class="field">
             <span>Prazo da ação</span>
-            <input type="date" name="dueDate" data-action-field>
+            <input type="date" name="dueDate" data-action-field required>
           </label>
           <label class="field">
             <span>Prioridade</span>
-            <select name="priority" data-action-field>
+            <select name="priority" data-action-field required>
               <option value="high">Alta</option>
               <option value="medium">Média</option>
               <option value="low">Baixa</option>
