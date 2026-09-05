@@ -660,7 +660,6 @@ function actionPlansView(data, context) {
   }
 
   const rows = items.map((item) => {
-    const actionText = [item.title, item.objective, item.meetingSubject].filter(Boolean).join(" ");
     const requester = item.requesterName || item.legacyRequesterName || "Não informado";
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
     const canComplete = toInt(item.ownerId) === toInt(context.user?.id) && item.status !== "done";
@@ -669,7 +668,7 @@ function actionPlansView(data, context) {
     const attachment = item.attachment?.data
       ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
       : `<span class="text-muted">Sem anexo</span>`;
-    return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
+    return `<tr data-action-row data-action-subject="${escapeHtml(item.meetingSubject || item.title || "")}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
       <td class="action-date-cell" data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
       <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
       <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
@@ -692,7 +691,7 @@ function actionPlansView(data, context) {
       <section class="action-filter-card">
         <div class="action-filter-heading"><strong>Filtros</strong><button class="button ghost" type="button" data-clear-action-filters>Limpar filtros</button></div>
         <div class="action-filter-grid" data-action-filters>
-          <label class="field"><span>Buscar assunto</span><input type="search" data-action-filter="text" placeholder="Assunto ou plano de ação"></label>
+          <label class="field"><span>Assunto</span><select data-action-filter="subject"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => item.meetingSubject || item.title)}</select></label>
           <label class="field"><span>Reunião</span><select data-action-filter="meeting"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => item.meetingTitle)}</select></label>
           <label class="field"><span>Solicitante</span><select data-action-filter="requester"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => item.requesterName || item.legacyRequesterName)}</select></label>
           <label class="field"><span>Responsável</span><select data-action-filter="owner"><option value="">Selecionar</option>${actionFilterOptions(items, (item) => getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName))}</select></label>

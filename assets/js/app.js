@@ -2,7 +2,7 @@ import { api as localApi, ApiError } from "./api.js?v=20260905-13";
 import { createSharedApi } from "./shared-api.js?v=20260905-12";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
 import { clearSession, setSession, state } from "./state.js";
-import { gerotLivePreview, views } from "./modules/index.js?v=filters-20260905-01";
+import { gerotLivePreview, views } from "./modules/index.js?v=filters-20260905-02";
 import { applyGerotAdminChanges, loadGerotAdminChanges, removeGerotIndicator, saveGerotIndicator } from "./gerot-admin.js?v=20260904-03";
 import { canManageRequestedAction, deleteOwnedAction, updateOwnedAction } from "./action-owner.js?v=20260905-09";
 
@@ -1346,7 +1346,7 @@ function applyActionFilters() {
 
   rows.forEach((row) => {
     const matches =
-      (!filters.text || normalizeFilterValue(row.dataset.actionText).includes(filters.text)) &&
+      (!filters.subject || normalizeFilterValue(row.dataset.actionSubject) === filters.subject) &&
       (!filters.meeting || normalizeFilterValue(row.dataset.meeting) === filters.meeting) &&
       (!filters.requester || normalizeFilterValue(row.dataset.requester) === filters.requester) &&
       (!filters.owner || normalizeFilterValue(row.dataset.owner) === filters.owner) &&

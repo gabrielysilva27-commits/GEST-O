@@ -15,10 +15,11 @@ for(const view of ['dashboard','actionPlans','meetings','gapa','dto','gerot']){
  console.log(JSON.stringify({view,contentPresent:text.length>30}));
 
  if(view==='actionPlans'){
-   if(await page.locator('[data-action-filter="meeting"] option').first().textContent() !== 'Selecionar') throw Error('action initial filter must be Selecionar');
+   if(await page.locator('[data-action-filter="subject"] option').first().textContent() !== 'Selecionar') throw Error('action subject filter must be Selecionar');
+   if(await page.locator('input[data-action-filter="text"]').count()) throw Error('action subject filter must be a data list');
    if(!(await page.locator('[data-action-filter-result]').innerText()).includes('Selecione ao menos um filtro')) throw Error('actions must start filtered');
-   if(await page.locator('[data-action-filter="meeting"] option').count()>1){
-     await page.locator('[data-action-filter="meeting"]').selectOption({index:1});
+   if(await page.locator('[data-action-filter="subject"] option').count()>1){
+     await page.locator('[data-action-filter="subject"]').selectOption({index:1});
      if(await page.locator('[data-action-row]:not([hidden])').count()===0) throw Error('action selection did not return results');
    }
  }
