@@ -105,11 +105,7 @@ function formatDate(value) {
     return value;
   }
 
-  const hasTime = typeof value === "string" && value.includes("T");
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "medium",
-    timeStyle: hasTime ? "short" : undefined
-  }).format(date);
+  return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
 }
 
 function formatValueLabel(value = "") {
@@ -294,13 +290,13 @@ function dashboardView(data, context) {
     const requester = item.requesterName || item.legacyRequesterName || "Não informado";
     const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
     return `<tr>
-      <td data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
+      <td class="action-date-cell" data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
       <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
       <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
       <td data-label="Solicitante">${escapeHtml(requester)}</td>
       <td data-label="Responsável">${escapeHtml(owner)}</td>
       <td class="action-plan-cell" data-label="Ação">${escapeHtml(item.objective || item.title)}</td>
-      <td data-label="Prazo">${escapeHtml(formatDate(item.dueDate))}</td>
+      <td class="action-date-cell" data-label="Prazo">${escapeHtml(formatDate(item.dueDate))}</td>
       <td data-label="Status">${actionStatusBadge(item.status || "open")}</td>
     </tr>`;
   }).join("");
@@ -674,7 +670,7 @@ function actionPlansView(data, context) {
       ? `<a class="button ghost attachment-link" href="${escapeHtml(item.attachment.data)}" download="${escapeHtml(item.attachment.name || "documento")}" target="_blank" rel="noopener">Ver anexo</a>`
       : `<span class="text-muted">Sem anexo</span>`;
     return `<tr data-action-row data-action-text="${escapeHtml(actionText)}" data-meeting="${escapeHtml(item.meetingTitle || "")}" data-requester="${escapeHtml(requester)}" data-owner="${escapeHtml(owner)}" data-execution-month="${escapeHtml(executionMonthKey(item.meetingExecutionDate || item.createdAt))}" data-status="${escapeHtml(item.status || "open")}">
-      <td data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
+      <td class="action-date-cell" data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
       <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
       <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
       <td class="action-plan-cell" data-label="Plano de ação">${escapeHtml(item.objective || item.title)}</td>
