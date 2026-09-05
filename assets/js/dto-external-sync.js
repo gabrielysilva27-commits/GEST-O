@@ -1,5 +1,6 @@
 import { state } from "./state.js";
-import { syncOperationalData } from "./shared-api.js?v=20260905-11";
+import { loadDtoExternalData } from "./dto-external-data.js?v=20260905-01";
+import { syncOperationalData } from "./shared-api.js?v=20260905-12";
 import { loadDtoExternalData } from "./dto-external-data.js?v=20260905-01";
 
 const DB_KEY = "lead-gestao-db-v2";
@@ -311,11 +312,11 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
-function enhance() {
+function enhance() { return;
   installStyles();
   markCompactTables();
   installDeleteButtons();
-  ensureExternalImport();
+  // Importação externa pausada até a base dedicada estar pronta.
 }
 
 const observer = new MutationObserver(() => requestAnimationFrame(enhance));

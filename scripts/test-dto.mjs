@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {listDtos,dtoItem} from '../worker/dto-items.js';
+const original={id:1,recordType:'dto_application',applicatorId:2,ownerId:2,applicationDate:'2026-09-05',employeeName:'João',answers:[{question:'Execução?',result:'OK'}],actionPlan:'Ação'};
+const map=new Map([['data',{dtoRecords:[original]}]]);
+const storage={get:async k=>structuredClone(map.get(k)),put:async(k,v)=>map.set(k,structuredClone(v))};
+const users=[{id:2,username:'Iago'},{id:3,username:'Marcos'}];
+const req=(method,item)=>new Request('https://site/api/dto-applications/1',{method,headers:{'content-type':'application/json'},body:item?JSON.stringify({item}):undefined});
+assert.equal((await dtoItem(req('PATCH',{actionPlan:'No'}),storage,{username:'Marcos',role:'operator'},users)).status,403);
+assert.equal((await dtoItem(req('DELETE'),storage,{username:'Marcos',role:'operator'},users)).status,403);
+const response=await dtoItem(req('PATCH',{employeeName:'José',applicationDate:'2026-09-06',actionPlan:'Correção de execução',answers:[{question:'Execução?',result:'NOK'}],applicatorId:3}),storage,{username:'Iago',role:'operator'},users);
+assert.equal(response.status,200);
+const saved=(await listDtos(storage))[0];assert.equal(saved.applicatorId,2);assert.equal(saved.actionPlan,'Correção de execução');assert.equal(saved.nextDueDate,'2026-11-05');assert.equal(saved.complianceRate,0);
+assert.equal((await dtoItem(req('PATCH',{applicationDate:'2026-02-31'}),storage,{username:'Iago',role:'operator'},users)).status,400);
+assert.equal((await dtoItem(req('DELETE'),storage,{username:'Gabriely',role:'admin'},users)).status,200);
+assert.equal((await listDtos(storage)).length,0);assert.ok(map.get('data').dtoRecords.length,'Deletion must be recoverable');
+console.log('DTO permission, persistence, UTF-8, recurrence and recoverable deletion tests passed');

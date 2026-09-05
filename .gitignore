@@ -1,3 +1,6 @@
 dist/
 node_modules/
 .env
+.wrangler/
+recovered/active-worker.js
+recovered/assets.json

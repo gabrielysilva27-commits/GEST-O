@@ -1,10 +1,11 @@
 import { state } from "./state.js";
-import { syncOperationalData } from "./shared-api.js?v=20260905-11";
+import { loadDtoExternalData } from "./dto-external-data.js?v=20260905-01";
+import { syncOperationalData } from "./shared-api.js?v=20260905-12";
 
 const DB_KEY = "lead-gestao-db-v2";
 const SYNC_TOKEN_KEY = "lead-gestao-sync-token";
 const RECURRENCE_DAYS = 60;
-const TEMPLATES = [{
+let TEMPLATES = [{
   id: "qualidade",
   name: "DTO - QUALIDADE",
   description: "Diagnóstico de aderência ao padrão de qualidade no manuseio, transporte e descarga de produtos.",
@@ -25,6 +26,8 @@ const TEMPLATES = [{
     ["q17", "17 - Os produtos foram expostos ao sol por longo tempo? (Considerar longo tempo acima de 30 minutos)"]
   ].map(([id, label]) => ({ id, label }))
 }];
+
+loadDtoExternalData().then((data) => { const names={tml:"Diagnóstico de aderência ao padrão de TML.",qualidade:"Diagnóstico de aderência ao padrão de qualidade.","tempo-interno":"Diagnóstico de aderência ao padrão de tempo interno.",produtividade:"Diagnóstico de aderência ao padrão de produtividade."}; TEMPLATES=Object.entries(data.templates||{}).map(([id,template])=>({id,name:template.name,description:names[id]||"Diagnóstico de Tarefa Operacional.",questions:(template.questions||[]).map((label,index)=>({id:"q"+(index+1),label}))})); }).catch(()=>{});
 
 const esc = (v = "") => String(v).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 const root = () => document.querySelector("#page-content");
@@ -156,12 +159,8 @@ async function save(form) {
   };
 
   const saved = await saveSharedDto(item);
-  db.dtoRecords = Array.isArray(db.dtoRecords) ? db.dtoRecords.filter((record) => String(record?.syncId || "") !== String(saved.syncId || "")) : [];
-  db.dtoRecords.push(saved);
-  db.sequence = db.sequence || {};
-  db.sequence.dtoRecords = Math.max(Number(db.sequence.dtoRecords || 0), Number(saved.id || 0));
-  write(db);
-  await syncOperationalData();
+  window.dispatchEvent(new Event('dto:changed'));
+  return saved;
 }
 
 function click(event) {
