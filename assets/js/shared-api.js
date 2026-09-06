@@ -4,10 +4,13 @@ const KEY = "lead-gestao-db-v2";
 const TOKEN_KEY = "lead-gestao-sync-token";
 const FIELDS = ["companies", "units", "actionPlans", "meetings", "gapaRecords", "dtoRecords", "anomalyReports", "tickets", "tasks", "checklists", "safetyReports", "trainings", "notifications", "history", "gerotWarehouse", "gerotAdditionalAreas", "meta"];
 const SYNC_ERROR = "Não foi possível confirmar a sincronização compartilhada. Nenhuma alteração foi aplicada.";
-const SYNC_FRESH_MS = 1500;
+const SYNC_FRESH_MS = 8000;
+const BACKGROUND_SYNC_TIMEOUT_MS = 1400;
 
 let syncInFlight = null;
 let lastSyncAt = 0;
+let lastRemoteSnapshot = "";
+let backgroundRefreshCancel = null;
 
 const read = () => {
   try {
@@ -17,6 +20,8 @@ const read = () => {
     return null;
   }
 };
+
+const hasLocalDatabase = () => localStorage.getItem(KEY) !== null;
 
 const headers = (json) => ({
   ...(json ? { "content-type": "application/json" } : {}),
@@ -40,6 +45,36 @@ const markSynced = () => {
   lastSyncAt = Date.now();
 };
 
+function dispatchSharedSync(changed) {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(new CustomEvent("lead:shared-synced", { detail: { changed, at: Date.now() } }));
+}
+
+function cancelScheduledRefresh() {
+  if (!backgroundRefreshCancel) return;
+  backgroundRefreshCancel();
+  backgroundRefreshCancel = null;
+}
+
+function scheduleSharedRefresh() {
+  if (!localStorage.getItem(TOKEN_KEY) || syncInFlight || backgroundRefreshCancel) return;
+  if (lastSyncAt && Date.now() - lastSyncAt < SYNC_FRESH_MS) return;
+
+  const run = () => {
+    backgroundRefreshCancel = null;
+    syncOperationalData().catch(() => {});
+  };
+
+  if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(run, { timeout: BACKGROUND_SYNC_TIMEOUT_MS });
+    backgroundRefreshCancel = () => window.cancelIdleCallback?.(id);
+    return;
+  }
+
+  const id = setTimeout(run, 220);
+  backgroundRefreshCancel = () => clearTimeout(id);
+}
+
 async function loginSession(credentials) {
   const response = await fetch("/api/session", {
     method: "POST",
@@ -50,6 +85,7 @@ async function loginSession(credentials) {
   if (!response.ok) throw new Error(payload.error || "Não foi possível validar a sessão compartilhada.");
   localStorage.setItem(TOKEN_KEY, payload.token);
   lastSyncAt = 0;
+  lastRemoteSnapshot = "";
 }
 
 export async function persistOperationalData() {
@@ -61,7 +97,10 @@ export async function persistOperationalData() {
       headers: headers(true),
       body: JSON.stringify({ data: project(data) })
     });
-    if (response.ok) markSynced();
+    if (response.ok) {
+      markSynced();
+      lastRemoteSnapshot = "";
+    }
     return response.ok;
   } catch {
     return false;
@@ -69,7 +108,6 @@ export async function persistOperationalData() {
 }
 
 async function performSharedSync() {
-  const local = read();
   const hasSession = Boolean(localStorage.getItem(TOKEN_KEY));
   let response;
   try {
@@ -89,11 +127,22 @@ async function performSharedSync() {
   const payload = await response.json().catch(() => null);
   if (!payload) return false;
   if (!payload.data) {
+    const local = read();
     const success = local && hasSession ? await persistOperationalData() : true;
     if (success) markSynced();
     return success;
   }
 
+  // O servidor retorna sempre a base completa. Se ela não mudou, evita recompactar
+  // e regravar megabytes no localStorage — uma das principais causas de travadas.
+  const remoteSnapshot = JSON.stringify(payload.data);
+  if (lastRemoteSnapshot && remoteSnapshot === lastRemoteSnapshot) {
+    markSynced();
+    dispatchSharedSync(false);
+    return true;
+  }
+
+  const local = read();
   const data = merge(local, payload.data);
   if (!data) return false;
   try {
@@ -101,11 +150,14 @@ async function performSharedSync() {
   } catch {
     return false;
   }
+  lastRemoteSnapshot = remoteSnapshot;
   markSynced();
+  dispatchSharedSync(true);
   return true;
 }
 
 export async function syncOperationalData({ force = false } = {}) {
+  if (force) cancelScheduledRefresh();
   if (!force && lastSyncAt && Date.now() - lastSyncAt < SYNC_FRESH_MS) return true;
   if (syncInFlight) return syncInFlight;
 
@@ -134,6 +186,7 @@ async function saveGerotRows(area, rows, cells) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || "Não foi possível salvar o GEROT compartilhado.");
   markSynced();
+  lastRemoteSnapshot = "";
   return payload;
 }
 
@@ -144,6 +197,7 @@ export async function upsertLiveAction(item) {
     body: JSON.stringify({ item })
   });
   if (!response.ok) throw new Error(SYNC_ERROR);
+  lastRemoteSnapshot = "";
   return (await response.json().catch(() => ({}))).item || item;
 }
 
@@ -153,6 +207,7 @@ export async function removeLiveAction(actionId) {
     headers: headers()
   });
   if (!response.ok) throw new Error(SYNC_ERROR);
+  lastRemoteSnapshot = "";
 }
 
 async function confirmLiveAction(item) {
@@ -166,8 +221,14 @@ async function confirmLiveAction(item) {
 }
 
 export function createSharedApi(api) {
-  const readMethod = async (method, args) => {
-    await requireSharedSync();
+  const readMethod = async (method, args, { fresh = false } = {}) => {
+    // Depois do login a base compartilhada já foi validada. As navegações seguintes
+    // leem a cópia local quente imediatamente e atualizam o compartilhado em tempo ocioso.
+    if (!fresh && hasLocalDatabase()) {
+      scheduleSharedRefresh();
+      return api[method](...args);
+    }
+    await requireSharedSync({ force: fresh });
     return api[method](...args);
   };
 
@@ -198,6 +259,7 @@ export function createSharedApi(api) {
       if (snapshot === null) localStorage.removeItem(KEY);
       else localStorage.setItem(KEY, snapshot);
       lastSyncAt = 0;
+      lastRemoteSnapshot = "";
       throw error;
     }
   };
@@ -214,11 +276,12 @@ export function createSharedApi(api) {
       } catch (error) {
         localStorage.removeItem(TOKEN_KEY);
         lastSyncAt = 0;
+        lastRemoteSnapshot = "";
         throw error;
       }
     },
     resetPassword: (...args) => api.resetPassword(...args),
-    me: (...args) => readMethod("me", args),
+    me: (...args) => readMethod("me", args, { fresh: true }),
     logout: (...args) => api.logout(...args),
     dashboard: (...args) => readMethod("dashboard", args),
     // Presence is already persisted by its own Durable Object and never needs a full shared-database download.
