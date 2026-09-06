@@ -21,21 +21,31 @@ jobs:
           fetch-depth: 0
 
       - name: Aplicar editor e correções de cálculo
-        run: node scripts/patch-gerot-sheet-editor.mjs
+        run: |
+          node scripts/patch-gerot-sheet-editor.mjs
+          sed -i 's/EOY 2023/EOY 2024/g' assets/js/app.js
 
       - name: Preparar teste do GEROT para Node
         shell: bash
         run: |
           cat > tests/gerot-entrega.test.mjs <<'NODE'
           import assert from 'node:assert/strict';
-          globalThis.localStorage = {
-            getItem() { return null; },
-            setItem() {},
-            removeItem() {},
-            clear() {}
-          };
+          import fs from 'node:fs/promises';
+          import os from 'node:os';
+          import path from 'node:path';
+          import { pathToFileURL } from 'node:url';
+
           const { IMPORTED_GEROT_AREAS } = await import('../assets/js/gerot-imports.js');
-          const { gerotLivePreview } = await import('../assets/js/modules/index.js');
+          const modulePath = new URL('../assets/js/modules/index.js', import.meta.url);
+          const source = await fs.readFile(modulePath, 'utf8');
+          const isolated = source.replace(
+            "import {anomalyReportsView} from '../anomaly-ui.js';",
+            "const anomalyReportsView = () => '';"
+          );
+          const tempModule = path.join(os.tmpdir(), `gerot-module-test-${Date.now()}.mjs`);
+          await fs.writeFile(tempModule, isolated);
+          const { gerotLivePreview } = await import(pathToFileURL(tempModule).href);
+          await fs.unlink(tempModule).catch(() => {});
 
           const area = IMPORTED_GEROT_AREAS.find((item) => item.area === 'ENTREGA');
           assert(area, 'GEROT ENTREGA não encontrado');
@@ -102,6 +112,7 @@ jobs:
               && grep -q 'GEROT_SHEET_EDITOR_V2_20260906' /tmp/app.js \
               && grep -q 'GEROT_FORMULA_ENGINE_V2_20260906' /tmp/modules.js \
               && grep -q 'GEROT SHEET EDITOR V2 20260906' /tmp/styles.css \
+              && grep -q 'EOY 2024' /tmp/app.js \
               && grep -q '"id":"entrega-8"' /tmp/gerot.js; then
               shared_code="$(curl -L -sS --connect-timeout 10 --max-time 25 -o /tmp/shared.json -w '%{http_code}' "$BASE/api/shared-view?verify=$nonce" || true)"
               if [ "$shared_code" = "200" ] && node --input-type=module <<'NODE'
