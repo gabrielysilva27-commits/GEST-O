@@ -923,6 +923,12 @@ async function closeMeetingFromForm(form) {
 }
 
 async function handleDynamicClick(event) {
+  const openAnomalyButton = event.target.closest("[data-anomaly-open]");
+  if (openAnomalyButton && typeof window.__openAnomaly === "function") {
+    window.__openAnomaly(openAnomalyButton.dataset.anomalyOpen);
+    return;
+  }
+
   const navButton = event.target.closest("[data-view]");
   if (navButton) {
     const viewId = navButton.dataset.view;

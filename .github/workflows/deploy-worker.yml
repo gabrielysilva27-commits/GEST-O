@@ -27,4 +27,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4"
-          preCommands: npm run build && node scripts/test-dto.mjs && node tests/action-owner.test.mjs && node tests/database-storage.test.mjs && node --check dist/server/index.js
+          preCommands: npm run build && node scripts/test-dto.mjs && node tests/action-owner.test.mjs && node tests/database-storage.test.mjs && node tests/anomaly-items.test.mjs && node --check dist/server/index.js

@@ -1,3 +1,4 @@
+import {anomalyReportsView} from '../anomaly-ui.js';
 const MODULE_LABELS = {
   dashboard: "Dashboard",
   audit: "Painel de auditoria",
@@ -1464,7 +1465,7 @@ export const views = {
   anomalyReports: {
     title: "Relato de anomalia",
     load: (api, token) => api.list(token, "/anomaly-reports"),
-    render: (data, context) => operationsView(anomalyReportsConfig, data, context)
+    render: () => anomalyReportsView()
   },
   gerot: {
     title: "GEROT",

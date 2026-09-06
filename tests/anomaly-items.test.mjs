@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {anomalyRequest,INDICATORS} from '../worker/anomaly-items.js';
+const map=new Map([['data',{sequence:{anomalyReports:0},anomalyReports:[]}]]),storage={get:async key=>structuredClone(map.get(key)),put:async(key,value)=>map.set(key,structuredClone(value))};
+const users=[{id:1,username:'Gabriely',title:'Gabriely'},{id:2,username:'Iago',title:'Iago Rodrigues'},{id:3,username:'Marcos',title:'Marcos Júnior'}];
+const call=(path,method,claim,item)=>anomalyRequest(new Request('https://site'+path,{method,headers:{'content-type':'application/json'},body:item?JSON.stringify({item}):undefined}),storage,claim,users);
+const fields={date:'2026-09-06',occurrence:'Indicador acima do gatilho',indicator:INDICATORS[0],whys:['Volume alto','Rota extensa','Sequenciamento inadequado','Planejamento incompleto','Ausência de revisão'],actionPlan:'Revisar o planejamento antes da saída'};
+let response=await call('/api/anomaly-reports','POST',{username:'Iago',role:'operator'},fields);assert.equal(response.status,201);const created=(await response.json()).item;assert.equal(created.reportedBy,2);assert.equal(created.reportedByName,'Iago Rodrigues');
+response=await call('/api/anomaly-reports/1','PATCH',{username:'Marcos',role:'operator'},{...fields,actionPlan:'Não autorizado'});assert.equal(response.status,403);
+response=await call('/api/anomaly-reports/1','DELETE',{username:'Marcos',role:'operator'});assert.equal(response.status,403);
+response=await call('/api/anomaly-reports/1','PATCH',{username:'Iago',role:'operator'},{...fields,actionPlan:'Plano atualizado'});assert.equal(response.status,200);assert.equal((await response.json()).item.actionPlan,'Plano atualizado');
+response=await call('/api/anomaly-reports','GET',{username:'Marcos',role:'operator'});let listed=(await response.json()).items;assert.equal(listed.length,1);assert.equal(listed[0].canManage,false);
+response=await call('/api/anomaly-reports','GET',{username:'Iago',role:'operator'});listed=(await response.json()).items;assert.equal(listed[0].canManage,true);
+response=await call('/api/anomaly-reports/1','DELETE',{username:'Gabriely',role:'admin'});assert.equal(response.status,200);assert.equal(map.get('data').anomalyReports.length,0);
+response=await call('/api/anomaly-reports','POST',{username:'Iago',role:'operator'},{...fields,whys:['Só um']});assert.equal(response.status,400);
+console.log('Anomaly create, list, validation, ownership, edit and delete tests passed');
