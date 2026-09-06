@@ -5,7 +5,9 @@ let runtime=await fs.readFile('recovered/runtime.js','utf8');
 const entries=JSON.parse(await fs.readFile('recovered/live-assets.json','utf8'));
 entries.push({route:'/assets/js/dto-controls.js',kind:'text',contentType:'application/javascript; charset=utf-8',body:''});
 for (const route of ['/assets/js/database-storage.js','/assets/js/vendor/lz-string.js','/assets/js/anomaly-ui.js','/assets/js/anomaly-finish.js','/assets/js/notifications-ui.js']) entries.push({route,kind:'text',contentType:'application/javascript; charset=utf-8',body:''});
-for (const file of ["gerot-delivery-data.js","gerot-delivery-engine.js","gerot-delivery-model.js","gerot-delivery-editor.js"]) entries.push({route:'/assets/js/'+file,kind:'text',contentType:'application/javascript; charset=utf-8',body:''});
+for (const file of ["gerot-delivery-data.js","gerot-delivery-engine.js","gerot-delivery-model.js","gerot-delivery-editor.js","gerot-delivery-launcher.js","gerot-entrega-standalone.js"]) entries.push({route:'/assets/js/'+file,kind:'text',contentType:'application/javascript; charset=utf-8',body:''});
+entries.push({route:'/assets/css/gerot-delivery-workspace.css',kind:'text',contentType:'text/css; charset=utf-8',body:''});
+entries.push({route:'/gerot-entrega-editor.html',kind:'text',contentType:'text/html; charset=utf-8',body:''});
 for(const entry of entries){const file=entry.route==='/'?'index.html':entry.route.slice(1);const bytes=await fs.readFile(file);entry.body=entry.kind==='base64'?bytes.toString('base64'):bytes.toString('utf8');}
 // Version the complete module graph together so existing browsers also migrate.
 const release=createHash('sha256').update(entries.map(e=>e.body).join('')).digest('hex').slice(0,12);
