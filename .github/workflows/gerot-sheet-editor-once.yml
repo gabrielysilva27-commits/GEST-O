@@ -23,6 +23,7 @@ jobs:
       - name: Aplicar editor e correções de cálculo
         run: |
           node scripts/patch-gerot-sheet-editor.mjs
+          git restore .github/workflows/deploy-worker.yml
           sed -i 's/EOY 2023/EOY 2024/g' assets/js/app.js
 
       - name: Preparar teste do GEROT para Node
@@ -91,7 +92,7 @@ jobs:
         run: |
           git config user.name "gabrielysilva27-commits"
           git config user.email "gabrielysilva27@icloud.com"
-          git add assets/js/gerot-imports.js assets/js/modules/index.js assets/js/app.js assets/js/api.js assets/css/styles.css recovered/runtime.js tests/gerot-entrega.test.mjs .github/workflows/deploy-worker.yml
+          git add assets/js/gerot-imports.js assets/js/modules/index.js assets/js/app.js assets/js/api.js assets/css/styles.css recovered/runtime.js tests/gerot-entrega.test.mjs
           git commit -m "Melhora editor GEROT e corrige IV crítico"
           git push origin main
           echo "PATCH_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
@@ -145,7 +146,7 @@ jobs:
           git config user.name "gabrielysilva27-commits"
           git config user.email "gabrielysilva27@icloud.com"
           git pull --rebase origin main
-          rm -f scripts/patch-gerot-sheet-editor.mjs .github/workflows/gerot-sheet-editor-once.yml
+          rm -f scripts/patch-gerot-sheet-editor.mjs
           git add -A
           git commit -m "Remove aplicador temporário do editor GEROT"
           git push origin main
