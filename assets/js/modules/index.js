@@ -1140,6 +1140,7 @@ const anomalyReportsConfig = {
   }
 };
 
+// GEROT_FORMULA_ENGINE_V2_20260906
 const GEROT_MONTHS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
 function gerotNumber(value, unit, displayFormat = unit) {
@@ -1201,18 +1202,22 @@ function gerotSpreadsheetFormula(row, rows, formula, monthIndex, stack = new Set
   if (stack.has(key)) return null;
   const nextStack = new Set(stack).add(key);
   const rowsBySheetRow = new Map(rows.map((item) => [Number(item.sheetRow), item]));
-  const numeric = (value) => Number.isFinite(Number(value)) ? Number(value) : null;
+  const numeric = (value) => value === null || value === undefined || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
   const cell = (reference) => {
     const match = String(reference).match(/^([A-Z]+)(\d+)$/);
-    if (!match) return null;
+    if (!match) return Number.NaN;
     const [, column, rowNumber] = match;
     const source = rowsBySheetRow.get(Number(rowNumber));
-    if (!source) return null;
-    if (column === "N") return gerotYtd(source, rows, true, nextStack);
+    if (!source) return Number.NaN;
+    if (column === "N") {
+      const resolved = gerotYtd(source, rows, true, nextStack);
+      return Number.isFinite(resolved) ? resolved : Number.NaN;
+    }
     const index = gerotColumnIndex(column);
-    if (index < 0 || index > 11) return null;
+    if (index < 0 || index > 11) return Number.NaN;
     const sourceFormula = arrayValue(source.formulas)[index];
-    return sourceFormula ? gerotSpreadsheetFormula(source, rows, sourceFormula, index, nextStack) : numeric(source.monthly?.[index]);
+    const resolved = sourceFormula ? gerotSpreadsheetFormula(source, rows, sourceFormula, index, nextStack) : numeric(source.monthly?.[index]);
+    return Number.isFinite(resolved) ? resolved : Number.NaN;
   };
   const range = (from, to) => {
     const start = String(from).match(/^([A-Z]+)(\d+)$/);
@@ -1231,7 +1236,7 @@ function gerotSpreadsheetFormula(row, rows, formula, monthIndex, stack = new Set
   const average = (values) => values.length ? sum(values) / values.length : null;
   const ranges = [];
   const expression = gerotUnwrapIfError(formula)
-    .replace(/^IF\((SUM\([^)]*\))=0,"",\(?\1\)?\)$/i, "$1")
+    .replace(/^IF\((SUM\([^)]*\))=0,"",\(?\1\)?\)$/i, "($1===0?NaN:$1)")
     .replace(/\$([A-Z]+)/g, "$1")
     .replace(/([A-Z]+\d+):([A-Z]+\d+)/g, (_, from, to) => {
       ranges.push([from, to]);
@@ -1412,7 +1417,7 @@ function gerotWarehouseView(data, context = {}) {
       const calculated = spreadsheetFormula && data.calculatedYtd ? gerotSpreadsheetFormula(row, allRows, spreadsheetFormula, index) : arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index, Boolean(data.calculatedYtd)) : row.monthly?.[index];
       const value = calculated ?? row.monthly?.[index];
       const status = gerotGoalClass(row, value);
-      const editable = !arrayValue(row.formulaInputs).length && !arrayValue(row.formulas).some(Boolean);
+      const editable = data.area === "ARMAZÉM" ? !arrayValue(row.formulaInputs).length : !spreadsheetFormula;
       return `<td class="gerot-value ${status}" data-gerot-row-value="${escapeHtml(row.id)}" data-gerot-month-value="${index}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="text" inputmode="${gerotInputMode(row.displayFormat || row.unit)}" data-gerot-format="${escapeHtml(row.displayFormat || row.unit || "N°")}" value="${escapeHtml(gerotInputValue(value, row.displayFormat || row.unit))}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;
     }).join("");
     const indicatorActions = isAdmin && !row.calculationInput ? `<td class="gerot-indicator-actions"><button class="gerot-icon-button" type="button" data-gerot-indicator-edit="${escapeHtml(row.id)}" data-gerot-indicator-area="${escapeHtml(data.area)}" aria-label="Editar indicador" title="Editar indicador">✎</button><button class="gerot-icon-button danger" type="button" data-gerot-indicator-delete="${escapeHtml(row.id)}" data-gerot-indicator-area="${escapeHtml(data.area)}" aria-label="Excluir indicador" title="Excluir indicador">🗑</button></td>` : isAdmin ? "<td></td>" : "";

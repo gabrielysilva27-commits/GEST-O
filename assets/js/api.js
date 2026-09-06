@@ -1076,8 +1076,12 @@ function updateGerotArea(database, user, payload) {
   if (!record) throw new ApiError("Área do GEROT não encontrada.", 404);
   arrayValue(payload.rows).forEach((update) => {
     const row = record.rows.find((item) => item.id === update.id);
-    if (!row || arrayValue(row.formulas).some(Boolean) || !Array.isArray(update.monthly)) return;
-    row.monthly = GEROT_MONTHS.map((_, index) => update.monthly[index] === null || update.monthly[index] === "" || typeof update.monthly[index] === "undefined" ? null : Number(update.monthly[index]));
+    if (!row || !Array.isArray(update.monthly)) return;
+    row.monthly = GEROT_MONTHS.map((_, index) => {
+      if (arrayValue(row.formulas)[index]) return row.monthly?.[index] ?? null;
+      const value = update.monthly[index];
+      return value === null || value === "" || typeof value === "undefined" ? null : Number(value);
+    });
   });
   record.updatedAt = nowIso(); record.updatedBy = toInt(user.id); record.calculatedYtd = true;
   return { item: record };

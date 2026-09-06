@@ -160,6 +160,95 @@ function buildGerotDisplayBoards(data) {
 }
 
 
+// GEROT_SHEET_EDITOR_V2_20260906
+const GEROT_SHEET_MONTHS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
+function gerotSheetEscape(value = "") {
+  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+
+function gerotSheetFormat(value, format = "N°") {
+  if (value === null || value === undefined || value === "" || !Number.isFinite(Number(value))) return "–";
+  const number = Number(value);
+  if (format === "%") return new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number);
+  if (format === "HORA" || format === "MIN") {
+    const totalMinutes = Math.round(number * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.abs(totalMinutes % 60);
+    return String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
+  }
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 4 }).format(number);
+}
+
+function gerotSheetInputValue(value, format = "N°") {
+  if (value === null || value === undefined || value === "" || !Number.isFinite(Number(value))) return "";
+  const number = Number(value);
+  if (format === "%") return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 4 }).format(number * 100);
+  if (format === "HORA" || format === "MIN") return gerotSheetFormat(number, format);
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 6 }).format(number);
+}
+
+function gerotSheetTarget(row) {
+  const format = row.displayFormat || row.unit || "N°";
+  if (row.goalMode === "range" && Number.isFinite(Number(row.targetMin)) && Number.isFinite(Number(row.targetMax))) return gerotSheetFormat(row.targetMin, format) + " a " + gerotSheetFormat(row.targetMax, format);
+  if (row.target === null || row.target === undefined || row.target === "") return "–";
+  if (!Number.isFinite(Number(row.target))) return String(row.target);
+  return gerotSheetFormat(row.target, format);
+}
+
+function gerotSheetRowClass(row) {
+  const type = String(row.type || "").toLocaleUpperCase("pt-BR");
+  if (type.includes("IV CRÍTICO")) return "gerot-sheet-row--critical";
+  if (type === "IV") return "gerot-sheet-row--iv";
+  if (type === "IC") return "gerot-sheet-row--ic";
+  return row.calculationInput ? "gerot-sheet-row--memory" : "";
+}
+
+function closeGerotSpreadsheetEditor(editor, force = false) {
+  if (!editor) return;
+  if (!force && editor.dataset.gerotDirty === "true" && !window.confirm("Descartar as alterações ainda não salvas?")) return;
+  editor.remove();
+  document.body.classList.remove("gerot-sheet-editor-open");
+}
+
+function openGerotSpreadsheetEditor(scope, areaName) {
+  const area = state.dataCache.gerot?.areas?.find((item) => item.area === areaName);
+  if (!area) throw new Error("Área do GEROT não encontrada.");
+  const existing = scope.querySelector("[data-gerot-sheet-editor]");
+  if (existing) return;
+  const preview = new Map(gerotLivePreview(area).map((row) => [String(row.id), row]));
+  const rows = [...(area.rows || [])].sort((left, right) => Number(left.sheetRow || 9999) - Number(right.sheetRow || 9999));
+  const editableCells = rows.reduce((total, row) => total + GEROT_SHEET_MONTHS.filter((_, index) => !(row.formulas || [])[index] && !(areaName === "ARMAZÉM" && (row.formulaInputs || []).length)).length, 0);
+  const formulaCells = rows.reduce((total, row) => total + (row.formulas || []).filter(Boolean).length, 0);
+  const body = rows.map((row) => {
+    const rowPreview = preview.get(String(row.id));
+    const format = row.displayFormat || row.unit || "N°";
+    const months = GEROT_SHEET_MONTHS.map((month, index) => {
+      const formula = (row.formulas || [])[index];
+      const warehouseFormula = areaName === "ARMAZÉM" && (row.formulaInputs || []).length;
+      const isFormula = Boolean(formula || warehouseFormula);
+      const result = rowPreview?.monthly?.[index];
+      if (isFormula) return '<td class="gerot-sheet-formula" data-gerot-row-value="' + gerotSheetEscape(row.id) + '" data-gerot-month-value="' + index + '" title="' + gerotSheetEscape(formula ? '=' + formula : 'Calculado automaticamente') + '"><span class="gerot-sheet-fx">ƒx</span><span class="gerot-result">' + gerotSheetEscape(result?.display || "–") + '</span></td>';
+      return '<td class="gerot-sheet-editable"><input data-gerot-input data-gerot-row="' + gerotSheetEscape(row.id) + '" data-gerot-month="' + index + '" data-gerot-format="' + gerotSheetEscape(format) + '" type="text" inputmode="decimal" value="' + gerotSheetEscape(gerotSheetInputValue(row.monthly?.[index], format)) + '" aria-label="' + gerotSheetEscape(row.indicator) + ' em ' + month + '"></td>';
+    }).join("");
+    return '<tr class="' + gerotSheetRowClass(row) + '"><td class="gerot-sheet-line">' + gerotSheetEscape(row.sheetRow || "") + '</td><td class="gerot-sheet-type">' + gerotSheetEscape(row.type || "") + '</td><th scope="row" class="gerot-sheet-indicator">' + gerotSheetEscape(row.indicator || "") + '</th><td>' + gerotSheetEscape(row.product || "") + '</td><td>' + gerotSheetEscape(row.unit || "") + '</td><td>' + gerotSheetEscape(gerotSheetFormat(row.eoy2024, format)) + '</td><td>' + gerotSheetEscape(gerotSheetFormat(row.eoy2025, format)) + '</td><td class="gerot-sheet-meta">' + gerotSheetEscape(gerotSheetTarget(row)) + '</td><td class="gerot-sheet-ytd ' + gerotSheetEscape(rowPreview?.ytd?.status || "") + '" data-gerot-ytd="' + gerotSheetEscape(row.id) + '" title="' + gerotSheetEscape(row.ytdFormula ? '=' + row.ytdFormula : 'Acumulado automático') + '">' + gerotSheetEscape(rowPreview?.ytd?.display || "–") + '</td>' + months + '</tr>';
+  }).join("");
+  const editor = document.createElement("section");
+  editor.className = "gerot-sheet-editor gerot-card is-editing";
+  editor.dataset.gerotSheetEditor = "";
+  editor.dataset.gerotSheetArea = areaName;
+  editor.dataset.gerotDirty = "false";
+  editor.innerHTML = '<header class="gerot-sheet-toolbar"><div><span class="eyebrow">EDIÇÃO EM FORMATO DE PLANILHA</span><h2>GEROT DPO ' + gerotSheetEscape(area.year || 2026) + ' · ' + gerotSheetEscape(areaName) + '</h2><p>Células brancas são editáveis. Células com ƒx vêm da fórmula da planilha e recalculam automaticamente.</p></div><div class="gerot-sheet-toolbar-actions"><span class="gerot-sheet-status" data-gerot-live-preview>Pronto para editar</span><button class="button secondary" type="button" data-gerot-sheet-close>Voltar sem salvar</button><button class="button primary" type="button" data-gerot-sheet-save>Salvar e voltar</button></div></header><div class="gerot-sheet-info"><span><strong>' + rows.length + '</strong> linhas</span><span><strong>' + editableCells + '</strong> células mensais editáveis</span><span><strong>' + formulaCells + '</strong> fórmulas protegidas</span><span>Enter: próxima célula da coluna · Ctrl/Cmd+S: salvar · aceita colar do Excel</span></div><div class="gerot-sheet-scroll"><table class="gerot-sheet-table"><thead><tr><th>Linha</th><th>TIPO</th><th>INDICADOR</th><th>PRODUTO</th><th>UN.</th><th>EOY 2024</th><th>EOY 2025</th><th>META 2026</th><th>YTD 2026</th>' + GEROT_SHEET_MONTHS.map((month) => '<th>' + month + '</th>').join("") + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+  scope.appendChild(editor);
+  document.body.classList.add("gerot-sheet-editor-open");
+  refreshGerotPreview(editor);
+  window.requestAnimationFrame(() => {
+    const first = editor.querySelector("[data-gerot-input]");
+    first?.focus();
+    first?.select?.();
+  });
+}
+
 function addGerotEditorControls(data) {
   buildGerotDisplayBoards(data);
   if (state.user?.role === "admin" || !Array.isArray(data?.areas)) return;
@@ -210,7 +299,16 @@ function gerotEditableInputs(scope) {
 
 function handleGerotKeydown(event) {
   const input = event.target.closest?.("[data-gerot-input]");
-  if (!input || event.key !== "Enter") return;
+  if (!input) return;
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+    const editor = input.closest("[data-gerot-sheet-editor]");
+    if (editor) {
+      event.preventDefault();
+      editor.querySelector("[data-gerot-sheet-save]")?.click();
+    }
+    return;
+  }
+  if (event.key !== "Enter") return;
   event.preventDefault();
   const scope = input.closest(".gerot-card");
   if (!scope) return;
@@ -283,7 +381,7 @@ function refreshGerotPreview(scope) {
   const status = scope.querySelector("[data-gerot-live-preview]");
   if (status) {
     status.hidden = false;
-    status.textContent = "Resultados atualizados em tempo real · sincronizando";
+    status.textContent = scope.matches("[data-gerot-sheet-editor]") ? "Cálculos atualizados · alterações ainda não salvas" : "Resultados atualizados em tempo real · sincronizando";
   }
 }
 
@@ -1124,21 +1222,43 @@ async function handleDynamicClick(event) {
     return;
   }
 
+  const gerotSheetCloseButton = event.target.closest("[data-gerot-sheet-close]");
+  if (gerotSheetCloseButton) {
+    closeGerotSpreadsheetEditor(gerotSheetCloseButton.closest("[data-gerot-sheet-editor]"));
+    return;
+  }
+
+  const gerotSheetSaveButton = event.target.closest("[data-gerot-sheet-save]");
+  if (gerotSheetSaveButton) {
+    const editor = gerotSheetSaveButton.closest("[data-gerot-sheet-editor]");
+    const areaName = editor?.dataset.gerotSheetArea || "ARMAZÉM";
+    const restoreButton = setButtonBusy(gerotSheetSaveButton, "Salvando...");
+    if (!editor || !restoreButton) return;
+    try {
+      window.clearTimeout(gerotAutoSaveTimer);
+      await saveGerotEditor(editor);
+      editor.dataset.gerotDirty = "false";
+      closeGerotSpreadsheetEditor(editor, true);
+      await loadView("gerot");
+      const selector = elements.pageContent.querySelector("[data-gerot-area]");
+      if (selector && [...selector.options].some((option) => option.value === areaName)) {
+        selector.value = areaName;
+        selector.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    } catch (error) {
+      handleError(error, "Não foi possível atualizar o GEROT.");
+    } finally {
+      restoreButton();
+    }
+    return;
+  }
+
   const gerotEditButton = event.target.closest("[data-gerot-edit]");
   if (gerotEditButton) {
     const actionArea = gerotEditButton.dataset.gerotActionArea;
     const scope = (actionArea && [...elements.pageContent.querySelectorAll("[data-gerot-panel]")].find((panel) => panel.dataset.gerotPanel === actionArea)) || gerotEditButton.closest("[data-gerot-panel]") || elements.pageContent;
-    scope.querySelector("[data-gerot-display-board]")?.setAttribute("hidden", "");
-    scope.querySelector("[data-gerot-editor-layout]")?.removeAttribute("hidden");
-    scope.querySelector(".gerot-card")?.classList.add("is-editing");
-    scope.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = false; });
-    const firstGerotInput = scope.querySelector("[data-gerot-input]:not([disabled])");
-    firstGerotInput?.focus();
-    firstGerotInput?.select?.();
-    gerotEditButton.hidden = true;
-    const saveButton = gerotEditButton.parentElement?.querySelector("[data-gerot-save]") || scope.querySelector("[data-gerot-save]");
-    if (saveButton) saveButton.hidden = false;
-    showToast("Edição mensal liberada.");
+    const areaName = actionArea || scope.closest("[data-gerot-panel]")?.dataset.gerotPanel || "ARMAZÉM";
+    openGerotSpreadsheetEditor(scope, areaName);
     return;
   }
 
@@ -1485,7 +1605,8 @@ function handleDynamicInput(event) {
     if (scope) {
       window.cancelAnimationFrame(gerotPreviewFrame);
       gerotPreviewFrame = window.requestAnimationFrame(() => refreshGerotPreview(scope));
-      scheduleGerotSharedSave(scope);
+      if (scope.matches("[data-gerot-sheet-editor]")) scope.dataset.gerotDirty = "true";
+      else scheduleGerotSharedSave(scope);
     }
   }
 
