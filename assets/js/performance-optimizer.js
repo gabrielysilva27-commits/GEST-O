@@ -1,14 +1,16 @@
 import { api as localApi } from './api.js';
-import { createSharedApi } from './shared-api.js';
 import { state } from './state.js';
 import { views } from './modules/index.js';
 
-const sharedApi = createSharedApi(localApi);
-const PREFETCHABLE = new Set(['actionPlans', 'meetings', 'gapa', 'dto', 'anomalyReports', 'notifications', 'administration']);
+const PREFETCHABLE = new Set(['actionPlans', 'meetings', 'gapa', 'dto', 'anomalyReports', 'notifications', 'administration', 'gerot', 'history']);
+const VIEW_CACHE_TTL_MS = 4500;
 const prefetched = new Map();
+const viewLoadedAt = new Map();
 let actionRows = [];
 let actionRowsGeneration = 0;
 let hoverTimer = 0;
+let warmStarted = false;
+let warmProbeTimer = 0;
 
 const decodeAttribute = (value = '') => String(value)
   .replaceAll('&quot;', '"')
@@ -24,6 +26,13 @@ const normalizeSubject = (value = '') => String(value)
   .toLocaleLowerCase('pt-BR')
   .replace(/[^a-z0-9]+/g, ' ')
   .trim();
+
+function runIdle(callback, timeout = 900) {
+  if (typeof window.requestIdleCallback === 'function') {
+    return window.requestIdleCallback(callback, { timeout });
+  }
+  return window.setTimeout(() => callback({ didTimeout: true, timeRemaining: () => 0 }), 32);
+}
 
 function rowAttribute(html, name) {
   const match = html.match(new RegExp(`${name}="([^"]*)"`));
@@ -75,6 +84,24 @@ views.actionPlans.render = (data, context) => {
   }
   return cacheActionRows(html);
 };
+
+function wrapViewLoads() {
+  Object.entries(views).forEach(([viewId, view]) => {
+    if (!view?.load || view.__leadFastLoadWrapped) return;
+    const originalLoad = view.load.bind(view);
+    view.load = async (...args) => {
+      const cached = state.dataCache[viewId];
+      const loadedAt = viewLoadedAt.get(viewId) || 0;
+      if (cached && Date.now() - loadedAt < VIEW_CACHE_TTL_MS) return cached;
+      const data = await originalLoad(...args);
+      viewLoadedAt.set(viewId, Date.now());
+      return data;
+    };
+    view.__leadFastLoadWrapped = true;
+  });
+}
+
+wrapViewLoads();
 
 function actionFilters() {
   const root = document.querySelector('#page-content [data-action-filters]');
@@ -128,9 +155,12 @@ async function prefetchView(viewId) {
   const view = views[viewId];
   if (!view?.load) return;
 
-  const task = view.load(sharedApi, state.token)
+  // Prefetch is deliberately local-only. Shared freshness is handled independently
+  // in idle time, so hovering/clicking never starts a multi-megabyte synchronization.
+  const task = view.load(localApi, state.token)
     .then((data) => {
       if (!state.dataCache[viewId]) state.dataCache[viewId] = data;
+      viewLoadedAt.set(viewId, Date.now());
       return data;
     })
     .catch(() => null)
@@ -139,10 +169,38 @@ async function prefetchView(viewId) {
   return task;
 }
 
-function schedulePrefetch(viewId) {
+function schedulePrefetch(viewId, delay = 55) {
   window.clearTimeout(hoverTimer);
-  hoverTimer = window.setTimeout(() => prefetchView(viewId), 90);
+  hoverTimer = window.setTimeout(() => prefetchView(viewId), delay);
 }
+
+function warmViewsWhenReady() {
+  if (warmStarted) return;
+  if (!state.token || !state.user) {
+    window.clearTimeout(warmProbeTimer);
+    warmProbeTimer = window.setTimeout(warmViewsWhenReady, 350);
+    return;
+  }
+
+  warmStarted = true;
+  const queue = [...PREFETCHABLE];
+  const next = () => {
+    const viewId = queue.shift();
+    if (!viewId) return;
+    runIdle(async () => {
+      await prefetchView(viewId);
+      next();
+    }, 1300);
+  };
+  next();
+}
+
+// When a real shared update arrives, keep the already-renderable cache for instant
+// navigation, but force the next load to rebuild from the newly synchronized local base.
+window.addEventListener('lead:shared-synced', (event) => {
+  if (!event.detail?.changed) return;
+  viewLoadedAt.clear();
+});
 
 document.addEventListener('input', (event) => {
   if (event.target.matches?.('[data-action-filter]')) queueActionHydration();
@@ -156,6 +214,11 @@ document.addEventListener('click', (event) => {
   if (event.target.closest?.('[data-clear-action-filters]')) queueActionHydration();
 }, true);
 
+document.addEventListener('pointerdown', (event) => {
+  const button = event.target.closest?.('[data-view]');
+  if (button?.dataset.view) prefetchView(button.dataset.view);
+}, { capture: true, passive: true });
+
 document.addEventListener('pointerover', (event) => {
   const button = event.target.closest?.('[data-view]');
   if (button?.dataset.view) schedulePrefetch(button.dataset.view);
@@ -163,9 +226,11 @@ document.addEventListener('pointerover', (event) => {
 
 document.addEventListener('focusin', (event) => {
   const button = event.target.closest?.('[data-view]');
-  if (button?.dataset.view) schedulePrefetch(button.dataset.view);
+  if (button?.dataset.view) schedulePrefetch(button.dataset.view, 0);
 }, true);
 
 document.addEventListener('pointerout', (event) => {
   if (event.target.closest?.('[data-view]')) window.clearTimeout(hoverTimer);
 }, { capture: true, passive: true });
+
+warmViewsWhenReady();
