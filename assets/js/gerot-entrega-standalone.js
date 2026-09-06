@@ -6,6 +6,10 @@ import { setSession, state } from "./state.js";
 const api = createSharedApi(localApi);
 const root = document.querySelector("#delivery-workspace-root");
 let loading = false;
+let hadEditor = false;
+let reopenAfterSave = false;
+
+if (localStorage.getItem("lead-gestao-dark-mode") === "true") document.body.classList.add("dark-mode");
 
 function renderState(title, message, action = true) {
   root.innerHTML = `<main class="delivery-standalone-state"><div class="delivery-state-card"><span class="delivery-state-mark">GEROT · ENTREGA</span><h1>${title}</h1><p>${message}</p>${action ? '<button class="button primary" type="button" data-return-gerot>Voltar ao GEROT</button>' : ""}</div></main>`;
@@ -18,17 +22,6 @@ function returnToGerot() {
     return;
   }
   window.location.assign("/#gerot");
-}
-
-function hasPendingChanges() {
-  const editor = document.querySelector("[data-delivery-editor]");
-  if (!editor) return false;
-  return Boolean(editor.querySelector(".delivery-editable.is-changed, [data-delivery-input][aria-invalid='true']"));
-}
-
-function closeWorkspace() {
-  if (hasPendingChanges() && !window.confirm("Descartar as alterações não salvas do GEROT Entrega?")) return;
-  returnToGerot();
 }
 
 function visibleInputs() {
@@ -104,7 +97,7 @@ async function loadEditor() {
     openDeliveryEditor(root, delivery, async (cells) => {
       await api.patch(state.token, "/gerot/warehouse", { area: "ENTREGA", cells });
       localStorage.setItem("lead-gerot-entrega-updated", String(Date.now()));
-      window.setTimeout(() => loadEditor(), 80);
+      reopenAfterSave = true;
     });
     window.requestAnimationFrame(enhanceEditor);
   } catch (error) {
@@ -116,11 +109,7 @@ async function loadEditor() {
 
 document.addEventListener("click", (event) => {
   if (event.target.closest("[data-return-gerot]")) return returnToGerot();
-  if (!event.target.closest("[data-delivery-close], [data-delivery-cancel]")) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  closeWorkspace();
-}, true);
+});
 
 document.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f") {
@@ -131,12 +120,6 @@ document.addEventListener("keydown", (event) => {
       search.focus();
       search.select?.();
     }
-    return;
-  }
-  if (event.key === "Escape" && document.querySelector("[data-delivery-editor]")) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    closeWorkspace();
     return;
   }
   const input = event.target.closest?.("[data-delivery-input]");
@@ -166,10 +149,23 @@ document.addEventListener("focusin", (event) => {
   row?.classList.add("is-active-row");
 });
 
-window.addEventListener("beforeunload", (event) => {
-  if (!hasPendingChanges()) return;
-  event.preventDefault();
-  event.returnValue = "";
+const editorObserver = new MutationObserver(() => {
+  const editor = document.querySelector("[data-delivery-editor]");
+  if (editor) {
+    hadEditor = true;
+    window.requestAnimationFrame(enhanceEditor);
+    return;
+  }
+  if (!hadEditor) return;
+  hadEditor = false;
+  document.body.classList.remove("delivery-editor-ready");
+  if (reopenAfterSave) {
+    reopenAfterSave = false;
+    window.setTimeout(loadEditor, 40);
+    return;
+  }
+  returnToGerot();
 });
+editorObserver.observe(document.body, { childList: true });
 
 loadEditor();
