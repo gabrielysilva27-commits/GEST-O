@@ -188,12 +188,72 @@ function gerotEditorArea(scope) {
   return state.dataCache.gerot?.areas?.find((area) => area.area === name) || null;
 }
 
+function parseGerotInput(input) {
+  const raw = String(input?.value || "").trim();
+  if (!raw) return null;
+  const format = input?.dataset?.gerotFormat || "";
+  if (format === "HORA" || format === "MIN") {
+    if (/^\d{1,3}:\d{1,2}(?::\d{1,2})?$/.test(raw)) {
+      const [hours, minutes, seconds = "0"] = raw.split(":").map(Number);
+      if (minutes < 60 && seconds < 60) return (hours * 3600 + minutes * 60 + seconds) / 86400;
+    }
+  }
+  const normalized = raw.replace(/\s/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".").replace(/%$/, "");
+  const number = Number(normalized);
+  if (!Number.isFinite(number)) return null;
+  return format === "%" ? number / 100 : number;
+}
+
+function gerotEditableInputs(scope) {
+  return [...scope.querySelectorAll("[data-gerot-input]:not([disabled])")].filter((input) => input.offsetParent !== null);
+}
+
+function handleGerotKeydown(event) {
+  const input = event.target.closest?.("[data-gerot-input]");
+  if (!input || event.key !== "Enter") return;
+  event.preventDefault();
+  const scope = input.closest(".gerot-card");
+  if (!scope) return;
+  const month = input.dataset.gerotMonth;
+  const sameMonth = gerotEditableInputs(scope).filter((item) => item.dataset.gerotMonth === month);
+  const index = sameMonth.indexOf(input);
+  const target = event.shiftKey ? sameMonth[index - 1] : sameMonth[index + 1];
+  (target || input).focus();
+  (target || input).select?.();
+}
+
+function handleGerotPaste(event) {
+  const input = event.target.closest?.("[data-gerot-input]");
+  if (!input) return;
+  const text = event.clipboardData?.getData("text") || "";
+  if (!/[\t\r\n]/.test(text)) return;
+  const scope = input.closest(".gerot-card");
+  const table = input.closest("table");
+  const startRow = input.closest("tr");
+  if (!scope || !table || !startRow) return;
+  event.preventDefault();
+  const matrix = text.replace(/\r/g, "").split("\n").filter((line, index, list) => line || index < list.length - 1).map((line) => line.split("\t"));
+  const bodyRows = [...table.querySelectorAll("tbody tr")];
+  const startRowIndex = bodyRows.indexOf(startRow);
+  const startMonth = Number(input.dataset.gerotMonth);
+  matrix.forEach((cells, rowOffset) => {
+    const row = bodyRows[startRowIndex + rowOffset];
+    if (!row) return;
+    cells.forEach((value, colOffset) => {
+      const target = row.querySelector(`[data-gerot-input][data-gerot-month="${startMonth + colOffset}"]`);
+      if (!target || target.disabled) return;
+      target.value = value.trim();
+      target.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
+}
+
 function gerotEditorRows(scope) {
   const rows = new Map();
   scope.querySelectorAll("[data-gerot-input]").forEach((input) => {
     const id = input.dataset.gerotRow;
     if (!rows.has(id)) rows.set(id, { id, monthly: Array(12).fill(null) });
-    rows.get(id).monthly[Number(input.dataset.gerotMonth)] = input.value === "" ? null : Number(input.value);
+    rows.get(id).monthly[Number(input.dataset.gerotMonth)] = parseGerotInput(input);
   });
   return [...rows.values()];
 }
@@ -1072,6 +1132,9 @@ async function handleDynamicClick(event) {
     scope.querySelector("[data-gerot-editor-layout]")?.removeAttribute("hidden");
     scope.querySelector(".gerot-card")?.classList.add("is-editing");
     scope.querySelectorAll("[data-gerot-input]").forEach((input) => { input.disabled = false; });
+    const firstGerotInput = scope.querySelector("[data-gerot-input]:not([disabled])");
+    firstGerotInput?.focus();
+    firstGerotInput?.select?.();
     gerotEditButton.hidden = true;
     const saveButton = gerotEditButton.parentElement?.querySelector("[data-gerot-save]") || scope.querySelector("[data-gerot-save]");
     if (saveButton) saveButton.hidden = false;
@@ -1500,6 +1563,8 @@ function wireEvents() {
   elements.pageContent.addEventListener("click", handleDynamicClick);
   elements.pageContent.addEventListener("change", handleDynamicChange);
   elements.pageContent.addEventListener("input", handleDynamicInput);
+  elements.pageContent.addEventListener("keydown", handleGerotKeydown);
+  elements.pageContent.addEventListener("paste", handleGerotPaste);
   elements.pageContent.addEventListener("submit", handleDynamicSubmit);
   elements.notificationLink.addEventListener("click", () => {
     window.location.hash = "notifications";

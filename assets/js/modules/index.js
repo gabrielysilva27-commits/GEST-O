@@ -1157,6 +1157,25 @@ function gerotNumber(value, unit, displayFormat = unit) {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(number);
 }
 
+function gerotInputValue(value, displayFormat = "") {
+  if (value === null || value === undefined || value === "") return "";
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  if (displayFormat === "%") return new Intl.NumberFormat("pt-BR", { useGrouping: false, maximumFractionDigits: 4 }).format(number * 100);
+  if (displayFormat === "HORA" || displayFormat === "MIN") {
+    const totalSeconds = Math.round(number * 86400);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return seconds ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` : `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+  return new Intl.NumberFormat("pt-BR", { useGrouping: false, maximumFractionDigits: 6 }).format(number);
+}
+
+function gerotInputMode(displayFormat = "") {
+  return displayFormat === "HORA" || displayFormat === "MIN" ? "numeric" : "decimal";
+}
+
 function gerotUnwrapIfError(formula) {
   const expression = String(formula || "").replace(/^=/, "").trim();
   if (!/^IFERROR\(/i.test(expression) || !expression.endsWith(")")) return expression;
@@ -1394,7 +1413,7 @@ function gerotWarehouseView(data, context = {}) {
       const value = calculated ?? row.monthly?.[index];
       const status = gerotGoalClass(row, value);
       const editable = !arrayValue(row.formulaInputs).length && !arrayValue(row.formulas).some(Boolean);
-      return `<td class="gerot-value ${status}" data-gerot-row-value="${escapeHtml(row.id)}" data-gerot-month-value="${index}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="number" step="any" value="${value ?? ""}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;
+      return `<td class="gerot-value ${status}" data-gerot-row-value="${escapeHtml(row.id)}" data-gerot-month-value="${index}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="text" inputmode="${gerotInputMode(row.displayFormat || row.unit)}" data-gerot-format="${escapeHtml(row.displayFormat || row.unit || "N°")}" value="${escapeHtml(gerotInputValue(value, row.displayFormat || row.unit))}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;
     }).join("");
     const indicatorActions = isAdmin && !row.calculationInput ? `<td class="gerot-indicator-actions"><button class="gerot-icon-button" type="button" data-gerot-indicator-edit="${escapeHtml(row.id)}" data-gerot-indicator-area="${escapeHtml(data.area)}" aria-label="Editar indicador" title="Editar indicador">✎</button><button class="gerot-icon-button danger" type="button" data-gerot-indicator-delete="${escapeHtml(row.id)}" data-gerot-indicator-area="${escapeHtml(data.area)}" aria-label="Excluir indicador" title="Excluir indicador">🗑</button></td>` : isAdmin ? "<td></td>" : "";
     return `<tr class="${row.calculationInput ? "gerot-memory-row" : ""}"><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}" data-gerot-ytd="${escapeHtml(row.id)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}${indicatorActions}</tr>`;
