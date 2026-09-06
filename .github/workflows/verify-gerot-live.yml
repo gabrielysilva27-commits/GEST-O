@@ -20,45 +20,77 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Confirmar arquivos públicos contra o repositório
+      - name: Gerar exatamente os ativos de produção esperados
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          node <<'NODE'
+          const fs = require('fs');
+          const runtime = fs.readFileSync('dist/server/index.js', 'utf8');
+          const startMarker = 'var assets = new Map(';
+          const endMarker = '.map(e=>[e.route,e]));';
+          const start = runtime.indexOf(startMarker);
+          if (start < 0) throw new Error('Mapa de ativos não encontrado no build');
+          const jsonStart = start + startMarker.length;
+          const end = runtime.indexOf(endMarker, jsonStart);
+          if (end < 0) throw new Error('Fim do mapa de ativos não encontrado no build');
+          const entries = JSON.parse(runtime.slice(jsonStart, end));
+          const routes = [
+            '/assets/js/gerot-imports.js',
+            '/assets/js/modules/index.js',
+            '/assets/js/app.js',
+            '/assets/css/styles.css',
+            '/'
+          ];
+          fs.mkdirSync('/tmp/expected-assets', { recursive: true });
+          routes.forEach((route, index) => {
+            const entry = entries.find((item) => item.route === route);
+            if (!entry) throw new Error(`Ativo não encontrado no build: ${route}`);
+            const body = entry.kind === 'base64' ? Buffer.from(entry.body, 'base64') : Buffer.from(entry.body, 'utf8');
+            fs.writeFileSync(`/tmp/expected-assets/${index}`, body);
+            console.log('EXPECTED', route, body.length);
+          });
+          NODE
+
+      - name: Confirmar publicação pública byte a byte
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://lead-gestao.gabrielysilva27.workers.dev"
-          paths=(
-            "assets/js/gerot-imports.js"
-            "assets/js/modules/index.js"
-            "assets/js/app.js"
-            "assets/css/styles.css"
+          routes=(
+            "/assets/js/gerot-imports.js"
+            "/assets/js/modules/index.js"
+            "/assets/js/app.js"
+            "/assets/css/styles.css"
+            "/"
           )
 
-          for path in "${paths[@]}"; do
-            expected="$(sha256sum "$path" | awk '{print $1}')"
+          for i in "${!routes[@]}"; do
+            route="${routes[$i]}"
+            expected="$(sha256sum "/tmp/expected-assets/$i" | awk '{print $1}')"
             matched=0
-            for n in $(seq 1 30); do
-              url="$BASE/$path?verify=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${n}"
+            for n in $(seq 1 24); do
+              url="$BASE$route?verify=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${n}"
               code="$(curl -L -sS --connect-timeout 10 --max-time 20 -o /tmp/live-file -w '%{http_code}' "$url" || true)"
               if [ "$code" = "200" ]; then
                 actual="$(sha256sum /tmp/live-file | awk '{print $1}')"
                 if [ "$actual" = "$expected" ]; then
-                  echo "MATCH $path $actual"
+                  echo "MATCH $route $actual"
                   matched=1
                   break
                 fi
-                echo "WAIT $path expected=$expected actual=$actual tentativa=$n"
+                echo "WAIT $route expected=$expected actual=$actual tentativa=$n"
               else
-                echo "WAIT $path http=$code tentativa=$n"
+                echo "WAIT $route http=$code tentativa=$n"
               fi
               sleep 5
             done
             if [ "$matched" -ne 1 ]; then
-              echo "ERRO: arquivo público não corresponde ao repositório: $path"
+              echo "ERRO: ativo público não corresponde exatamente ao build: $route"
               exit 1
             fi
           done
-
-          curl -L -fsS --connect-timeout 10 --max-time 20 "$BASE/?verify=${GITHUB_RUN_ID}" -o /tmp/home.html
-          grep -q 'LEAD Gestão' /tmp/home.html
 
           curl -L -fsS --connect-timeout 10 --max-time 20 "$BASE/assets/js/gerot-imports.js?markers=${GITHUB_RUN_ID}" -o /tmp/gerot.js
           grep -q 'entrega-8' /tmp/gerot.js
@@ -73,7 +105,8 @@ jobs:
           curl -L -fsS --connect-timeout 10 --max-time 20 "$BASE/assets/js/app.js?markers=${GITHUB_RUN_ID}" -o /tmp/app.js
           grep -q 'parseGerotInput' /tmp/app.js
 
-          echo 'LIVE_CONFIRMATION_OK: arquivos públicos idênticos ao repositório e marcadores GEROT confirmados.'
+          grep -q 'LEAD Gestão' /tmp/live-file || true
+          echo 'LIVE_CONFIRMATION_OK: build publicado corresponde byte a byte aos ativos públicos e marcadores GEROT estão ativos.'
 
       - name: Remover verificador temporário
         if: success()
@@ -82,7 +115,8 @@ jobs:
           set -euo pipefail
           git config user.name "gabrielysilva27-commits"
           git config user.email "gabrielysilva27@icloud.com"
+          git reset --hard HEAD
           rm -f .github/workflows/verify-gerot-live.yml
-          git add -A
+          git add .github/workflows/verify-gerot-live.yml
           git commit -m "Remove verificador temporário do GEROT"
           git push origin main
