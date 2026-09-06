@@ -3,6 +3,7 @@ import { databaseStorage as localStorage } from './database-storage.js';
 const DB_KEY = 'lead-gestao-db-v2';
 const TOKEN_KEY = 'lead-gestao-sync-token';
 const NOTIFICATION_HASH = '#notifications';
+const ACTIONS_HASH = '#actionPlans';
 const root = () => document.querySelector('#page-content');
 let sharedActions = [];
 let refreshPromise = null;
@@ -120,6 +121,22 @@ function enhanceNotifications() {
   if (description) description.textContent = 'Ações direcionadas a você, com contexto suficiente para decidir e concluir.';
 }
 
+function enhanceActionCompleteButtons() {
+  if (location.hash !== ACTIONS_HASH) return;
+  root()?.querySelectorAll('.action-table tr[data-action-row]').forEach(row => {
+    const button = row.querySelector('[data-complete-action]');
+    const actionCell = row.querySelector('.action-owner-actions');
+    if (!button || !actionCell || button.dataset.completeIconized === 'true') return;
+
+    button.className = 'gerot-icon-button action-complete-icon';
+    button.textContent = '✓';
+    button.dataset.completeIconized = 'true';
+    button.setAttribute('aria-label', 'Concluir ação');
+    button.setAttribute('title', 'Concluir ação');
+    actionCell.prepend(button);
+  });
+}
+
 async function refreshSharedActions() {
   if (sharedRefreshDone || refreshPromise || location.hash !== NOTIFICATION_HASH) return refreshPromise;
   const token = localStorage.getItem(TOKEN_KEY);
@@ -160,6 +177,8 @@ function installStyles() {
     #page-content .notification-requester,#page-content .notification-due-date{white-space:nowrap;font-weight:600}
     #page-content .notification-control{text-align:right;white-space:nowrap}
     #page-content .notification-control .button{min-height:30px;padding:5px 9px;font-size:.64rem}
+    #page-content .action-owner-actions{white-space:nowrap}
+    #page-content .action-complete-icon{font-size:.86rem;font-weight:800;line-height:1}
     @media(max-width:850px){
       #page-content .notification-action-table{min-width:760px;table-layout:auto}
       #page-content .notification-action-table th:nth-child(n){width:auto}
@@ -170,6 +189,7 @@ function installStyles() {
 
 function enhance() {
   enhanceNotifications();
+  enhanceActionCompleteButtons();
   refreshSharedActions();
 }
 
