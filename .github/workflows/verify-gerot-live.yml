@@ -1,0 +1,88 @@
+name: Confirmar GEROT publicado
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/verify-gerot-live.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obter código atual
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Confirmar arquivos públicos contra o repositório
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://lead-gestao.gabrielysilva27.workers.dev"
+          paths=(
+            "assets/js/gerot-imports.js"
+            "assets/js/modules/index.js"
+            "assets/js/app.js"
+            "assets/css/styles.css"
+          )
+
+          for path in "${paths[@]}"; do
+            expected="$(sha256sum "$path" | awk '{print $1}')"
+            matched=0
+            for n in $(seq 1 30); do
+              url="$BASE/$path?verify=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${n}"
+              code="$(curl -L -sS --connect-timeout 10 --max-time 20 -o /tmp/live-file -w '%{http_code}' "$url" || true)"
+              if [ "$code" = "200" ]; then
+                actual="$(sha256sum /tmp/live-file | awk '{print $1}')"
+                if [ "$actual" = "$expected" ]; then
+                  echo "MATCH $path $actual"
+                  matched=1
+                  break
+                fi
+                echo "WAIT $path expected=$expected actual=$actual tentativa=$n"
+              else
+                echo "WAIT $path http=$code tentativa=$n"
+              fi
+              sleep 5
+            done
+            if [ "$matched" -ne 1 ]; then
+              echo "ERRO: arquivo público não corresponde ao repositório: $path"
+              exit 1
+            fi
+          done
+
+          curl -L -fsS --connect-timeout 10 --max-time 20 "$BASE/?verify=${GITHUB_RUN_ID}" -o /tmp/home.html
+          grep -q 'LEAD Gestão' /tmp/home.html
+
+          curl -L -fsS --connect-timeout 10 --max-time 20 "$BASE/assets/js/gerot-imports.js?markers=${GITHUB_RUN_ID}" -o /tmp/gerot.js
+          grep -q 'entrega-8' /tmp/gerot.js
+          grep -q 'entrega-40' /tmp/gerot.js
+          grep -q 'PPM' /tmp/gerot.js
+          grep -q 'entrega-114' /tmp/gerot.js
+          grep -q 'U116/U115' /tmp/gerot.js
+
+          curl -L -fsS --connect-timeout 10 --max-time 20 "$BASE/assets/js/modules/index.js?markers=${GITHUB_RUN_ID}" -o /tmp/modules.js
+          grep -q 'data-gerot-format' /tmp/modules.js
+
+          curl -L -fsS --connect-timeout 10 --max-time 20 "$BASE/assets/js/app.js?markers=${GITHUB_RUN_ID}" -o /tmp/app.js
+          grep -q 'parseGerotInput' /tmp/app.js
+
+          echo 'LIVE_CONFIRMATION_OK: arquivos públicos idênticos ao repositório e marcadores GEROT confirmados.'
+
+      - name: Remover verificador temporário
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "gabrielysilva27-commits"
+          git config user.email "gabrielysilva27@icloud.com"
+          rm -f .github/workflows/verify-gerot-live.yml
+          git add -A
+          git commit -m "Remove verificador temporário do GEROT"
+          git push origin main
