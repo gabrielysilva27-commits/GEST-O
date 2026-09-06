@@ -1,3 +1,4 @@
+import { openDeliveryEditor } from "./gerot-delivery-editor.js";
 import { api as localApi, ApiError } from "./api.js?v=20260905-13";
 import { createSharedApi } from "./shared-api.js?v=20260905-12";
 import { createAuditApi } from "./audit-api.js?v=20260904-02";
@@ -428,6 +429,7 @@ function gerotSignature(data) {
 }
 
 async function refreshGerotFromShared() {
+  if (document.querySelector("[data-delivery-editor]")) return;
   if (state.currentView !== "gerot" || elements.pageContent.querySelector(".gerot-card.is-editing")) return;
   const loaded = await views.gerot.load(api, state.token);
   const data = applyGerotAdminChanges(loaded, await loadGerotAdminChanges());
@@ -1258,6 +1260,18 @@ async function handleDynamicClick(event) {
     const actionArea = gerotEditButton.dataset.gerotActionArea;
     const scope = (actionArea && [...elements.pageContent.querySelectorAll("[data-gerot-panel]")].find((panel) => panel.dataset.gerotPanel === actionArea)) || gerotEditButton.closest("[data-gerot-panel]") || elements.pageContent;
     const areaName = actionArea || scope.closest("[data-gerot-panel]")?.dataset.gerotPanel || "ARMAZÉM";
+    if (areaName === "ENTREGA") {
+      const delivery = state.dataCache.gerot?.areas?.find((area) => area.area === "ENTREGA");
+      if (!delivery?.canEdit) return;
+      openDeliveryEditor(scope, delivery, async (cells) => {
+        await api.patch(state.token, "/gerot/warehouse", { area: "ENTREGA", cells });
+        await loadView("gerot");
+        const selector = elements.pageContent.querySelector("[data-gerot-area]");
+        if (selector) { selector.value = "ENTREGA"; selector.dispatchEvent(new Event("change", { bubbles: true })); }
+        showToast("GEROT Entrega salvo e compartilhado. Cálculos atualizados.");
+      });
+      return;
+    }
     openGerotSpreadsheetEditor(scope, areaName);
     return;
   }

@@ -1,3 +1,5 @@
+import { GEROT_DELIVERY } from "./gerot-delivery-data.js";
+import { applyDeliveryCells, hydrateDeliveryArea } from "./gerot-delivery-model.js";
 import { databaseStorage as localStorage } from './database-storage.js';
 import { IMPORTED_MEETING_SUBJECTS } from "./imported-meeting-subjects.js?v=20260904-01";
 import { IMPORTED_GEROT_AREAS } from "./gerot-imports.js?v=20260902-01";
@@ -142,8 +144,9 @@ const GEROT_YTD_REFERENCE = {
 };
 const GEROT_NUMERIC_FORMATS = { reabastecimento: "%", "aderencia-wms": "%", "txr-armazem": "%" };
 const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, sourceMonthly: [...row.monthly], monthlySourceOverrides: GEROT_MONTHLY_SOURCE_OVERRIDES[row.id] || [], referenceYtd: GEROT_YTD_REFERENCE[row.id], ytdCalculation: GEROT_YTD_CALCULATIONS[row.id] || "formula", displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
-const GEROT_IMPORTED_AREA_TEMPLATES = Object.fromEntries(IMPORTED_GEROT_AREAS.map((area) => {
-  const rows = area.rows.map((row) => ({ ...row, sourceMonthly: [...row.monthly], displayFormat: row.unit, goalMode: row.targetMode === "MA" ? "higher" : row.targetMode === "ME" ? "lower" : row.targetMode === "ABS" ? "absolute" : "none" }));
+const GEROT_IMPORTED_AREA_TEMPLATES = Object.fromEntries(IMPORTED_GEROT_AREAS.map((importedArea) => {
+  const area = importedArea.area === "ENTREGA" ? GEROT_DELIVERY : importedArea;
+  const rows = area.rows.map((row) => ({ ...row, sourceMonthly: [...row.monthly], displayFormat: row.displayFormat || row.unit, goalMode: row.targetMode === "MA" ? "higher" : row.targetMode === "ME" ? "lower" : row.targetMode === "ABS" ? "absolute" : "none" }));
   const idBySheetRow = new Map(rows.map((row) => [row.sheetRow, row.id]));
   return [area.area, {
     ...area,
@@ -770,6 +773,7 @@ function sanitizeDatabase(database) {
       })
     }];
   }));
+  hydrateDeliveryArea(sanitized.gerotAdditionalAreas.ENTREGA);
   sanitized.sequence.users = Math.max(
     toInt(sanitized.sequence.users, 0),
     ...sanitized.users.map((item) => toInt(item.id, 0))
@@ -1074,6 +1078,11 @@ function updateGerotArea(database, user, payload) {
   if (!canEditGerotArea(user, area)) throw new ApiError("A edição deste GEROT é permitida somente ao setor correspondente e à Gabriely.", 403);
   const record = database.gerotAdditionalAreas?.[area];
   if (!record) throw new ApiError("Área do GEROT não encontrada.", 404);
+  if (area === "ENTREGA" && Array.isArray(payload.cells)) {
+    try { applyDeliveryCells(record, payload.cells); } catch (error) { throw new ApiError(error.message, 400); }
+    record.updatedAt = nowIso(); record.updatedBy = toInt(user.id);
+    return { item: record };
+  }
   arrayValue(payload.rows).forEach((update) => {
     const row = record.rows.find((item) => item.id === update.id);
     if (!row || !Array.isArray(update.monthly)) return;

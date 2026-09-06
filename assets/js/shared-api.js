@@ -10,7 +10,7 @@ async function loginSession(credentials){const response=await fetch("/api/sessio
 export async function persistOperationalData(){const data=read();if(!data||!localStorage.getItem(TOKEN_KEY))return false;try{return (await fetch("/api/shared-data",{method:"PUT",headers:headers(true),body:JSON.stringify({data:project(data)})})).ok;}catch{return false;}}
 export async function syncOperationalData(){const local=read(),hasSession=Boolean(localStorage.getItem(TOKEN_KEY));let response;try{response=await fetch(hasSession?"/api/shared-data":"/api/shared-view",{headers:headers(),cache:"no-store"});}catch{return false;}if(!response.ok){if(hasSession&&response.status===401)localStorage.removeItem(TOKEN_KEY);return false;}const payload=await response.json().catch(()=>null);if(!payload)return false;if(!payload.data){return local&&hasSession?persistOperationalData():true;}const data=merge(local,payload.data);if(!data)return false;try{localStorage.setItem(KEY,JSON.stringify(data));}catch{return false;}return true;}
 async function requireSharedSync(){if(!await syncOperationalData())throw new Error(SYNC_ERROR);}
-async function saveGerotRows(area,rows){const data=read(),areaData=String(area||"").toUpperCase()==="ARMAZÉM"?data?.gerotWarehouse:data?.gerotAdditionalAreas?.[area];const response=await fetch("/api/gerot-data",{method:"PUT",headers:headers(true),body:JSON.stringify({area,rows,areaData})}),payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||"Não foi possível salvar o GEROT compartilhado.");return payload;}
+async function saveGerotRows(area,rows,cells){const data=read(),areaData=String(area||"").toUpperCase()==="ARMAZÉM"?data?.gerotWarehouse:data?.gerotAdditionalAreas?.[area];const response=await fetch("/api/gerot-data",{method:"PUT",headers:headers(true),body:JSON.stringify({area,rows,cells,areaData})}),payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||"Não foi possível salvar o GEROT compartilhado.");return payload;}
 export async function upsertLiveAction(item){const response=await fetch("/api/live-actions",{method:"POST",headers:headers(true),body:JSON.stringify({item})});if(!response.ok)throw new Error(SYNC_ERROR);return (await response.json().catch(()=>({}))).item||item;}
 export async function removeLiveAction(actionId){const response=await fetch("/api/live-actions/"+encodeURIComponent(actionId),{method:"DELETE",headers:headers()});if(!response.ok)throw new Error(SYNC_ERROR);}
 async function confirmLiveAction(item){const saved=await upsertLiveAction(item);if(!await syncOperationalData())throw new Error(SYNC_ERROR);const current=read()?.actionPlans?.find((entry)=>Number(entry.id)===Number(saved.id));if(!current||String(current.status)!==String(saved.status)||Number(current.ownerId)!==Number(saved.ownerId))throw new Error(SYNC_ERROR);return current;}
@@ -21,7 +21,7 @@ export function createSharedApi(api){
     if(!isGerotSave)await requireSharedSync();
     try{
       const result=await api[method](...args);
-      if(isGerotSave){await saveGerotRows(args[2]?.area,args[2]?.rows);return result;}
+      if(isGerotSave){await saveGerotRows(args[2]?.area,args[2]?.rows,args[2]?.cells);return result;}
       if(result?.item&&((method==="create"&&(path==="/action-plans"||path==="/meetings/actions"))||(method==="patch"&&/^\/action-plans\/\d+\/complete$/.test(path))))return {...result,item:await confirmLiveAction(result.item)};
       if(!await persistOperationalData())throw new Error(SYNC_ERROR);
       return result;
