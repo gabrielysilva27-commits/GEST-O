@@ -66,15 +66,21 @@ let gerotPreviewFrame = null;
 let gerotAutoSaveTimer = null;
 let gerotAutoSaveRunning = false;
 let activeViewLoad = 0;
+let notificationRefreshRunning = false;
 const auditApi = createAuditApi(() => state.user);
 let passwordResetStep = "request";
 window.setInterval(async () => {
-  if (!state.token) return;
+  if (!state.token || document.hidden || notificationRefreshRunning) return;
+  const token = state.token;
+  notificationRefreshRunning = true;
   try {
     const notifications = await api.list(state.token, "/notifications");
+    if (state.token !== token) return;
     elements.notificationBadge.textContent = String(notifications.unreadCount || 0);
   } catch {
     // A atualização do sininho não interrompe o uso do sistema.
+  } finally {
+    notificationRefreshRunning = false;
   }
 }, 20000);
 
@@ -430,9 +436,11 @@ function gerotSignature(data) {
 
 async function refreshGerotFromShared() {
   if (document.querySelector("[data-delivery-editor]")) return;
-  if (state.currentView !== "gerot" || elements.pageContent.querySelector(".gerot-card.is-editing")) return;
-  const loaded = await views.gerot.load(api, state.token);
-  const data = applyGerotAdminChanges(loaded, await loadGerotAdminChanges());
+  if (!state.token || document.hidden || state.currentView !== "gerot" || elements.pageContent.querySelector(".gerot-card.is-editing")) return;
+  const requestId = activeViewLoad;
+  const [loaded, changes] = await Promise.all([views.gerot.load(api, state.token), loadGerotAdminChanges()]);
+  if (!state.token || requestId !== activeViewLoad || state.currentView !== "gerot" || document.querySelector("[data-delivery-editor]") || elements.pageContent.querySelector(".gerot-card.is-editing")) return;
+  const data = applyGerotAdminChanges(loaded, changes);
   if (gerotSignature(data) === gerotSignature(state.dataCache.gerot)) return;
   const selectedArea = elements.pageContent.querySelector("[data-gerot-area]")?.value || "GERAL";
   state.dataCache.gerot = data;
@@ -508,6 +516,9 @@ function hideStatus() {
 }
 
 function setLoggedOutUi() {
+  ++activeViewLoad;
+  [auditRefreshInterval, dashboardRefreshInterval, gerotRefreshInterval].forEach((timer) => window.clearInterval(timer));
+  auditRefreshInterval = dashboardRefreshInterval = gerotRefreshInterval = null;
   elements.app.hidden = true;
   elements.workspace.hidden = true;
   elements.loginRoot.hidden = false;
@@ -696,7 +707,7 @@ async function loadView(viewId) {
   }
 
   state.currentView = viewId;
-  api.presence(state.token, viewId).catch(() => {});
+  if (viewId !== "dashboard") api.presence(state.token, viewId).catch(() => {});
   renderNavigation();
   elements.pageTitle.textContent = view.title;
   const cachedData = state.dataCache[viewId];
@@ -717,9 +728,9 @@ async function loadView(viewId) {
   }
 
   try {
-    const loadedData = await view.load(viewId === "audit" ? auditApi : api, state.token);
+    const [loadedData, changes] = await Promise.all([view.load(viewId === "audit" ? auditApi : api, state.token), viewId === "gerot" ? loadGerotAdminChanges() : null]);
     if (requestId !== activeViewLoad || state.currentView !== viewId) return;
-    const data = viewId === "gerot" ? applyGerotAdminChanges(loadedData, await loadGerotAdminChanges()) : loadedData;
+    const data = viewId === "gerot" ? applyGerotAdminChanges(loadedData, changes) : loadedData;
     if (requestId !== activeViewLoad || state.currentView !== viewId) return;
     state.dataCache[viewId] = data;
     hideStatus();
@@ -730,10 +741,13 @@ async function loadView(viewId) {
 
     if (viewId === "audit") {
       elements.notificationBadge.textContent = String(data.unreadCount || 0);
+      let refreshing = false;
       auditRefreshInterval = window.setInterval(async () => {
-        if (state.currentView !== "audit" || !state.token) return;
+        if (state.currentView !== "audit" || !state.token || document.hidden || refreshing) return;
+        refreshing = true;
         try {
           const refreshed = await views.audit.load(auditApi, state.token);
+          if (requestId !== activeViewLoad || !state.token || state.currentView !== "audit") return;
           const previous = state.dataCache.audit;
           state.dataCache.audit = refreshed;
           const previousSignature = JSON.stringify((previous?.items || []).map((item) => [item.id, item.status, item.updatedAt]));
@@ -748,6 +762,8 @@ async function loadView(viewId) {
           applyAuditFilters();
         } catch {
           // Uma oscilação de sincronização não interrompe a tela atual.
+        } finally {
+          refreshing = false;
         }
       }, 5000);
     }
@@ -758,10 +774,13 @@ async function loadView(viewId) {
 
     if (viewId === "dashboard") {
       elements.notificationBadge.textContent = String(data.highlights?.unreadNotifications || 0);
+      let refreshing = false;
       dashboardRefreshInterval = window.setInterval(async () => {
-        if (state.currentView !== "dashboard" || !state.token) return;
+        if (state.currentView !== "dashboard" || !state.token || document.hidden || refreshing) return;
+        refreshing = true;
         try {
           const refreshed = await views.dashboard.load(api, state.token);
+          if (requestId !== activeViewLoad || !state.token || state.currentView !== "dashboard") return;
           const previous = state.dataCache.dashboard;
           const signature = (value) => JSON.stringify({ actions: (value?.actionPlans || []).map((item) => [item.id, item.status, item.dueDate, item.updatedAt]), unread: value?.highlights?.unreadNotifications || 0 });
           if (signature(previous) === signature(refreshed)) return;
@@ -770,13 +789,18 @@ async function loadView(viewId) {
           elements.notificationBadge.textContent = String(refreshed.highlights?.unreadNotifications || 0);
         } catch {
           // A tela continua disponível se a sincronização oscilar.
+        } finally {
+          refreshing = false;
         }
       }, 10000);
     }
 
     if (viewId === "gerot") {
+      let refreshing = false;
       gerotRefreshInterval = window.setInterval(() => {
-        refreshGerotFromShared().catch(() => {});
+        if (refreshing) return;
+        refreshing = true;
+        refreshGerotFromShared().catch(() => {}).finally(() => { refreshing = false; });
       }, 4000);
     }
   } catch (error) {

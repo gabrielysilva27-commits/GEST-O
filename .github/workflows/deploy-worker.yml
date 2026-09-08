@@ -21,6 +21,18 @@ jobs:
       - name: Obter versão publicada
         uses: actions/checkout@v6
 
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Validar cache e concorrência
+        run: npm run build && node --test tests/publication-performance.test.mjs
+
       - name: Publicar Worker
         uses: cloudflare/wrangler-action@v3
         with:

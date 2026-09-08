@@ -11,6 +11,18 @@ let syncInFlight = null;
 let lastSyncAt = 0;
 let lastRemoteSnapshot = "";
 let backgroundRefreshCancel = null;
+let mutationTail = Promise.resolve();
+let sharedRevision;
+
+export function withSharedMutation(operation) {
+  const pending = mutationTail.then(async () => {
+    cancelScheduledRefresh();
+    if (syncInFlight) await syncInFlight;
+    return operation({ sync: syncNow });
+  });
+  mutationTail = pending.catch(() => {});
+  return pending;
+}
 
 const read = () => {
   try {
@@ -95,9 +107,10 @@ export async function persistOperationalData() {
     const response = await fetch("/api/shared-data", {
       method: "PUT",
       headers: headers(true),
-      body: JSON.stringify({ data: project(data) })
+      body: JSON.stringify({ data: project(data), baseRevision: sharedRevision })
     });
     if (response.ok) {
+      sharedRevision = (await response.json().catch(() => ({}))).revision;
       markSynced();
       lastRemoteSnapshot = "";
     }
@@ -108,7 +121,8 @@ export async function persistOperationalData() {
 }
 
 async function performSharedSync() {
-  const hasSession = Boolean(localStorage.getItem(TOKEN_KEY));
+  const token = localStorage.getItem(TOKEN_KEY);
+  const hasSession = Boolean(token);
   let response;
   try {
     response = await fetch(hasSession ? "/api/shared-data" : "/api/shared-view", {
@@ -119,13 +133,15 @@ async function performSharedSync() {
     return false;
   }
 
+  if (localStorage.getItem(TOKEN_KEY) !== token) return false;
   if (!response.ok) {
     if (hasSession && response.status === 401) localStorage.removeItem(TOKEN_KEY);
     return false;
   }
 
   const payload = await response.json().catch(() => null);
-  if (!payload) return false;
+  if (!payload || localStorage.getItem(TOKEN_KEY) !== token) return false;
+  sharedRevision = payload.revision;
   if (!payload.data) {
     const local = read();
     const success = local && hasSession ? await persistOperationalData() : true;
@@ -156,7 +172,7 @@ async function performSharedSync() {
   return true;
 }
 
-export async function syncOperationalData({ force = false } = {}) {
+async function syncNow({ force = false } = {}) {
   if (force) cancelScheduledRefresh();
   if (!force && lastSyncAt && Date.now() - lastSyncAt < SYNC_FRESH_MS) return true;
   if (syncInFlight) return syncInFlight;
@@ -169,8 +185,13 @@ export async function syncOperationalData({ force = false } = {}) {
   }
 }
 
-async function requireSharedSync({ force = false } = {}) {
-  if (!await syncOperationalData({ force })) throw new Error(SYNC_ERROR);
+export async function syncOperationalData(options = {}) {
+  await mutationTail;
+  return syncNow(options);
+}
+
+async function requireSharedSync({ force = false, insideMutation = false } = {}) {
+  if (!await (insideMutation ? syncNow({ force }) : syncOperationalData({ force }))) throw new Error(SYNC_ERROR);
 }
 
 async function saveGerotRows(area, rows, cells) {
@@ -212,7 +233,7 @@ export async function removeLiveAction(actionId) {
 
 async function confirmLiveAction(item) {
   const saved = await upsertLiveAction(item);
-  if (!await syncOperationalData({ force: true })) throw new Error(SYNC_ERROR);
+  if (!await syncNow({ force: true })) throw new Error(SYNC_ERROR);
   const current = read()?.actionPlans?.find((entry) => Number(entry.id) === Number(saved.id));
   if (!current || String(current.status) !== String(saved.status) || Number(current.ownerId) !== Number(saved.ownerId)) {
     throw new Error(SYNC_ERROR);
@@ -222,6 +243,7 @@ async function confirmLiveAction(item) {
 
 export function createSharedApi(api) {
   const readMethod = async (method, args, { fresh = false } = {}) => {
+    await mutationTail;
     // Depois do login a base compartilhada já foi validada. As navegações seguintes
     // leem a cópia local quente imediatamente e atualizam o compartilhado em tempo ocioso.
     if (!fresh && hasLocalDatabase()) {
@@ -232,12 +254,11 @@ export function createSharedApi(api) {
     return api[method](...args);
   };
 
-  const mutate = async (method, args) => {
+  const mutate = (method, args) => withSharedMutation(async () => {
     const path = args[1] || "";
     const isGerotSave = method === "patch" && path === "/gerot/warehouse";
+    if (!isGerotSave) await requireSharedSync({ force: true, insideMutation: true });
     const snapshot = localStorage.getItem(KEY);
-
-    if (!isGerotSave) await requireSharedSync({ force: true });
 
     try {
       const result = await api[method](...args);
@@ -262,7 +283,7 @@ export function createSharedApi(api) {
       lastRemoteSnapshot = "";
       throw error;
     }
-  };
+  });
 
   return {
     ...api,

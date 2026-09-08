@@ -1442,8 +1442,7 @@ export const views = {
   dashboard: {
     title: "Dashboard",
     load: async (api, token) => {
-      const dashboard = await api.dashboard(token);
-      const presence = await api.presence(token, "dashboard");
+      const [dashboard, presence] = await Promise.all([api.dashboard(token), api.presence(token, "dashboard")]);
       return { ...dashboard, presence };
     },
     render: (data, context) => dashboardView(data, context)

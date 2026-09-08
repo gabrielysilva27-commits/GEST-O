@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
+import { transform } from 'esbuild';
 
 let runtime = await fs.readFile('recovered/runtime.js', 'utf8');
 const entries = JSON.parse(await fs.readFile('recovered/live-assets.json', 'utf8'));
@@ -81,7 +82,7 @@ function saveDatabase(database) {
 }`);
 
 // Version the complete module graph together so existing browsers also migrate.
-const release = createHash('sha256').update(entries.map((entry) => entry.body).join('')).digest('hex').slice(0, 12);
+const release = createHash('sha256').update(entries.map((entry) => entry.body).join('')).update(runtime).update(await fs.readFile('scripts/build-recovered.mjs')).digest('hex').slice(0, 12);
 for (const entry of entries) {
   if (entry.kind === 'text' && (entry.route === '/' || entry.route.endsWith('.js'))) {
     entry.body = entry.body.replace(/(["'])(\.{0,2}\/[^"'\s]+\.js|assets\/[^"'\s]+\.js)(?:\?[^"'\s]*)?\1/g, (_, quote, path) => `${quote}${path}?v=${release}${quote}`);
@@ -95,6 +96,25 @@ const users = vm.runInNewContext(api.slice(start, end) + ';SEEDED_USERS').map(({
 const browserUsers = vm.runInNewContext(api.slice(start, end) + ';SEEDED_USERS');
 users.splice(0, users.length, ...browserUsers.map(({ id, username, name, title, department }) => ({ id, username, name, title, department })));
 users.push({ id: 1, username: 'Gabriely', name: 'Gabriely', title: 'Gabriely' });
+
+// Keep independently loaded modules sharing their existing instances. Compact
+// their output without changing exports or the lazy-loading architecture.
+for (const entry of entries) {
+  entry.release = release;
+  // The archived DTO importer is not in the active module graph; retain it verbatim.
+  if (entry.kind === 'text' && /\.(js|css)$/.test(entry.route) && entry.route !== '/assets/js/dto-external-sync.js') {
+    entry.body = (await transform(entry.body, {
+      loader: entry.route.endsWith('.css') ? 'css' : 'js',
+      minifyWhitespace: true,
+      charset: 'utf8',
+      legalComments: 'none'
+    })).code;
+  }
+  if (entry.kind === 'text' && (entry.route === '/' || entry.route.endsWith('.html'))) {
+    entry.body = entry.body.replace(/((?:src|href)=["'])(assets\/[^"'?]+)(?:\?[^"']*)?(["'])/g, (_, prefix, route, quote) => `${prefix}${route}?v=${release}${quote}`);
+  }
+  entry.etag = '"' + createHash('sha256').update(entry.body).digest('hex').slice(0, 20) + '"';
+}
 
 runtime = runtime.replace('/* ASSET_MAP */', 'var assets = new Map(' + JSON.stringify(entries) + '.map(e=>[e.route,e]));');
 runtime = runtime.replace('async function dtoApplicationsFor(state) {', 'async function dtoApplicationsFor(state) { return listDtos(state.storage);\n/*');

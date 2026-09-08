@@ -25,22 +25,27 @@ function decodeBase64(value) {
   return bytes;
 }
 __name(decodeBase64, "decodeBase64");
-function cacheControlFor(route) {
-  if (route === "/" || route.endsWith(".html")) {
+function cacheControlFor(asset, request) {
+  if (asset.route === "/" || asset.route.endsWith(".html") || new URL(request.url).searchParams.get("v") !== asset.release) {
     return "no-cache";
   }
   return "public, max-age=31536000, immutable";
 }
 __name(cacheControlFor, "cacheControlFor");
-function buildResponse(asset) {
+function buildResponse(asset, request) {
   if (!asset) {
     return new Response("Not Found", { status: 404 });
   }
   const headers = new Headers({
     "content-type": asset.contentType,
-    "cache-control": cacheControlFor(asset.route)
+    "cache-control": cacheControlFor(asset, request),
+    "etag": asset.etag
   });
-  const body = asset.kind === "base64" ? decodeBase64(asset.body) : asset.body;
+  if (["GET", "HEAD"].includes(request.method)) {
+    const validators = (request.headers.get("if-none-match") || "").split(",").map(value => value.trim().replace(/^W\//, ""));
+    if (validators.includes("*") || validators.includes(asset.etag)) return new Response(null, { status: 304, headers });
+  }
+  const body = request.method === "HEAD" ? null : asset.kind === "base64" ? decodeBase64(asset.body) : asset.body;
   return new Response(body, { status: 200, headers });
 }
 __name(buildResponse, "buildResponse");
@@ -445,14 +450,21 @@ var SharedStore = class {
       return Response.json({ success: true, item: record });
     }
     if (path === "/api/shared-data") {
-      if (request.method === "GET") return Response.json({ data: await withCentralImport(this.state, await this.state.storage.get("data") || null) });
+      if (request.method === "GET") {
+        const revision = Number(await this.state.storage.get("revision") || 0);
+        return Response.json({ data: await withCentralImport(this.state, await this.state.storage.get("data") || null), revision }, { headers: { "cache-control": "no-store" } });
+      }
       if (request.method !== "PUT") return Response.json({ error: "M\xE9todo n\xE3o permitido." }, { status: 405 });
       const body = await request.json().catch(() => ({}));
       if (!body?.data || typeof body.data !== "object" || Array.isArray(body.data)) return Response.json({ error: "Dados inv\xE1lidos." }, { status: 400 });
+      const revision = Number(await this.state.storage.get("revision") || 0);
+      if (body.baseRevision !== undefined && body.baseRevision !== revision) {
+        return Response.json({ error: "Os dados foram atualizados por outro usuário. Tente salvar novamente." }, { status: 409 });
+      }
       this.applyMeetingSubjects(body.data);
       this.applySharedActionImport(body.data);
-      await this.state.storage.put("data", body.data);
-      return Response.json({ success: true });
+      await this.state.storage.put({ data: body.data, revision: revision + 1 });
+      return Response.json({ success: true, revision: revision + 1 });
     }
     if (path === "/api/gerot-data") {
       if (request.method !== "PUT") return Response.json({ error: "M\xE9todo n\xE3o permitido." }, { status: 405 });
@@ -515,12 +527,12 @@ var index_default = {
     }
     const asset = assets.get(pathname);
     if (asset) {
-      return buildResponse(asset);
+      return buildResponse(asset, request);
     }
     if (!pathname.includes(".")) {
-      return buildResponse(assets.get("/"));
+      return buildResponse(assets.get("/"), request);
     }
-    return buildResponse(null);
+    return buildResponse(null, request);
   }
 };
 export {
