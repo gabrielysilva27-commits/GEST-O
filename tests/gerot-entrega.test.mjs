@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 const { GEROT_DELIVERY } = await import('../assets/js/gerot-delivery-data.js');
 const modulePath = new URL('../assets/js/modules/index.js', import.meta.url);
 const source = await fs.readFile(modulePath, 'utf8');
-const isolated = source.replace('"../gerot-delivery-engine.js"', JSON.stringify(new URL('../assets/js/gerot-delivery-engine.js', import.meta.url).href)).replace(
+const isolated = source.replace('"../gerot-presentation.js"', JSON.stringify(new URL('../assets/js/gerot-presentation.js', import.meta.url).href)).replace('"../gerot-delivery-engine.js"', JSON.stringify(new URL('../assets/js/gerot-delivery-engine.js', import.meta.url).href)).replace(
   "import {anomalyReportsView} from '../anomaly-ui.js';",
   "const anomalyReportsView = () => '';"
 );

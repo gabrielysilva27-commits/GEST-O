@@ -1,4 +1,5 @@
 import { createDeliveryCalculator } from "../gerot-delivery-engine.js";
+import { generalGerotEntries, gerotGoalStatus, gerotTargetLabel } from "../gerot-presentation.js";
 import {anomalyReportsView} from '../anomaly-ui.js';
 const MODULE_LABELS = {
   dashboard: "Dashboard",
@@ -1261,10 +1262,11 @@ function gerotYtd(row, rows, calculatedYtd = false, stack = new Set()) {
   if (row.ytdFormula) {
     const calculated = gerotSpreadsheetFormula(row, rows, row.ytdFormula, null, stack);
     if (Number.isFinite(calculated)) return calculated;
+    if (calculatedYtd) return null;
   }
   if (arrayValue(row.formulas).some(Boolean)) {
     const values = GEROT_MONTHS.map((_, index) => gerotSpreadsheetFormula(row, rows, arrayValue(row.formulas)[index], index, stack)).filter(Number.isFinite);
-    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : hasReferenceYtd ? row.referenceYtd : null;
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : !calculatedYtd && hasReferenceYtd ? row.referenceYtd : null;
   }
   if (row.ytdCalculation === "source-value" && hasReferenceYtd) return row.referenceYtd;
   if (row.ytdCalculation === "source-value" && arrayValue(row.formulaInputs).length) {
@@ -1345,27 +1347,19 @@ export function gerotLivePreview(area, inputValues = {}) {
 }
 
 function gerotGoalClass(row, value) {
-  if (value === null || value === undefined || value === "" || row.goalMode === "none") return "neutral";
-  if (!Number.isFinite(Number(value))) return "neutral";
-  if (row.goalMode === "higher") return Number(value) >= Number(row.target) ? "success" : "danger";
-  if (row.goalMode === "lower") return Number(value) <= Number(row.target) ? "success" : "danger";
-  if (row.goalMode === "absolute") return Math.abs(Number(value)) <= Math.abs(Number(String(row.target).replace(/[^0-9.,-]/g, "").replace(",", "."))) ? "success" : "danger";
-  return Number(value) >= Number(row.targetMin) && Number(value) <= Number(row.targetMax) ? "success" : "danger";
+  return gerotGoalStatus(row, value);
 }
 
 function gerotGoalLabel(row) {
-  if (row.goalMode === "none") return "Memória";
-  if (row.goalMode === "absolute") return String(row.target || "–");
-  if (row.goalMode === "range") return `${gerotNumber(row.targetMin, row.unit, row.displayFormat)} a ${gerotNumber(row.targetMax, row.unit, row.displayFormat)}`;
-  return gerotNumber(row.target, row.unit, row.displayFormat);
+  return escapeHtml(gerotTargetLabel(row, gerotNumber));
 }
 
 function gerotGeneralView(areas) {
   const months = GEROT_MONTHS;
-  const rows = areas.flatMap((area) => {
+  const calculators = new Map(areas.filter((area) => area.area === "ENTREGA").map((area) => [area, createDeliveryCalculator(arrayValue(area.rows))]));
+  const rows = generalGerotEntries(areas).map(({ area, row, areas: originAreas }) => {
     const areaRows = arrayValue(area.rows);
-    const delivery = area.area === "ENTREGA" ? createDeliveryCalculator(areaRows) : null;
-    return areaRows.filter((row) => !row.calculationInput).map((row) => {
+    const delivery = calculators.get(area);
       const ytd = delivery ? delivery.value(row) : gerotYtd(row, areaRows, Boolean(area.calculatedYtd));
       const monthly = months.map((month, index) => {
         const spreadsheetFormula = arrayValue(row.formulas)[index];
@@ -1374,14 +1368,13 @@ function gerotGeneralView(areas) {
           : arrayValue(row.formulaInputs).length
             ? gerotCalculatedValue(row, areaRows, index, Boolean(area.calculatedYtd))
             : row.monthly?.[index];
-        const value = delivery ? delivery.value(row, index) : calculated ?? row.monthly?.[index];
+        const value = delivery ? delivery.value(row, index) : calculated;
         return `<td class="gerot-value ${gerotGoalClass(row, value)}">${gerotNumber(value, row.unit, row.displayFormat)}</td>`;
       }).join("");
-      return `<tr><td><span class="gerot-area-badge">${escapeHtml(area.area)}</span></td><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}</tr>`;
-    });
+      return `<tr><td><span class="gerot-area-badge" title="${escapeHtml(`Resultado de ${area.area}`)}">${escapeHtml(originAreas.join(" / "))}</span></td><td>${escapeHtml(row.type)}</td><td><strong>${escapeHtml(row.indicator)}</strong></td><td>${escapeHtml(row.unit)}</td><td>${gerotNumber(row.eoy2024, row.unit, row.displayFormat)}</td><td>${gerotNumber(row.eoy2025, row.unit, row.displayFormat)}</td><td>${gerotGoalLabel(row)}</td><td class="gerot-value ${gerotGoalClass(row, ytd)}">${gerotNumber(ytd, row.unit, row.displayFormat)}</td>${monthly}</tr>`;
   }).join("");
   return `<section data-gerot-general>
-    <p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Visão consolidada somente para consulta.</span></p>
+    <p class="gerot-legend"><span class="badge success">Meta atingida</span><span class="badge danger">Meta não atingida</span><span>Indicadores compartilhados aparecem uma vez. OTIF e NPS: Entrega; refugo: Controle. Os filtros preservam o resultado de cada área.</span></p>
     <section class="table-card gerot-card gerot-general-card"><div class="table-scroll"><table class="gerot-table gerot-general-table"><thead><tr><th>Área</th><th>Tipo</th><th>Indicador</th><th>Un.</th><th>EOY 2024</th><th>EOY 2025</th><th>Meta 2026</th><th>YTD 2026</th>${months.map((month) => `<th>${month}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></section>
   </section>`;
 }
@@ -1419,7 +1412,7 @@ function gerotWarehouseView(data, context = {}) {
     const monthly = months.map((month, index) => {
       const spreadsheetFormula = arrayValue(row.formulas)[index];
       const calculated = spreadsheetFormula && data.calculatedYtd ? gerotSpreadsheetFormula(row, allRows, spreadsheetFormula, index) : arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index, Boolean(data.calculatedYtd)) : row.monthly?.[index];
-      const value = delivery ? delivery.value(row, index) : calculated ?? row.monthly?.[index];
+      const value = delivery ? delivery.value(row, index) : calculated;
       const status = gerotGoalClass(row, value);
       const editable = data.area === "ARMAZÉM" ? !arrayValue(row.formulaInputs).length : !spreadsheetFormula;
       return `<td class="gerot-value ${status}" data-gerot-row-value="${escapeHtml(row.id)}" data-gerot-month-value="${index}" data-label="${month}">${editable ? `<span class="gerot-result">${gerotNumber(value, row.unit, row.displayFormat)}</span><input data-gerot-input data-gerot-row="${escapeHtml(row.id)}" data-gerot-month="${index}" type="text" inputmode="${gerotInputMode(row.displayFormat || row.unit)}" data-gerot-format="${escapeHtml(row.displayFormat || row.unit || "N°")}" value="${escapeHtml(gerotInputValue(value, row.displayFormat || row.unit))}" disabled aria-label="${escapeHtml(row.indicator)} em ${month}">` : gerotNumber(value, row.unit, row.displayFormat)}</td>`;

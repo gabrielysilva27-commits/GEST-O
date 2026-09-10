@@ -1,4 +1,5 @@
 // Generated from the GEROT 2026 sheet. BASE_FOCO is not part of the GEROT indicator grid.
+import { applyGerotReferenceMetadata } from "./gerot-reference-metadata.js";
 export const GEROT_DELIVERY = {
   "area": "ENTREGA",
   "year": 2026,
@@ -9843,3 +9844,4 @@ export const GEROT_DELIVERY = {
     }
   ]
 };
+GEROT_DELIVERY.rows = GEROT_DELIVERY.rows.map((row) => applyGerotReferenceMetadata("ENTREGA", row));

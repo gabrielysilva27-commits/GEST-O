@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Validar cache e concorrência
-        run: npm run build && node --test tests/publication-performance.test.mjs
+        run: npm run build && node --test tests/publication-performance.test.mjs tests/gerot-reference.test.mjs
 
       - name: Publicar Worker
         uses: cloudflare/wrangler-action@v3

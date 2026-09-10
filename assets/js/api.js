@@ -1,4 +1,5 @@
 import { GEROT_DELIVERY } from "./gerot-delivery-data.js";
+import { applyGerotReferenceMetadata } from "./gerot-reference-metadata.js";
 import { applyDeliveryCells, hydrateDeliveryArea } from "./gerot-delivery-model.js";
 import { databaseStorage as localStorage } from './database-storage.js';
 import { IMPORTED_MEETING_SUBJECTS } from "./imported-meeting-subjects.js?v=20260904-01";
@@ -754,7 +755,7 @@ function sanitizeDatabase(database) {
     calculatedYtd: Boolean(sanitized.gerotWarehouse?.calculatedYtd),
     rows: GEROT_WAREHOUSE_ROWS.map((template) => {
       const persisted = persistedGerotRows.find((item) => item.id === template.id);
-      return { ...clone(template), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...template.monthly] };
+      return { ...applyGerotReferenceMetadata("ARMAZÉM", clone(template)), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...template.monthly] };
     })
   };
   const persistedAdditionalAreas = sanitized.gerotAdditionalAreas || {};
@@ -769,7 +770,7 @@ function sanitizeDatabase(database) {
       calculatedYtd: Boolean(persistedArea.calculatedYtd),
       rows: template.rows.map((row) => {
         const persisted = persistedRows.find((item) => item.id === row.id);
-        return { ...clone(row), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...row.monthly] };
+        return { ...applyGerotReferenceMetadata(area, clone(row)), monthly: arrayValue(persisted?.monthly).length ? arrayValue(persisted.monthly) : [...row.monthly] };
       })
     }];
   }));

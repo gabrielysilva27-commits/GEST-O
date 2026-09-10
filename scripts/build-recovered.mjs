@@ -16,6 +16,8 @@ for (const route of [
   '/assets/js/lazy-features.js'
 ]) entries.push({ route, kind: 'text', contentType: 'application/javascript; charset=utf-8', body: '' });
 for (const file of [
+  'gerot-presentation.js',
+  'gerot-reference-metadata.js',
   'gerot-delivery-data.js',
   'gerot-delivery-engine.js',
   'gerot-delivery-model.js',
@@ -127,7 +129,7 @@ runtime = runtime.replace('if (pathname === "/api/session"', 'if (pathname.start
 await fs.mkdir('dist/server', { recursive: true });
 await fs.copyFile('worker/dto-items.js', 'dist/server/dto-items.js');
 await fs.copyFile('worker/anomaly-items.js', 'dist/server/anomaly-items.js');
-for (const file of ['gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
+for (const file of ['gerot-reference-metadata.js', 'gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
   await fs.copyFile('assets/js/' + file, 'dist/server/' + file);
 }
 await fs.writeFile(
