@@ -1,4 +1,5 @@
 import { GEROT_DELIVERY } from "./gerot-delivery-data.js";
+import { applyLatestGerotArea, applyLatestGerotData } from "./gerot-source-sync.js";
 import { applyGerotReferenceMetadata } from "./gerot-reference-metadata.js";
 import { applyDeliveryCells, hydrateDeliveryArea } from "./gerot-delivery-model.js";
 import { databaseStorage as localStorage } from './database-storage.js';
@@ -145,8 +146,9 @@ const GEROT_YTD_REFERENCE = {
 };
 const GEROT_NUMERIC_FORMATS = { reabastecimento: "%", "aderencia-wms": "%", "txr-armazem": "%" };
 const GEROT_WAREHOUSE_ROWS = [...GEROT_WAREHOUSE_METRIC_ROWS, ...GEROT_WAREHOUSE_SUPPORT_ROWS].map((row) => ({ ...row, sourceMonthly: [...row.monthly], monthlySourceOverrides: GEROT_MONTHLY_SOURCE_OVERRIDES[row.id] || [], referenceYtd: GEROT_YTD_REFERENCE[row.id], ytdCalculation: GEROT_YTD_CALCULATIONS[row.id] || "formula", displayFormat: GEROT_NUMERIC_FORMATS[row.id] || row.unit, formulaInputs: GEROT_FORMULAS[row.id] || [] }));
+applyLatestGerotArea({ area: "ARMAZÉM", rows: GEROT_WAREHOUSE_ROWS });
 const GEROT_IMPORTED_AREA_TEMPLATES = Object.fromEntries(IMPORTED_GEROT_AREAS.map((importedArea) => {
-  const area = importedArea.area === "ENTREGA" ? GEROT_DELIVERY : importedArea;
+  const area = applyLatestGerotArea(clone(importedArea.area === "ENTREGA" ? GEROT_DELIVERY : importedArea));
   const rows = area.rows.map((row) => ({ ...row, sourceMonthly: [...row.monthly], displayFormat: row.displayFormat || row.unit, goalMode: row.targetMode === "MA" ? "higher" : row.targetMode === "ME" ? "lower" : row.targetMode === "ABS" ? "absolute" : "none" }));
   const idBySheetRow = new Map(rows.map((row) => [row.sheetRow, row.id]));
   return [area.area, {
@@ -746,6 +748,7 @@ function sanitizeDatabase(database) {
       userRecord.department = "ADMINISTRADOR";
     }
   });
+  applyLatestGerotData(sanitized);
   const persistedGerotRows = arrayValue(sanitized.gerotWarehouse?.rows);
   sanitized.gerotWarehouse = {
     area: "ARMAZÉM",

@@ -19,6 +19,7 @@ for (const file of [
   'gerot-presentation.js',
   'gerot-reference-metadata.js',
   'gerot-source-sync.js',
+  'gerot-source-values.js',
   'gerot-delivery-data.js',
   'gerot-delivery-engine.js',
   'gerot-delivery-model.js',
@@ -39,7 +40,6 @@ for (const entry of entries) {
 // Shared synchronization still invalidates the cache because it replaces the raw stored JSON.
 const apiAsset = entries.find((entry) => entry.route === '/assets/js/api.js');
 if (!apiAsset) throw new Error('Missing browser api asset');
-apiAsset.body = 'import { applyLatestGerotData } from "./gerot-source-sync.js";\n' + apiAsset.body;
 const databaseFunctions = /function loadDatabase\(\) \{[\s\S]*?\n\}\n\nfunction saveDatabase\(database\) \{\n  localStorage\.setItem\(STORAGE_KEY, JSON\.stringify\(database\)\);\n\}/;
 if (!databaseFunctions.test(apiAsset.body)) throw new Error('Missing browser database functions');
 apiAsset.body = apiAsset.body.replace(databaseFunctions, `let databaseMemoryCache = null;
@@ -140,7 +140,7 @@ runtime = runtime.replace('if (pathname === "/api/session"', 'if (pathname.start
 await fs.mkdir('dist/server', { recursive: true });
 await fs.copyFile('worker/dto-items.js', 'dist/server/dto-items.js');
 await fs.copyFile('worker/anomaly-items.js', 'dist/server/anomaly-items.js');
-for (const file of ['gerot-reference-metadata.js', 'gerot-source-sync.js', 'gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
+for (const file of ['gerot-reference-metadata.js', 'gerot-source-sync.js', 'gerot-source-values.js', 'gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
   await fs.copyFile('assets/js/' + file, 'dist/server/' + file);
 }
 await fs.writeFile(

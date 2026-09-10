@@ -1336,7 +1336,7 @@ export function gerotLivePreview(area, inputValues = {}) {
       const formula = arrayValue(row.formulas)[index];
       const value = delivery ? delivery.value(row, index) : formula
         ? gerotSpreadsheetFormula(row, rows, formula, index)
-        : arrayValue(row.formulaInputs).length
+        : area.area === "ARMAZÉM" && arrayValue(row.formulaInputs).length
           ? gerotCalculatedValue(row, rows, index, true)
           : row.monthly?.[index];
       return { value, display: gerotNumber(value, row.unit, row.displayFormat), status: gerotGoalClass(row, value) };
@@ -1365,7 +1365,7 @@ function gerotGeneralView(areas) {
         const spreadsheetFormula = arrayValue(row.formulas)[index];
         const calculated = spreadsheetFormula && area.calculatedYtd
           ? gerotSpreadsheetFormula(row, areaRows, spreadsheetFormula, index)
-          : arrayValue(row.formulaInputs).length
+          : area.area === "ARMAZÉM" && arrayValue(row.formulaInputs).length
             ? gerotCalculatedValue(row, areaRows, index, Boolean(area.calculatedYtd))
             : row.monthly?.[index];
         const value = delivery ? delivery.value(row, index) : calculated;
@@ -1411,7 +1411,7 @@ function gerotWarehouseView(data, context = {}) {
     const ytd = delivery ? delivery.value(row) : gerotYtd(row, allRows, Boolean(data.calculatedYtd));
     const monthly = months.map((month, index) => {
       const spreadsheetFormula = arrayValue(row.formulas)[index];
-      const calculated = spreadsheetFormula && data.calculatedYtd ? gerotSpreadsheetFormula(row, allRows, spreadsheetFormula, index) : arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index, Boolean(data.calculatedYtd)) : row.monthly?.[index];
+      const calculated = spreadsheetFormula && data.calculatedYtd ? gerotSpreadsheetFormula(row, allRows, spreadsheetFormula, index) : data.area === "ARMAZÉM" && arrayValue(row.formulaInputs).length ? gerotCalculatedValue(row, allRows, index, Boolean(data.calculatedYtd)) : row.monthly?.[index];
       const value = delivery ? delivery.value(row, index) : calculated;
       const status = gerotGoalClass(row, value);
       const editable = data.area === "ARMAZÉM" ? !arrayValue(row.formulaInputs).length : !spreadsheetFormula;

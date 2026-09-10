@@ -4,7 +4,7 @@
     "id": "aderencia-wms",
     "target": 0.8709,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J10"
+    "cell": "J16"
   },
   {
     "area": "ARMAZÉM",
@@ -18,448 +18,448 @@
     "id": "carros-nok",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J12"
+    "cell": "J24"
   },
   {
     "area": "ARMAZÉM",
     "id": "carros-ok",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J13"
+    "cell": "J23"
   },
   {
     "area": "ARMAZÉM",
     "id": "carros-priorizados",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J14"
+    "cell": "J21"
   },
   {
     "area": "ARMAZÉM",
     "id": "carros-wms",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J15"
+    "cell": "J18"
   },
   {
     "area": "ARMAZÉM",
     "id": "cinco-s",
     "target": 0.85,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J16"
+    "cell": "J75"
   },
   {
     "area": "ARMAZÉM",
     "id": "eficiencia-carregamento",
     "target": 0.96,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J17"
+    "cell": "J10"
   },
   {
     "area": "ARMAZÉM",
     "id": "eficiencia-descarga",
     "target": 0.9,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J18"
+    "cell": "J22"
   },
   {
     "area": "ARMAZÉM",
     "id": "eficiencia-montagem",
     "target": 0.85,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J19"
+    "cell": "J15"
   },
   {
     "area": "ARMAZÉM",
     "id": "eficiencia-puxada",
     "target": 0.9,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J20"
+    "cell": "J67"
   },
   {
     "area": "ARMAZÉM",
     "id": "falha-bloqueio",
     "target": 0,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J21"
+    "cell": "J74"
   },
   {
     "area": "ARMAZÉM",
     "id": "fnp",
     "target": 40.48,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J22"
+    "cell": "J57"
   },
   {
     "area": "ARMAZÉM",
     "id": "fnp-horas",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J23"
+    "cell": "J58"
   },
   {
     "area": "ARMAZÉM",
     "id": "fnp-volume",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J24"
+    "cell": "J59"
   },
   {
     "area": "ARMAZÉM",
     "id": "furo-puxada",
     "target": 0.1,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J25"
+    "cell": "J66"
   },
   {
     "area": "ARMAZÉM",
     "id": "hl-nok",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J26"
+    "cell": "J31"
   },
   {
     "area": "ARMAZÉM",
     "id": "hl-nok-curva-c",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J27"
+    "cell": "J34"
   },
   {
     "area": "ARMAZÉM",
     "id": "hl-total",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J28"
+    "cell": "J30"
   },
   {
     "area": "ARMAZÉM",
     "id": "hl-total-curva-c",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J29"
+    "cell": "J33"
   },
   {
     "area": "ARMAZÉM",
     "id": "indisponibilidade",
     "target": 0.0567,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J30"
+    "cell": "J39"
   },
   {
     "area": "ARMAZÉM",
     "id": "inovacao",
     "target": 0.191,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J31"
+    "cell": "J40"
   },
   {
     "area": "ARMAZÉM",
     "id": "matriz-priorizacao",
     "target": 0.96,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J32"
+    "cell": "J19"
   },
   {
     "area": "ARMAZÉM",
     "id": "ocupacao-estoque",
     "target": 0.6,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J33"
+    "cell": "J41"
   },
   {
     "area": "ARMAZÉM",
     "id": "oor",
     "target": 0.1529,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J34"
+    "cell": "J36"
   },
   {
     "area": "ARMAZÉM",
     "id": "pallets-avariados",
     "target": 0.0481,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J35"
+    "cell": "J70"
   },
   {
     "area": "ARMAZÉM",
     "id": "pallets-avariados-base",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J36"
+    "cell": "J71"
   },
   {
     "area": "ARMAZÉM",
     "id": "pallets-puxados",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J37"
+    "cell": "J72"
   },
   {
     "area": "ARMAZÉM",
     "id": "pnp",
     "target": 5.16,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J38"
+    "cell": "J50"
   },
   {
     "area": "ARMAZÉM",
     "id": "pnp-adm",
     "target": 47,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J39"
+    "cell": "J56"
   },
   {
     "area": "ARMAZÉM",
     "id": "pnp-ajudantes",
     "target": 305,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J40"
+    "cell": "J53"
   },
   {
     "area": "ARMAZÉM",
     "id": "pnp-conferentes",
     "target": 98,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J41"
+    "cell": "J55"
   },
   {
     "area": "ARMAZÉM",
     "id": "pnp-dias",
     "target": 25.166666666666668,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J42"
+    "cell": "J52"
   },
   {
     "area": "ARMAZÉM",
     "id": "pnp-operadores",
     "target": 111,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J43"
+    "cell": "J54"
   },
   {
     "area": "ARMAZÉM",
     "id": "pnp-volume",
     "target": 551476,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J44"
+    "cell": "J51"
   },
   {
     "area": "ARMAZÉM",
     "id": "produtividade-despejo",
     "target": 0.035203356481481485,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J45"
+    "cell": "J69"
   },
   {
     "area": "ARMAZÉM",
     "id": "produtividade-repack",
     "target": 0.0012037037037037038,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J46"
+    "cell": "J68"
   },
   {
     "area": "ARMAZÉM",
     "id": "quebra-fefo",
     "target": 6,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J47"
+    "cell": "J35"
   },
   {
     "area": "ARMAZÉM",
     "id": "reabastecimento",
     "target": 0.1282,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J48"
+    "cell": "J14"
   },
   {
     "area": "ARMAZÉM",
     "id": "ressuprimento",
     "target": 0.0423,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J49"
+    "cell": "J13"
   },
   {
     "area": "ARMAZÉM",
     "id": "ronda-qualidade",
     "target": 0.9281,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J50"
+    "cell": "J73"
   },
   {
     "area": "ARMAZÉM",
     "id": "stock-age",
     "target": 0.9911,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J51"
+    "cell": "J29"
   },
   {
     "area": "ARMAZÉM",
     "id": "stock-age-curva-c",
     "target": 0.9783,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J52"
+    "cell": "J32"
   },
   {
     "area": "ARMAZÉM",
     "id": "stock-out",
     "target": 0.1205,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J53"
+    "cell": "J37"
   },
   {
     "area": "ARMAZÉM",
     "id": "stock-over",
     "target": 0.0323,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J54"
+    "cell": "J38"
   },
   {
     "area": "ARMAZÉM",
     "id": "tempo-interno",
     "target": 0.020833333333333332,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J55"
+    "cell": "J28"
   },
   {
     "area": "ARMAZÉM",
     "id": "tempo-interno-financeira",
     "target": 0.85,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J56"
+    "cell": "J26"
   },
   {
     "area": "ARMAZÉM",
     "id": "tempo-interno-fisica",
     "target": 0.85,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J57"
+    "cell": "J25"
   },
   {
     "area": "ARMAZÉM",
     "id": "tempo-interno-revenda",
     "target": 0.85,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J58"
+    "cell": "J27"
   },
   {
     "area": "ARMAZÉM",
     "id": "tma",
     "target": 0.10916666666666666,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J59"
+    "cell": "J63"
   },
   {
     "area": "ARMAZÉM",
     "id": "total-carros",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J60"
+    "cell": "J12"
   },
   {
     "area": "ARMAZÉM",
     "id": "total-carros-priorizados",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J61"
+    "cell": "J20"
   },
   {
     "area": "ARMAZÉM",
     "id": "total-carros-wms",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J62"
+    "cell": "J17"
   },
   {
     "area": "ARMAZÉM",
     "id": "tqi",
     "target": 148.75,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J63"
+    "cell": "J60"
   },
   {
     "area": "ARMAZÉM",
     "id": "tqi-hl-baixado",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J64"
+    "cell": "J61"
   },
   {
     "area": "ARMAZÉM",
     "id": "tqi-volume",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J65"
+    "cell": "J62"
   },
   {
     "area": "ARMAZÉM",
     "id": "tr-nova-rio",
     "target": 0.1768720023148148,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J66"
+    "cell": "J64"
   },
   {
     "area": "ARMAZÉM",
     "id": "tr-pirai",
     "target": 0.1113633101851852,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J67"
+    "cell": "J65"
   },
   {
     "area": "ARMAZÉM",
     "id": "txr-armazem",
     "target": 0.1,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J68"
+    "cell": "J42"
   },
   {
     "area": "ARMAZÉM",
     "id": "txr-real",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J69"
+    "cell": "J44"
   },
   {
     "area": "ARMAZÉM",
     "id": "txr-tendencia",
     "target": null,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J70"
+    "cell": "J43"
   },
   {
     "area": "ARMAZÉM",
     "id": "wlp",
     "target": 4.78,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J71"
+    "cell": "J45"
   },
   {
     "area": "ARMAZÉM",
     "id": "wlp-ajudantes",
     "target": 298,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J72"
+    "cell": "J46"
   },
   {
     "area": "ARMAZÉM",
     "id": "wlp-dias",
     "target": 25.083333333333332,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J73"
+    "cell": "J49"
   },
   {
     "area": "ARMAZÉM",
     "id": "wlp-operadores",
     "target": 111,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J74"
+    "cell": "J47"
   },
   {
     "area": "ARMAZÉM",
     "id": "wlp-volume",
     "target": 551476,
     "source": "GEROT ARMAZÉM.xlsb.xlsx",
-    "cell": "J75"
+    "cell": "J48"
   },
   {
     "area": "ENTREGA",
@@ -981,147 +981,147 @@
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-68",
+    "id": "planejamento-41",
     "target": 0.0548,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J41"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-71",
+    "id": "planejamento-44",
     "target": 0.0921,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J44"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-74",
+    "id": "planejamento-47",
     "target": 0.0414,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J47"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-77",
+    "id": "planejamento-50",
     "target": 0.0241,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J50"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-80",
+    "id": "planejamento-53",
     "target": 0.0129,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J53"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-83",
+    "id": "planejamento-56",
     "target": 0.0335,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J56"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-86",
+    "id": "planejamento-59",
     "target": 0.0054,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J59"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-89",
+    "id": "planejamento-62",
     "target": 0.0102,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J62"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-92",
+    "id": "planejamento-65",
     "target": 0.0054,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J65"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-95",
+    "id": "planejamento-68",
     "target": 0,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J68"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-98",
+    "id": "planejamento-71",
     "target": 0.0863,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J71"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-101",
+    "id": "planejamento-74",
     "target": 0.0135,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J74"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-104",
+    "id": "planejamento-77",
     "target": 0.1256,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J77"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-107",
+    "id": "planejamento-80",
     "target": 0.0192,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J80"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-110",
+    "id": "planejamento-83",
     "target": 0.2,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J83"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-113",
+    "id": "planejamento-86",
     "target": 0.2684,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J86"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-116",
+    "id": "planejamento-89",
     "target": 0.2358,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J89"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-119",
+    "id": "planejamento-92",
     "target": 0.941,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J92"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-122",
+    "id": "planejamento-95",
     "target": 50,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J95"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-124",
+    "id": "planejamento-96",
     "target": 0.0077,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J96"
   },
   {
     "area": "PLANEJAMENTO",
-    "id": "planejamento-125",
+    "id": "planejamento-97",
     "target": 0.8,
     "source": "GEROT 2026 - CONTROLE E PLANEJAMENTO.xlsx",
     "cell": "J97"

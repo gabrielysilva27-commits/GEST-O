@@ -1,10 +1,13 @@
 import { GEROT_DELIVERY } from "./gerot-delivery-data.js";
+import { applyLatestGerotArea } from "./gerot-source-sync.js";
+const deliveryReference = applyLatestGerotArea({ area: "ENTREGA", rows: structuredClone(GEROT_DELIVERY.rows) });
 
 export function hydrateDeliveryArea(area) {
   if (!area || !Array.isArray(area.rows)) return area;
+  applyLatestGerotArea(area);
   const existing = new Map(area.rows.map((row) => [String(row.id), row]));
-  const ids = new Set(GEROT_DELIVERY.rows.map((row) => row.id));
-  area.rows = GEROT_DELIVERY.rows.map((seed) => {
+  const ids = new Set(deliveryReference.rows.map((row) => row.id));
+  area.rows = deliveryReference.rows.map((seed) => {
     const previous = existing.get(seed.id);
     return {
       ...previous, ...structuredClone(seed),
