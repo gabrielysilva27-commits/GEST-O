@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { generalGerotEntries, gerotGoalStatus, gerotTargetLabel } from '../assets/js/gerot-presentation.js';
 import { deliveryCellKind } from '../assets/js/gerot-delivery-engine.js';
 import { applyGerotReferenceMetadata } from '../assets/js/gerot-reference-metadata.js';
+import { applyLatestGerotData, GEROT_SOURCE_REVISION, migrateGerotRowId } from '../assets/js/gerot-source-sync.js';
 
 const store = new Map();
 globalThis.localStorage = { getItem: k => store.get(k) ?? null, setItem: (k,v) => store.set(k,v), removeItem: k => store.delete(k) };
@@ -87,4 +88,42 @@ test('cleared memories do not revive an obsolete cached YTD or monthly result',(
   const preview=gerotLivePreview(area);
   assert.equal(preview.find(r=>r.id==='controle-13').ytd.value,null);
   assert.equal(preview.find(r=>r.id==='controle-13').monthly[0].value,null);
+});
+
+test('latest GEROT source refresh keeps user entries and fills the new August reference',()=>{
+  const data={
+    gerotWarehouse: structuredClone(byArea.get('ARMAZÉM')),
+    gerotAdditionalAreas: Object.fromEntries(['ENTREGA','CONTROLE','PLANEJAMENTO'].map(name=>[name,structuredClone(byArea.get(name))]))
+  };
+  const custom=data.gerotAdditionalAreas.ENTREGA.rows.find(r=>r.id==='entrega-14');
+  custom.monthly[7]=999;
+  applyLatestGerotData(data);
+  assert.equal(data.gerotAdditionalAreas.ENTREGA.sourceRevision,GEROT_SOURCE_REVISION);
+  assert.equal(custom.monthly[7],999,'a manual August value must not be overwritten');
+  assert.equal(data.gerotAdditionalAreas.ENTREGA.rows.find(r=>r.id==='entrega-15').monthly[7],237);
+  assert.equal(data.gerotWarehouse.rows.find(r=>r.id==='eficiencia-carregamento').monthly[7],1);
+  assert.equal(data.gerotWarehouse.rows.find(r=>r.id==='wlp-dias').monthly[7],26);
+});
+
+test('latest Planning structure follows the supplied Control/Planning workbook',()=>{
+  const data={gerotAdditionalAreas:{PLANEJAMENTO:structuredClone(byArea.get('PLANEJAMENTO'))}};
+  applyLatestGerotData(data);
+  const planning=data.gerotAdditionalAreas.PLANEJAMENTO;
+  assert.equal(planning.rows.find(r=>r.id==='planejamento-41')?.indicator,'CDP SEM FALTA');
+  assert.equal(planning.rows.find(r=>r.id==='planejamento-97')?.indicator,'ANS - VOLUME DE VENDAS');
+  assert.equal(planning.rows.some(r=>r.indicator==='OTIF'),false);
+  assert.equal(migrateGerotRowId('PLANEJAMENTO','planejamento-68'),'planejamento-41');
+  assert.equal(planning.rows.find(r=>r.id==='planejamento-86')?.indicator,'ICV');
+  assert.equal(planning.rows.find(r=>r.id==='planejamento-89')?.indicator,'ICE');
+});
+
+test('source-only conditional presentation is restored without changing numeric goal rules',()=>{
+  const data={gerotAdditionalAreas:{CONTROLE:structuredClone(byArea.get('CONTROLE'))}};
+  applyLatestGerotData(data);
+  const trocas=data.gerotAdditionalAreas.CONTROLE.rows.find(r=>r.id==='controle-38');
+  assert.equal(trocas.indicator,'TROCAS');
+  assert.equal(trocas.sourceStatusFallback,'success');
+  assert.equal(gerotGoalStatus(trocas,trocas.referenceYtd),'success');
+  const fgli=data.gerotAdditionalAreas.CONTROLE.rows.find(r=>r.id==='controle-31');
+  assert.equal(gerotGoalStatus(fgli,fgli.referenceYtd),'danger','real target logic keeps priority over source fallback');
 });

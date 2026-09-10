@@ -30,7 +30,14 @@ export function generalGerotEntries(areas) {
 
 export function gerotGoalStatus(row, value) {
   const missing = (v) => v === null || v === undefined || v === "" || !Number.isFinite(Number(v));
-  if (missing(value) || row.calculationInput || !row.goalMode || row.goalMode === "none") return "neutral";
+  if (missing(value) || row.calculationInput) return "neutral";
+  // Some supplied GEROT rows (for example TROCAS) are intentionally colored in the
+  // workbook even though the spreadsheet has no numeric target rule. Preserve that
+  // source presentation only when there is no semantic rule to calculate instead.
+  if ((!row.goalMode || row.goalMode === "none") && ["success", "danger"].includes(row.sourceStatusFallback)) {
+    return row.sourceStatusFallback;
+  }
+  if (!row.goalMode || row.goalMode === "none") return "neutral";
   if (row.goalMode === "range") {
     if (missing(row.targetMin) || missing(row.targetMax)) return "neutral";
     return Number(value) >= Number(row.targetMin) && Number(value) <= Number(row.targetMax) ? "success" : "danger";

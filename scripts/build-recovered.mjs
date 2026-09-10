@@ -18,6 +18,7 @@ for (const route of [
 for (const file of [
   'gerot-presentation.js',
   'gerot-reference-metadata.js',
+  'gerot-source-sync.js',
   'gerot-delivery-data.js',
   'gerot-delivery-engine.js',
   'gerot-delivery-model.js',
@@ -38,6 +39,7 @@ for (const entry of entries) {
 // Shared synchronization still invalidates the cache because it replaces the raw stored JSON.
 const apiAsset = entries.find((entry) => entry.route === '/assets/js/api.js');
 if (!apiAsset) throw new Error('Missing browser api asset');
+apiAsset.body = 'import { applyLatestGerotData } from "./gerot-source-sync.js";\n' + apiAsset.body;
 const databaseFunctions = /function loadDatabase\(\) \{[\s\S]*?\n\}\n\nfunction saveDatabase\(database\) \{\n  localStorage\.setItem\(STORAGE_KEY, JSON\.stringify\(database\)\);\n\}/;
 if (!databaseFunctions.test(apiAsset.body)) throw new Error('Missing browser database functions');
 apiAsset.body = apiAsset.body.replace(databaseFunctions, `let databaseMemoryCache = null;
@@ -60,16 +62,18 @@ function loadDatabase() {
       const seeded = clone(INITIAL_DATABASE);
       ensureMeetingTemplates(seeded);
       ensureImportedActionHistory(seeded);
+      applyLatestGerotData(seeded);
       saveDatabase(seeded);
       return seeded;
     }
 
     const parsed = JSON.parse(raw);
-    const sanitized = sanitizeDatabase(parsed);
+    const sanitized = applyLatestGerotData(sanitizeDatabase(parsed));
     saveDatabase(sanitized);
     return sanitized;
   } catch {
     const seeded = clone(INITIAL_DATABASE);
+    applyLatestGerotData(seeded);
     saveDatabase(seeded);
     return seeded;
   }
@@ -118,6 +122,13 @@ for (const entry of entries) {
   entry.etag = '"' + createHash('sha256').update(entry.body).digest('hex').slice(0, 20) + '"';
 }
 
+const gerotMergeMarker = '  if (!data) return data;\n  if (data.gerotAdditionalAreas?.ENTREGA) repairGerotEntrega(data.gerotAdditionalAreas.ENTREGA);';
+if (!runtime.includes(gerotMergeMarker)) throw Error('Missing GEROT merge marker');
+runtime = runtime.replace(gerotMergeMarker, '  if (!data) return data;\n  applyLatestGerotData(data);\n  if (gerotData) applyLatestGerotData(gerotData);\n  if (data.gerotAdditionalAreas?.ENTREGA) repairGerotEntrega(data.gerotAdditionalAreas.ENTREGA);');
+const gerotSaveMarker = '      const savedGerot = await this.state.storage.get("gerotData") || {};';
+if (!runtime.includes(gerotSaveMarker)) throw Error('Missing GEROT save marker');
+runtime = runtime.replace(gerotSaveMarker, gerotSaveMarker + '\n      applyLatestGerotData(data);\n      applyLatestGerotData(savedGerot);');
+
 runtime = runtime.replace('/* ASSET_MAP */', 'var assets = new Map(' + JSON.stringify(entries) + '.map(e=>[e.route,e]));');
 runtime = runtime.replace('async function dtoApplicationsFor(state) {', 'async function dtoApplicationsFor(state) { return listDtos(state.storage);\n/*');
 runtime = runtime.replace('__name(dtoApplicationsFor, "dtoApplicationsFor");', '*/}\n__name(dtoApplicationsFor, "dtoApplicationsFor");');
@@ -129,11 +140,11 @@ runtime = runtime.replace('if (pathname === "/api/session"', 'if (pathname.start
 await fs.mkdir('dist/server', { recursive: true });
 await fs.copyFile('worker/dto-items.js', 'dist/server/dto-items.js');
 await fs.copyFile('worker/anomaly-items.js', 'dist/server/anomaly-items.js');
-for (const file of ['gerot-reference-metadata.js', 'gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
+for (const file of ['gerot-reference-metadata.js', 'gerot-source-sync.js', 'gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
   await fs.copyFile('assets/js/' + file, 'dist/server/' + file);
 }
 await fs.writeFile(
   'dist/server/index.js',
-  'import {hydrateDeliveryArea,applyDeliveryCells} from "./gerot-delivery-model.js";\nimport {listDtos,dtoItem} from "./dto-items.js";\nimport {anomalyRequest} from "./anomaly-items.js";\nconst DTO_USERS=' + JSON.stringify(users) + ';\n' + runtime
+  'import {hydrateDeliveryArea,applyDeliveryCells} from "./gerot-delivery-model.js";\nimport {applyLatestGerotData} from "./gerot-source-sync.js";\nimport {listDtos,dtoItem} from "./dto-items.js";\nimport {anomalyRequest} from "./anomaly-items.js";\nconst DTO_USERS=' + JSON.stringify(users) + ';\n' + runtime
 );
 console.log('Rebuilt production assets and runtime');
