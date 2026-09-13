@@ -1,0 +1,28 @@
+name: Exportar ações atuais do LEAD
+
+on:
+  push:
+    branches:
+      - tmp-export-actions-20260913d
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exportar ações públicas atuais
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 \
+            https://lead-gestao.gabrielysilva27.workers.dev/api/shared-view \
+            | jq '.data.actionPlans // []' > lead-actions.json
+          jq 'length' lead-actions.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add lead-actions.json
+          git commit -m 'Exporta ações atuais do LEAD para conferência'
+          git push
