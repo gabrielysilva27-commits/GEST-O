@@ -6,7 +6,7 @@ on:
       - tmp-export-actions-20260913d
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   export:
@@ -20,9 +20,11 @@ jobs:
           curl --fail --silent --show-error --retry 3 \
             https://lead-gestao.gabrielysilva27.workers.dev/api/shared-view \
             | jq '.data.actionPlans // []' > lead-actions.json
-          jq 'length' lead-actions.json
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add lead-actions.json
-          git commit -m 'Exporta ações atuais do LEAD para conferência'
-          git push
+          echo "Ações exportadas: $(jq 'length' lead-actions.json)"
+      - name: Disponibilizar exportação
+        uses: actions/upload-artifact@v4
+        with:
+          name: lead-actions-live
+          path: lead-actions.json
+          if-no-files-found: error
+          retention-days: 1
