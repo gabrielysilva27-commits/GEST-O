@@ -9,15 +9,26 @@ for (let i=1;i<=10;i++) {
 const path='dist/server/index.js';
 let source=await fs.readFile(path,'utf8');
 
-const importMarker='import {prepareReviewedActionImport} from "./action-import-20260914.js";';
-if(!source.includes(importMarker)) throw new Error('Missing reviewed action import marker');
+const importMarkers=[
+  'import {prepareReviewedActionImport,prepareReviewedActionImportB} from "./action-import-20260914.js";',
+  'import {prepareReviewedActionImport} from "./action-import-20260914.js";'
+];
+const importMarker=importMarkers.find(marker=>source.includes(marker));
+if(!importMarker) throw new Error('Missing reviewed action import marker');
 if(!source.includes('prepareAptActionImport')){
   source=source.replace(importMarker, importMarker+'\nimport {prepareAptActionImport} from "./action-import-20260914-aptas.js";');
 }
 
-const initMarker='await prepareReviewedActionImport(state); await removeActions2025(state);';
-if(!source.includes(initMarker)) throw new Error('Missing SharedStore action initialization marker');
-source=source.replace(initMarker,'await prepareReviewedActionImport(state); await prepareAptActionImport(state); await removeActions2025(state);');
+const initMarkers=[
+  'await prepareReviewedActionImport(state); await prepareReviewedActionImportB(state); await removeActions2025(state);',
+  'await prepareReviewedActionImport(state); await removeActions2025(state);'
+];
+const initMarker=initMarkers.find(marker=>source.includes(marker));
+if(!initMarker) throw new Error('Missing SharedStore action initialization marker');
+const initReplacement=initMarker.includes('prepareReviewedActionImportB')
+  ? 'await prepareReviewedActionImport(state); await prepareReviewedActionImportB(state); await prepareAptActionImport(state); await removeActions2025(state);'
+  : 'await prepareReviewedActionImport(state); await prepareAptActionImport(state); await removeActions2025(state);';
+source=source.replace(initMarker,initReplacement);
 
 const baseMarker='const base = [...state.reviewedActionImport || [], ...Array.isArray(data.actionPlans) ? data.actionPlans : [], ...overlay]';
 if(!source.includes(baseMarker)) throw new Error('Missing central action merge marker');
