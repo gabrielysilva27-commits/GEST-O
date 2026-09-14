@@ -13,28 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Extract seeded users
+      - name: Show requested user references
         shell: bash
         run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const vm = require('vm');
-          const api = fs.readFileSync('public/assets/js/api.js','utf8');
-          const start = api.indexOf('const ADDITIONAL_SEEDED_USERS =');
-          const end = api.indexOf('\n];', api.indexOf('const SEEDED_USERS =', start)) + 3;
-          if (start < 0 || end < 3) throw new Error('seeded users block not found');
-          const users = vm.runInNewContext(api.slice(start, end) + ';SEEDED_USERS');
-          fs.writeFileSync('seeded-users.json', JSON.stringify(users, null, 2));
-          for (const name of ['Lucas Soares','Christofee','Nathan','Iago','Tiago Silva']) {
-            const found = users.filter(u => [u.name,u.username].some(v => String(v||'').toLowerCase().includes(name.toLowerCase())));
-            console.log(name, JSON.stringify(found.map(({id,name,username}) => ({id,name,username}))));
-          }
-          NODE
+          grep -niE 'Lucas Soares|Christofee|Tiago Silva|Nathan|Iago' public/assets/js/api.js | head -80 || true
       - name: Upload review inputs
         uses: actions/upload-artifact@v4
         with:
           name: action-import-review-inputs
           path: |
             worker/action-import-20260914-data.js
-            seeded-users.json
+            public/assets/js/api.js
           retention-days: 1
