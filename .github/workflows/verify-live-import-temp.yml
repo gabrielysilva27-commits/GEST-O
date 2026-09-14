@@ -1,0 +1,45 @@
+name: Verify live reviewed import
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch and validate production
+        run: |
+          curl --fail --silent --show-error --location 'https://lead-gestao.gabrielysilva27.workers.dev/api/shared-view' --output live.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('live.json','utf8'));
+          const actions=p?.data?.actionPlans||[];
+          const meetings=p?.data?.meetings||[];
+          const batch=actions.filter(a=>a?.legacyImportBatch==='review20260914b');
+          const expected=[
+            [9,'SEM FALHA'],[9,'Planner'],[15,'Principais condições inseguras'],[3,'Furo de puxada'],
+            [2,'FNP'],[12,'NPS'],[15,'Principais relatos de incidentes']
+          ];
+          const missingSubjects=expected.filter(([id,s])=>!(meetings.find(m=>Number(m.id)===id)?.subjects||[]).some(x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()===String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()));
+          const tiago=batch.filter(a=>a.legacyOwnerName==='Tiago Silva');
+          const christofee=batch.filter(a=>String(a.legacyOwnerName||'').includes('Christofee'));
+          const efc=batch.filter(a=>a.meetingSubject==='EFC');
+          const erro=batch.filter(a=>String(a.meetingSubject||'').toLowerCase().includes('erro de carregamento'));
+          const relatos=batch.filter(a=>a.meetingSubject==='Principais relatos de incidentes');
+          console.log(JSON.stringify({totalActions:actions.length,batchCount:batch.length,missingSubjects,tiago:tiago.map(a=>({id:a.id,ownerId:a.ownerId,owner:a.legacyOwnerName})),christofee:christofee.map(a=>({id:a.id,ownerId:a.ownerId,owner:a.legacyOwnerName})),efcCount:efc.length,erroCarregamentoCount:erro.length,relatos:relatos.map(a=>({id:a.id,status:a.status,owner:a.legacyOwnerName,subject:a.meetingSubject}))},null,2));
+          if(batch.length!==174) throw new Error('Expected 174 reviewed actions, found '+batch.length);
+          if(missingSubjects.length) throw new Error('Missing registered subjects');
+          if(tiago.some(a=>Number(a.ownerId)!==26)) throw new Error('Tiago mapping invalid');
+          if(christofee.some(a=>Number(a.ownerId)!==5)) throw new Error('Christofee mapping invalid');
+          if(!efc.length || !erro.length || relatos.length!==2) throw new Error('Representative subjects missing');
+          NODE
+      - name: Upload verification snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-reviewed-import-verification
+          path: live.json
+          retention-days: 1
