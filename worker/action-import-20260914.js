@@ -3,6 +3,7 @@ import { REVIEWED_ACTION_IMPORT_B_GZIP_BASE64 } from './action-import-20260914b-
 const marker='actionImport20260914:manifest';
 const markerB='actionImport20260914b:manifest';
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,'');
+const withTransaction=(storage,fn)=>typeof storage.transaction==='function'?storage.transaction(fn):fn(storage);
 // Immutable, transactionally persisted chunks keep this import separate from
 // full-database saves. Existing base/live records override imported defaults.
 export async function prepareReviewedActionImport(state) {
@@ -11,7 +12,7 @@ export async function prepareReviewedActionImport(state) {
   if(previous){state.reviewedActionImport=(await Promise.all(previous.keys.map(key=>storage.get(key)))).flat();return;}
   const data=await storage.get('data');
   if(!data?.meetings?.length){state.reviewedActionImport=[];return;}
-  await storage.transaction(async tx=>{
+  await withTransaction(storage,async tx=>{
     const saved=await tx.get(marker);
     if(saved){state.reviewedActionImport=(await Promise.all(saved.keys.map(key=>tx.get(key)))).flat();return;}
     const current=await tx.get('data');
@@ -54,7 +55,7 @@ export async function prepareReviewedActionImportB(state){
   const storage=state.storage;
   if(await storage.get(markerB))return;
   const payload=await loadReviewedPayloadB();
-  await storage.transaction(async tx=>{
+  await withTransaction(storage,async tx=>{
     if(await tx.get(markerB))return;
     const current=await tx.get('data');
     if(!current?.meetings?.length)return;
