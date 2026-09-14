@@ -6,7 +6,7 @@ import { transform } from 'esbuild';
 let runtime = await fs.readFile('recovered/runtime.js', 'utf8');
 const readyMarker='    this.ready = Promise.resolve();';
 if (!runtime.includes(readyMarker)) throw Error('Missing SharedStore initialization');
-runtime=runtime.replace(readyMarker,'    const initializeActions = async () => { await prepareReviewedActionImport(state); await removeActions2025(state); };\n    this.ready = state.blockConcurrencyWhile ? state.blockConcurrencyWhile(initializeActions) : initializeActions();');
+runtime=runtime.replace(readyMarker,'    const initializeActions = async () => { await prepareReviewedActionImport(state); await prepareReviewedActionImportB(state); await removeActions2025(state); };\n    this.ready = state.blockConcurrencyWhile ? state.blockConcurrencyWhile(initializeActions) : initializeActions();');
 const baseMarker='const base = [...Array.isArray(data.actionPlans) ? data.actionPlans : [], ...overlay]';
 if (!runtime.includes(baseMarker)) throw Error('Missing central action merge');
 runtime=runtime.replace(baseMarker,'const base = [...state.reviewedActionImport || [], ...Array.isArray(data.actionPlans) ? data.actionPlans : [], ...overlay]');
@@ -150,11 +150,12 @@ await fs.copyFile('worker/anomaly-items.js', 'dist/server/anomaly-items.js');
 await fs.copyFile('worker/action-import-20260914.js', 'dist/server/action-import-20260914.js');
 await fs.copyFile('worker/remove-actions-2025.js', 'dist/server/remove-actions-2025.js');
 await fs.copyFile('worker/action-import-20260914-data.js', 'dist/server/action-import-20260914-data.js');
+await fs.copyFile('worker/action-import-20260914b-data.js', 'dist/server/action-import-20260914b-data.js');
 for (const file of ['gerot-reference-metadata.js', 'gerot-source-sync.js', 'gerot-source-values.js', 'gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
   await fs.copyFile('assets/js/' + file, 'dist/server/' + file);
 }
 await fs.writeFile(
   'dist/server/index.js',
-  'import {removeActions2025} from "./remove-actions-2025.js";\nimport {prepareReviewedActionImport} from "./action-import-20260914.js";\nimport {hydrateDeliveryArea,applyDeliveryCells} from "./gerot-delivery-model.js";\nimport {applyLatestGerotData} from "./gerot-source-sync.js";\nimport {listDtos,dtoItem} from "./dto-items.js";\nimport {anomalyRequest} from "./anomaly-items.js";\nconst DTO_USERS=' + JSON.stringify(users) + ';\n' + runtime
+  'import {removeActions2025} from "./remove-actions-2025.js";\nimport {prepareReviewedActionImport,prepareReviewedActionImportB} from "./action-import-20260914.js";\nimport {hydrateDeliveryArea,applyDeliveryCells} from "./gerot-delivery-model.js";\nimport {applyLatestGerotData} from "./gerot-source-sync.js";\nimport {listDtos,dtoItem} from "./dto-items.js";\nimport {anomalyRequest} from "./anomaly-items.js";\nconst DTO_USERS=' + JSON.stringify(users) + ';\n' + runtime
 );
 console.log('Rebuilt production assets and runtime');
