@@ -4,6 +4,29 @@ import { createHash } from 'node:crypto';
 import { transform } from 'esbuild';
 
 let runtime = await fs.readFile('recovered/runtime.js', 'utf8');
+const conditionalSharedGet = '      if (request.method === "GET") {\n        const revision = Number(await this.state.storage.get("revision") || 0);\n        return Response.json({ data: await withCentralImport(this.state, await this.state.storage.get("data") || null), revision }, { headers: { "cache-control": "no-store" } });\n      }';
+if (!runtime.includes(conditionalSharedGet)) throw Error('Missing shared GET marker');
+runtime = runtime.replace(conditionalSharedGet, `      if (request.method === "GET") {
+        const revision = Number(await this.state.storage.get("revision") || 0);
+        const searchParams = new URL(request.url).searchParams;
+        const knownRevision = Number(searchParams.get("revision"));
+        if (searchParams.has("revision") && Number.isFinite(knownRevision) && knownRevision === revision) {
+          return Response.json({ unchanged: true, revision }, { headers: { "cache-control": "no-store" } });
+        }
+        return Response.json({ data: await withCentralImport(this.state, await this.state.storage.get("data") || null), revision }, { headers: { "cache-control": "no-store" } });
+      }`);
+
+// Live actions and GEROT saves are stored outside the full database. Advance
+// the shared revision so other sessions know exactly when a full refresh is needed.
+const deleteSuccess = '      return Response.json({ success: true });\n    }\n    if (path === "/api/live-actions") {';
+if (!runtime.includes(deleteSuccess)) throw Error('Missing live action delete marker');
+runtime = runtime.replace(deleteSuccess, '      await this.state.storage.put("revision", Number(await this.state.storage.get("revision") || 0) + 1);\n      return Response.json({ success: true });\n    }\n    if (path === "/api/live-actions") {');
+const liveSuccess = '      await this.state.storage.put("liveNotifications", notifications);\n      return Response.json({ success: true, item });';
+if (!runtime.includes(liveSuccess)) throw Error('Missing live action save marker');
+runtime = runtime.replace(liveSuccess, '      await this.state.storage.put("liveNotifications", notifications);\n      await this.state.storage.put("revision", Number(await this.state.storage.get("revision") || 0) + 1);\n      return Response.json({ success: true, item });');
+const gerotSuccess = '      await this.state.storage.put("gerotData", nextGerot);\n      return Response.json({ success: true, area, updatedAt: record.updatedAt });';
+if (!runtime.includes(gerotSuccess)) throw Error('Missing GEROT save marker');
+runtime = runtime.replace(gerotSuccess, '      await this.state.storage.put("gerotData", nextGerot);\n      await this.state.storage.put("revision", Number(await this.state.storage.get("revision") || 0) + 1);\n      return Response.json({ success: true, area, updatedAt: record.updatedAt });');
 const readyMarker='    this.ready = Promise.resolve();';
 if (!runtime.includes(readyMarker)) throw Error('Missing SharedStore initialization');
 runtime=runtime.replace(readyMarker,'    const initializeActions = async () => { await prepareReviewedActionImport(state); await prepareReviewedActionImportB(state); await removeActions2025(state); };\n    this.ready = state.blockConcurrencyWhile ? state.blockConcurrencyWhile(initializeActions) : initializeActions();');

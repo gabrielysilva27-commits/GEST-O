@@ -27,6 +27,8 @@ assert.match(shared, /scheduleSharedRefresh/);
 assert.match(shared, /requestIdleCallback/);
 assert.match(shared, /if \(!fresh && hasLocalDatabase\(\)\)/);
 assert.match(shared, /lastRemoteSnapshot/);
+assert.match(shared, /\?revision=/);
+assert.match(shared, /payload\.unchanged/);
 assert.match(shared, /remoteSnapshot === lastRemoteSnapshot/);
 assert.match(shared, /if \(syncInFlight\) return syncInFlight/);
 assert.match(shared, /presence: \(\.\.\.args\) => api\.presence\(\.\.\.args\)/);
@@ -47,6 +49,7 @@ assert.match(optimizer, /actionRows\.filter\(\(row\) => matchesAction\(row, filt
 
 // Navigation intent and browser idle time warm module data without starting network synchronization.
 assert.match(optimizer, /VIEW_CACHE_TTL_MS/);
+assert.match(optimizer, /VIEW_CACHE_TTL_MS = 300000/);
 assert.match(optimizer, /wrapViewLoads/);
 assert.match(optimizer, /view\.load\(localApi, state\.token\)/);
 assert.match(optimizer, /warmViewsWhenReady/);
@@ -54,6 +57,7 @@ assert.match(optimizer, /pointerdown/);
 assert.match(optimizer, /pointerover/);
 assert.match(optimizer, /requestIdleCallback/);
 assert.match(optimizer, /lead:shared-synced/);
+assert.match(readFileSync(new URL('../assets/js/app.js', import.meta.url), 'utf8'), /cachedData && data === cachedData/);
 
 // DTO, anomalia and notificações are loaded on demand or on navigation intent.
 assert.match(lazy, /import\('\.\/dto-module\.js'\)/);

@@ -98,6 +98,7 @@ async function loginSession(credentials) {
   localStorage.setItem(TOKEN_KEY, payload.token);
   lastSyncAt = 0;
   lastRemoteSnapshot = "";
+  sharedRevision = undefined;
 }
 
 export async function persistOperationalData() {
@@ -125,7 +126,10 @@ async function performSharedSync() {
   const hasSession = Boolean(token);
   let response;
   try {
-    response = await fetch(hasSession ? "/api/shared-data" : "/api/shared-view", {
+    const revisionQuery = hasSession && Number.isFinite(sharedRevision)
+      ? `?revision=${encodeURIComponent(sharedRevision)}`
+      : "";
+    response = await fetch(hasSession ? "/api/shared-data" + revisionQuery : "/api/shared-view", {
       headers: headers(),
       cache: "no-store"
     });
@@ -142,6 +146,11 @@ async function performSharedSync() {
   const payload = await response.json().catch(() => null);
   if (!payload || localStorage.getItem(TOKEN_KEY) !== token) return false;
   sharedRevision = payload.revision;
+  if (payload.unchanged) {
+    markSynced();
+    dispatchSharedSync(false);
+    return true;
+  }
   if (!payload.data) {
     const local = read();
     const success = local && hasSession ? await persistOperationalData() : true;

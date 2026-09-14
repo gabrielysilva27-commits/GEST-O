@@ -3,7 +3,9 @@ import { state } from './state.js';
 import { views } from './modules/index.js';
 
 const PREFETCHABLE = new Set(['actionPlans', 'meetings', 'gapa', 'dto', 'anomalyReports', 'notifications', 'administration', 'gerot', 'history']);
-const VIEW_CACHE_TTL_MS = 4500;
+// A shared change explicitly invalidates this timestamp. A long TTL therefore
+// avoids rebuilding an unchanged module while still refreshing after real data changes.
+const VIEW_CACHE_TTL_MS = 300000;
 const prefetched = new Map();
 const viewLoadedAt = new Map();
 let actionRows = [];

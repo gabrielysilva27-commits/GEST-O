@@ -37,6 +37,28 @@ test('old full-database revisions cannot replace a teammate save', async () => {
   assert.equal((await store.fetch(new Request('https://lead.test/api/shared-data'))).status, 401);
 });
 
+test('unchanged sessions receive a tiny revision response and live actions invalidate it', async () => {
+  const values = new Map([
+    ['data', { meetings: [], actionPlans: [{ id: 1, status: 'done' }], notifications: [], sequence: { actionPlans: 1 } }],
+    ['revision', 7],
+    ['sessions', { test: { username: 'Gabriely', role: 'admin', expiresAt: Date.now() + 60000 } }]
+  ]);
+  const storage = {
+    get: async key => structuredClone(values.get(key)),
+    put: async (key, value) => { for (const [k, v] of typeof key === 'string' ? [[key, value]] : Object.entries(key)) values.set(k, structuredClone(v)); }
+  };
+  const store = new SharedStore({ storage }, {});
+  const auth = { authorization: 'Bearer test' };
+  const unchanged = await (await store.fetch(new Request('https://lead.test/api/shared-data?revision=7', { headers: auth }))).json();
+  assert.deepEqual(unchanged, { unchanged: true, revision: 7 });
+  const item = { id: 2, syncId: 'fast-test', status: 'in_progress', ownerId: 1, createdAt: '2026-09-14T12:00:00.000Z' };
+  await store.fetch(new Request('https://lead.test/api/live-actions', { method: 'POST', headers: { ...auth, 'content-type': 'application/json' }, body: JSON.stringify({ item }) }));
+  assert.equal(values.get('revision'), 8);
+  const changed = await (await store.fetch(new Request('https://lead.test/api/shared-data?revision=7', { headers: auth }))).json();
+  assert.equal(changed.revision, 8);
+  assert.ok(changed.data.actionPlans.some(action => action.id === 2));
+});
+
 test('queued writes preserve both edits and hot reads wait for confirmation', async (t) => {
   const values = new Map([['lead-gestao-sync-token', 'test']]);
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
