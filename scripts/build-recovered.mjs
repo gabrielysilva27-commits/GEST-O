@@ -4,6 +4,13 @@ import { createHash } from 'node:crypto';
 import { transform } from 'esbuild';
 
 let runtime = await fs.readFile('recovered/runtime.js', 'utf8');
+const readyMarker='    this.ready = Promise.resolve();';
+if (!runtime.includes(readyMarker)) throw Error('Missing SharedStore initialization');
+runtime=runtime.replace(readyMarker,'    this.ready = state.blockConcurrencyWhile ? state.blockConcurrencyWhile(() => prepareReviewedActionImport(state)) : prepareReviewedActionImport(state);');
+const baseMarker='const base = [...Array.isArray(data.actionPlans) ? data.actionPlans : [], ...overlay]';
+if (!runtime.includes(baseMarker)) throw Error('Missing central action merge');
+runtime=runtime.replace(baseMarker,'const base = [...state.reviewedActionImport || [], ...Array.isArray(data.actionPlans) ? data.actionPlans : [], ...overlay]');
+runtime=runtime.replace('Math.max(Number(data.sequence?.actionPlans || 0), ...activeLive','Math.max(Number(data.sequence?.actionPlans || 0), ...(state.reviewedActionImport || []).map(item => Number(item.id) || 0), ...activeLive');
 const entries = JSON.parse(await fs.readFile('recovered/live-assets.json', 'utf8'));
 entries.push({ route: '/assets/js/dto-controls.js', kind: 'text', contentType: 'application/javascript; charset=utf-8', body: '' });
 for (const route of [
@@ -140,11 +147,13 @@ runtime = runtime.replace('if (pathname === "/api/session"', 'if (pathname.start
 await fs.mkdir('dist/server', { recursive: true });
 await fs.copyFile('worker/dto-items.js', 'dist/server/dto-items.js');
 await fs.copyFile('worker/anomaly-items.js', 'dist/server/anomaly-items.js');
+await fs.copyFile('worker/action-import-20260914.js', 'dist/server/action-import-20260914.js');
+await fs.copyFile('worker/action-import-20260914-data.js', 'dist/server/action-import-20260914-data.js');
 for (const file of ['gerot-reference-metadata.js', 'gerot-source-sync.js', 'gerot-source-values.js', 'gerot-delivery-data.js', 'gerot-delivery-engine.js', 'gerot-delivery-model.js']) {
   await fs.copyFile('assets/js/' + file, 'dist/server/' + file);
 }
 await fs.writeFile(
   'dist/server/index.js',
-  'import {hydrateDeliveryArea,applyDeliveryCells} from "./gerot-delivery-model.js";\nimport {applyLatestGerotData} from "./gerot-source-sync.js";\nimport {listDtos,dtoItem} from "./dto-items.js";\nimport {anomalyRequest} from "./anomaly-items.js";\nconst DTO_USERS=' + JSON.stringify(users) + ';\n' + runtime
+  'import {prepareReviewedActionImport} from "./action-import-20260914.js";\nimport {hydrateDeliveryArea,applyDeliveryCells} from "./gerot-delivery-model.js";\nimport {applyLatestGerotData} from "./gerot-source-sync.js";\nimport {listDtos,dtoItem} from "./dto-items.js";\nimport {anomalyRequest} from "./anomaly-items.js";\nconst DTO_USERS=' + JSON.stringify(users) + ';\n' + runtime
 );
 console.log('Rebuilt production assets and runtime');
