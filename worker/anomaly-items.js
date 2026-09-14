@@ -31,18 +31,20 @@ export async function anomalyRequest(request,storage,claim,users) {
     const id=Math.max(Number(data.sequence.anomalyReports||0),...data.anomalyReports.map(record=>Number(record.id)||0))+1,now=new Date().toISOString();
     const record={id,...fields,reportedBy:Number(user.id),reportedByUsername:user.username,reportedByName:user.title||user.name||user.username,createdAt:now,updatedAt:now};
     data.sequence.anomalyReports=id;data.anomalyReports.push(record);await storage.put('data',data);
+    await storage.put('revision',Number(await storage.get('revision')||0)+1);
     return Response.json({success:true,item:record},{status:201});
   }
   const id=Number(path.split('/').pop()),index=data.anomalyReports.findIndex(record=>Number(record.id)===id),record=data.anomalyReports[index];
   if(!record)return Response.json({error:'Relato de anomalia não encontrado.'},{status:404});
   if(!canManage(record,claim,user))return Response.json({error:'Somente o responsável pelo relato ou ADM pode alterar ou excluir.'},{status:403});
   if(request.method==='DELETE'){
-    data.anomalyReports.splice(index,1);await storage.put('data',data);return Response.json({success:true});
+    data.anomalyReports.splice(index,1);await storage.put('data',data);await storage.put('revision',Number(await storage.get('revision')||0)+1);return Response.json({success:true});
   }
   if(request.method==='PATCH'){
     const {item}=await request.json().catch(()=>({})),fields=validate(item||{},record);
     if(!fields)return Response.json({error:'Preencha data, ocorrência, indicador, os cinco porquês e o plano de ação.'},{status:400});
     const updated={...record,...fields,updatedAt:new Date().toISOString(),updatedBy:claim.username};data.anomalyReports[index]=updated;await storage.put('data',data);
+    await storage.put('revision',Number(await storage.get('revision')||0)+1);
     return Response.json({success:true,item:updated});
   }
   return Response.json({error:'Método não permitido.'},{status:405});

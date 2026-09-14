@@ -4,6 +4,9 @@ import { createHash } from 'node:crypto';
 import { transform } from 'esbuild';
 
 let runtime = await fs.readFile('recovered/runtime.js', 'utf8');
+const dtoCreateMarker = '      await this.state.storage.put("dtoApplicationIds", [...ids, nextId]);';
+if (!runtime.includes(dtoCreateMarker)) throw Error('Missing DTO create marker');
+runtime = runtime.replace(dtoCreateMarker, dtoCreateMarker + '\n      await this.state.storage.put("revision", Number(await this.state.storage.get("revision") || 0) + 1);');
 const conditionalSharedGet = '      if (request.method === "GET") {\n        const revision = Number(await this.state.storage.get("revision") || 0);\n        return Response.json({ data: await withCentralImport(this.state, await this.state.storage.get("data") || null), revision }, { headers: { "cache-control": "no-store" } });\n      }';
 if (!runtime.includes(conditionalSharedGet)) throw Error('Missing shared GET marker');
 runtime = runtime.replace(conditionalSharedGet, `      if (request.method === "GET") {

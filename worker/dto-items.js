@@ -18,6 +18,7 @@ export async function dtoItem(request,storage,claim,users) {
   if(request.method==='DELETE'){
     const ids=await storage.get('dtoDeletedIds')||[];
     await storage.put('dtoDeletedIds',[...new Set([...ids,Number(record.id)])]);
+    await storage.put('revision',Number(await storage.get('revision')||0)+1);
     return Response.json({success:true});
   }
   if(request.method!=='PATCH')return Response.json({error:'Método não permitido.'},{status:405});
@@ -34,5 +35,6 @@ export async function dtoItem(request,storage,claim,users) {
   const next={...record,employeeName:employee,applicationDate:date,actionPlan:plan,answers:answers.map((a,i)=>({...record.answers[i],question:String(a.question||record.answers[i].question),result:a.result})),nextDueDate:parsed.toISOString().slice(0,10),complianceRate:Math.round(100*answers.filter(a=>a.result==='OK').length/answers.length),nokCount:answers.filter(a=>a.result==='NOK').length,updatedAt:new Date().toISOString(),updatedBy:claim.username,textCorrected:true};
   const edits=await storage.get('dtoEdits')||{};
   await storage.put('dtoEdits',{...edits,[record.id]:next});
+  await storage.put('revision',Number(await storage.get('revision')||0)+1);
   return Response.json({success:true,item:next});
 }

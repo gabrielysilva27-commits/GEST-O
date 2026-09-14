@@ -737,11 +737,11 @@ async function loadView(viewId) {
     elements.pageContent.classList.remove("is-refreshing");
     // The cached object was already painted above. Avoid a second full DOM
     // replacement on module switches when the shared revision did not change.
-    if (cachedData && data === cachedData && viewId !== "gerot") return;
+    if (!(cachedData && data === cachedData && viewId !== "gerot")) {
     elements.pageContent.innerHTML = view.render(data, state);
     if (viewId === "gerot") addGerotEditorControls(data);
     applyInitialFilters(viewId);
-
+    }
     if (viewId === "audit") {
       elements.notificationBadge.textContent = String(data.unreadCount || 0);
       let refreshing = false;

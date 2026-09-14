@@ -1,6 +1,8 @@
 import { api as localApi } from './api.js';
 import { state } from './state.js';
 import { views } from './modules/index.js';
+import { databaseStorage } from './database-storage.js';
+import { syncOperationalData } from './shared-api.js';
 
 const PREFETCHABLE = new Set(['actionPlans', 'meetings', 'gapa', 'dto', 'anomalyReports', 'notifications', 'administration', 'gerot', 'history']);
 // A shared change explicitly invalidates this timestamp. A long TTL therefore
@@ -8,6 +10,8 @@ const PREFETCHABLE = new Set(['actionPlans', 'meetings', 'gapa', 'dto', 'anomaly
 const VIEW_CACHE_TTL_MS = 300000;
 const prefetched = new Map();
 const viewLoadedAt = new Map();
+const viewDatabase = new Map();
+const actionRenderCache = new WeakMap();
 let actionRows = [];
 let actionRowsGeneration = 0;
 let hoverTimer = 0;
@@ -79,12 +83,20 @@ function cacheActionRows(html) {
 
 const originalActionRender = views.actionPlans.render;
 views.actionPlans.render = (data, context) => {
+  const cached = actionRenderCache.get(data);
+  if (context.actionWorkspace === 'list' && cached?.user === context.user && cached?.lookups === context.lookups) {
+    actionRows = cached.rows;
+    actionRowsGeneration += 1;
+    return cached.html;
+  }
   const html = originalActionRender(data, context);
   if (context.actionWorkspace !== 'list') {
     actionRows = [];
     return html;
   }
-  return cacheActionRows(html);
+  const compact = cacheActionRows(html);
+  actionRenderCache.set(data, { user: context.user, lookups: context.lookups, rows: actionRows, html: compact });
+  return compact;
 };
 
 function wrapViewLoads() {
@@ -94,9 +106,14 @@ function wrapViewLoads() {
     view.load = async (...args) => {
       const cached = state.dataCache[viewId];
       const loadedAt = viewLoadedAt.get(viewId) || 0;
-      if (cached && Date.now() - loadedAt < VIEW_CACHE_TTL_MS) return cached;
+      const raw = databaseStorage.getItem('lead-gestao-db-v2');
+      if (cached && !['audit', 'dashboard', 'notifications'].includes(viewId) && raw === viewDatabase.get(viewId) && Date.now() - loadedAt < VIEW_CACHE_TTL_MS) {
+        syncOperationalData().catch(() => {});
+        return cached;
+      }
       const data = await originalLoad(...args);
       viewLoadedAt.set(viewId, Date.now());
+      viewDatabase.set(viewId, databaseStorage.getItem('lead-gestao-db-v2'));
       return data;
     };
     view.__leadFastLoadWrapped = true;

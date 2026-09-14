@@ -1,4 +1,5 @@
 import { databaseStorage as localStorage } from './database-storage.js';
+import { syncOperationalData } from './shared-api.js';
 
 const DB_KEY = 'lead-gestao-db-v2';
 const TOKEN_KEY = 'lead-gestao-sync-token';
@@ -142,13 +143,9 @@ async function refreshSharedActions() {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return null;
   sharedRefreshDone = true;
-  refreshPromise = fetch('/api/shared-data', {
-    headers: { authorization: `Bearer ${token}` },
-    cache: 'no-store'
-  }).then(async response => {
-    if (!response.ok) return;
-    const payload = await response.json().catch(() => null);
-    if (Array.isArray(payload?.data?.actionPlans)) sharedActions = payload.data.actionPlans;
+  refreshPromise = syncOperationalData().then(success => {
+    if (!success) return;
+    sharedActions = readDatabase()?.actionPlans || [];
     const table = root()?.querySelector('.notification-action-table');
     if (table) delete table.dataset.notificationDetails;
     enhanceNotifications();
