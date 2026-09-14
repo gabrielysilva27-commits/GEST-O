@@ -1,0 +1,38 @@
+name: Export temporary LEAD live review snapshot
+
+on:
+  push:
+    branches:
+      - chatgpt-live-review-20260914b
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch live shared view
+        run: |
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-delay 2 \
+            'https://lead-gestao.gabrielysilva27.workers.dev/api/shared-view' \
+            --output live-shared-view.json
+      - name: Validate snapshot
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('live-shared-view.json', 'utf8'));
+          const actions = payload?.data?.actionPlans;
+          const meetings = payload?.data?.meetings;
+          if (!Array.isArray(actions)) throw new Error('actionPlans ausente');
+          if (!Array.isArray(meetings)) throw new Error('meetings ausente');
+          console.log(`Ações: ${actions.length}`);
+          console.log(`Reuniões: ${meetings.length}`);
+          NODE
+      - name: Upload snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: lead-live-review-snapshot
+          path: live-shared-view.json
+          retention-days: 1
