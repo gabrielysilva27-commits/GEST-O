@@ -29,6 +29,7 @@ jobs:
           if (!Array.isArray(meetings)) throw new Error('meetings ausente');
           console.log(`Ações: ${actions.length}`);
           console.log(`Reuniões: ${meetings.length}`);
+          console.log(`Lote revisado: ${actions.filter(a => a?.legacyImportBatch === 'review20260914b').length}`);
           NODE
       - name: Upload snapshot
         uses: actions/upload-artifact@v4
@@ -36,3 +37,4 @@ jobs:
           name: lead-live-review-snapshot
           path: live-shared-view.json
           retention-days: 1
+# verification 2026-09-14
