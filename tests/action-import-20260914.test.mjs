@@ -5,7 +5,7 @@ import records from '../worker/action-import-20260914-data.js';
 function fixture(){
  const meetings=[...new Map(records.map(r=>[r.meetingId,{id:r.meetingId,title:r.meetingTitle,subjects:records.filter(a=>a.meetingId===r.meetingId).map(a=>a.meetingSubject)}])).values()];
  const original={meetings,actionPlans:[{id:42,objective:'Preservar',status:'in_progress'}],sequence:{actionPlans:42}};
- const values=new Map([['data',structuredClone(original)]]);
+ const values=new Map([['data',structuredClone(original)],['removedActions2025:20260914',{count:0}]]);
  const storage={get:async k=>structuredClone(values.get(k)),put:async(k,v)=>{for(const [key,value] of typeof k==='string'?[[k,v]]:Object.entries(k)){assert.ok(Buffer.byteLength(JSON.stringify(value))<128000);values.set(key,structuredClone(value));}},list:async({prefix}={})=>new Map([...values].filter(([k])=>!prefix||k.startsWith(prefix)))};
  storage.transaction=async fn=>fn(storage);
  const read=async()=>{const store=new SharedStore({storage},{});return (await (await store.fetch(new Request('https://lead.test/api/shared-view'))).json()).data;};
