@@ -1,0 +1,41 @@
+name: Validate live LEAD actions before import
+
+on:
+  push:
+    branches:
+      - chatgpt-import-223-validate
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Inspect configured users
+        shell: bash
+        run: |
+          echo '--- USERS ---'
+          grep -niE 'Lucas Soares|Christofee|Christoffe|Lucas' public/assets/js/api.js || true
+      - name: Fetch live shared view
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 2 \
+            'https://lead-gestao.gabrielysilva27.workers.dev/api/shared-view' \
+            --output live-shared-view.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('live-shared-view.json','utf8'));
+          const a=p?.data?.actionPlans;
+          if(!Array.isArray(a)) throw new Error('actionPlans ausente');
+          console.log('Ações atuais:',a.length);
+          const y2025=a.filter(x=>String(x.meetingExecutionDate||x.createdAt||'').startsWith('2025-'));
+          console.log('Ações 2025 restantes:',y2025.length);
+          NODE
+      - name: Upload live snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: lead-live-before-import-223
+          path: live-shared-view.json
+          retention-days: 1
