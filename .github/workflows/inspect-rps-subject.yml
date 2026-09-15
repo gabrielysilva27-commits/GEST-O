@@ -1,0 +1,27 @@
+name: Inspect RPS subject storage
+on:
+  push:
+    branches:
+      - fix/rps-distribuicao-ocupacao-20260915
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Inspect shared meeting merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build >/dev/null
+          echo '=== markers ==='
+          grep -n "withCentralImport\|applySharedActionImport\|shared-view\|shared-data\|class SharedStore\|meetings:" dist/server/index.js | tail -120 || true
+          echo '=== RPS literal ==='
+          grep -ni "RPS Distrib" dist/server/index.js | head -20 || true
