@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "node scripts/apply-central-password-reset.mjs && node scripts/preserve-local-password-reset.mjs && node scripts/build-recovered.mjs && node scripts/apply-apt-action-import-20260914.mjs"
+    "build": "node scripts/apply-central-password-reset.mjs && node scripts/disambiguate-password-reset-notification.mjs && node scripts/preserve-local-password-reset.mjs && node scripts/build-recovered.mjs && node scripts/apply-apt-action-import-20260914.mjs"
   },
   "dependencies": {
     "lz-string": "1.5.0"
