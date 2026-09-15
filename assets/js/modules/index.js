@@ -334,12 +334,6 @@ function dashboardView(data, context) {
     <td>${escapeHtml(row.requester)}</td><td>${escapeHtml(row.owner)}</td><td class="dashboard-action-text">${escapeHtml(row.action)}</td>
     <td>${escapeHtml(row.sector)}</td><td class="dashboard-status ${row.status === "Aberto hoje" ? "opened-today" : row.status === "Pendente" ? "pending" : "in-progress"}">${escapeHtml(row.status)}</td>
   </tr>`).join("");
-  const meetingRows = (data.meetings || []).map((item) => [
-    escapeHtml(item.title),
-    escapeHtml(formatDate(item.scheduledAt)),
-    escapeHtml(getUserLabel(context.lookups, item.ownerId)),
-    statusBadge(item.status || "scheduled")
-  ]);
   const activeUsersRows = (data.presence?.users || []).slice().sort((left, right) => Number(right.lastSeenAt || 0) - Number(left.lastSeenAt || 0)).map((item) => [
     escapeHtml(item.name),
     escapeHtml(moduleLabel(item.module)),
@@ -367,7 +361,6 @@ function dashboardView(data, context) {
       <thead><tr><th scope="col">Data</th><th scope="col">Reunião</th><th scope="col">Assunto</th><th scope="col">Solicitante</th><th scope="col">Responsável</th><th scope="col">Ações</th><th scope="col">Setor</th><th scope="col">Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>
       <div class="empty-state" data-dashboard-empty ${visible ? "hidden" : ""}><p>${records.length ? "Nenhuma ação encontrada para os filtros selecionados." : "Sem ações abertas. As próximas ações da equipe aparecerão aqui."}</p></div>
     </section>
-    ${tableCard("Reuniões em andamento", "Consulta compartilhada das reuniões agendadas ou em execução.", ["Reunião", "Data", "Responsável", "Status"], meetingRows)}
     ${tableCard("Usuários ativos agora", "Pessoas conectadas nos últimos 90 segundos.", ["Usuário", "Atividade atual", "Última atividade"], activeUsersRows)}
   `;
 }
