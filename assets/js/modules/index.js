@@ -339,20 +339,13 @@ function dashboardView(data, context) {
     escapeHtml(moduleLabel(item.module)),
     escapeHtml(formatDate(new Date(Number(item.lastSeenAt)).toISOString()))
   ]);
-  const dashboardCards = [
-    ...(data.kpis || []),
-    {
-      label: "Usuários online",
-      value: (data.presence?.users || []).length,
-      helper: "Pessoas ativas na plataforma agora"
-    }
-  ];
+  const activeActionCount = records.length;
+  const activeUserCount = activeUsersRows.length;
 
   return `
     ${moduleHeader("Dashboard operacional", "Acompanhe todas as ações abertas e em andamento pela equipe.")}
-    ${metricCards(dashboardCards)}
     <section class="table-card dashboard-actions-card" data-dashboard-actions>
-      <div class="table-card-header"><div><h3>Ações em andamento</h3><p>Aberto hoje: data de hoje. Pendente: data anterior, ainda sem conclusão.</p></div></div>
+      <div class="table-card-header"><div><h3>Ações em andamento <span class="dashboard-section-count">${activeActionCount}</span></h3><p>Aberto hoje: data de hoje. Pendente: data anterior, ainda sem conclusão.</p></div></div>
       <div class="dashboard-action-filters">${input("from","Data inicial","date")}${input("to","Data final","date")}${fields.map(select).join("")}${input("search","Buscar ação","search")}
         <button class="button secondary" type="button" data-dashboard-clear>Limpar filtros</button>
       </div>
@@ -361,7 +354,7 @@ function dashboardView(data, context) {
       <thead><tr><th scope="col">Data</th><th scope="col">Reunião</th><th scope="col">Assunto</th><th scope="col">Solicitante</th><th scope="col">Responsável</th><th scope="col">Ações</th><th scope="col">Setor</th><th scope="col">Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>
       <div class="empty-state" data-dashboard-empty ${visible ? "hidden" : ""}><p>${records.length ? "Nenhuma ação encontrada para os filtros selecionados." : "Sem ações abertas. As próximas ações da equipe aparecerão aqui."}</p></div>
     </section>
-    ${tableCard("Usuários ativos agora", "Pessoas conectadas nos últimos 90 segundos.", ["Usuário", "Atividade atual", "Última atividade"], activeUsersRows)}
+    ${tableCard(`Usuários ativos agora · ${activeUserCount}`, "Pessoas conectadas nos últimos 90 segundos.", ["Usuário", "Atividade atual", "Última atividade"], activeUsersRows)}
   `;
 }
 
