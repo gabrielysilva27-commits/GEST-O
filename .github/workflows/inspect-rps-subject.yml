@@ -1,4 +1,4 @@
-name: Inspect current shared store
+name: Test RPS Distribuição Ocupação
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -16,18 +16,17 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Build anterior ao patch RPS e inspecionar
+      - name: Build e regressão
+        run: |
+          npm run build
+          node --check dist/server/index.js
+          node --test tests/publication-performance.test.mjs tests/database-storage.test.mjs
+      - name: Validar cadastro e migração automática
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/apply-central-password-reset.mjs
-          node scripts/disambiguate-password-reset-notification.mjs
-          node scripts/preserve-local-password-reset.mjs
-          node scripts/apply-action-opening-d0.mjs
-          node scripts/apply-actions-performance.mjs
-          node scripts/build-recovered.mjs
-          node scripts/apply-apt-action-import-20260914.mjs
-          echo '=== shared-sync ==='
-          grep -n -B20 -A45 'sourcePath === "/shared-sync"' dist/server/index.js || true
-          echo '=== shared-data occurrences ==='
-          grep -n -B8 -A25 'storage.get("shared-data")' dist/server/index.js | head -160 || true
+          grep -q 'RPS_DISTRIBUICAO_OCUPACAO_V1' dist/server/index.js
+          grep -q 'Cx Viagem FF e Spot.*Ocupação' dist/server/index.js
+          grep -q 'var meetingSubjectSeedVersion = 3' dist/server/index.js
+          grep -q 'await this.ensureMeetingSubjects(); await prepareReviewedActionImport(state)' dist/server/index.js
+          grep -q 'this.applyMeetingSubjects(body.data)' dist/server/index.js
