@@ -1,4 +1,4 @@
-name: Inspect actions module performance
+name: Test actions module performance
 on:
   push:
     branches:
@@ -6,24 +6,58 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      - name: Inspect actions rendering and loading paths
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Build and existing regression tests
+        run: |
+          npm run build
+          node --check assets/js/modules/index.js
+          node --check assets/js/app.js
+          node --check assets/js/api.js
+          node --check dist/server/index.js
+          node --test tests/publication-performance.test.mjs tests/action-owner.test.mjs tests/database-storage.test.mjs
+      - name: Validate lazy actions rendering
         shell: bash
         run: |
           set -euo pipefail
-          echo '=== actionPlansView location ==='
-          grep -n "function actionPlansView" assets/js/modules/index.js || true
-          LINE=$(grep -n "function actionPlansView" assets/js/modules/index.js | head -1 | cut -d: -f1)
-          if [ -n "$LINE" ]; then
-            START=$((LINE-10)); END=$((LINE+300));
-            sed -n "${START},${END}p" assets/js/modules/index.js
-          fi
-          echo '=== action plan list API ==='
-          grep -n 'case "/action-plans"\|function listAction\|actionPlans' assets/js/api.js | head -120 || true
-          echo '=== app.js actionPlans references ==='
-          grep -n 'actionPlans' assets/js/app.js | head -140 || true
-          echo '=== file sizes ==='
-          wc -c assets/js/modules/index.js assets/js/app.js assets/js/api.js assets/js/shared-api.js
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const modules = fs.readFileSync('assets/js/modules/index.js', 'utf8');
+          const app = fs.readFileSync('assets/js/app.js', 'utf8');
+          const viewStart = modules.indexOf('function actionPlansView');
+          const viewEnd = modules.indexOf('function meetingHistoryView');
+          const view = modules.slice(viewStart, viewEnd);
+          const filterStart = app.indexOf('function applyActionFilters');
+          const filterEnd = app.indexOf('function clearActionFilters');
+          const filter = app.slice(filterStart, filterEnd);
+          const required = [
+            'ACTIONS_LAZY_RENDER_V1',
+            'export function renderActionRows',
+            'export function actionFilterRecord',
+            'data-action-results-body',
+            'data-action-pagination',
+            'data-edit-owned-action',
+            'data-delete-owned-action',
+            'data-complete-action',
+            'attachment-link'
+          ];
+          for (const marker of required) {
+            if (!modules.includes(marker)) throw new Error(`Marcador ausente: ${marker}`);
+          }
+          if (view.includes('const rows = items.map')) throw new Error('A view ainda materializa todas as linhas de ações.');
+          if (filter.includes('querySelectorAll("[data-action-row]")')) throw new Error('O filtro ainda percorre milhares de nós do DOM.');
+          if (!filter.includes('matches.slice(start, start + ACTION_FILTER_PAGE_SIZE)')) throw new Error('Paginação sob demanda não encontrada.');
+          if (!modules.includes('if (context?.actionWorkspace !== "create") return actions;')) throw new Error('Reuniões ainda são carregadas na abertura da lista.');
+          for (const filterName of ['subject','meeting','requester','owner','status','executionMonth']) {
+            if (!view.includes(`data-action-filter="${filterName}"`)) throw new Error(`Filtro perdido: ${filterName}`);
+          }
+          console.log('OK: carteira não renderiza milhares de linhas na abertura, pagina resultados e preserva ações/filtros.');
+          NODE
