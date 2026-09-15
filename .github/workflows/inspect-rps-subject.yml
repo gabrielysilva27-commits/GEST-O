@@ -1,4 +1,4 @@
-name: Inspect RPS subject storage
+name: Test RPS Distribuição Ocupação
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -16,12 +16,18 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Inspect shared meeting merge
+      - name: Build e regressão
+        run: |
+          npm run build
+          node --check dist/server/index.js
+          node --test tests/publication-performance.test.mjs tests/database-storage.test.mjs
+      - name: Validar persistência do assunto
         shell: bash
         run: |
           set -euo pipefail
-          npm run build >/dev/null
-          echo '=== markers ==='
-          grep -n "withCentralImport\|applySharedActionImport\|shared-view\|shared-data\|class SharedStore\|meetings:" dist/server/index.js | tail -120 || true
-          echo '=== RPS literal ==='
-          grep -ni "RPS Distrib" dist/server/index.js | head -20 || true
+          grep -q 'RPS_DISTRIBUICAO_OCUPACAO_V1' dist/server/index.js
+          grep -q 'normalizeRpsSubjectValue(meeting?.title) !== "rps distribuicao"' dist/server/index.js
+          grep -q 'subjects: \[...subjects, "Ocupação"\]' dist/server/index.js
+          grep -q 'ensureRpsDistribuicaoOcupacao(applyAptActionImport(raw))' dist/server/index.js
+          grep -q 'const data = ensureRpsDistribuicaoOcupacao(stored);' dist/server/index.js
+          grep -q 'await this.state.storage.put("shared-data", data);' dist/server/index.js
