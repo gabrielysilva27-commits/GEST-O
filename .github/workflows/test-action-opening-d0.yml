@@ -1,0 +1,36 @@
+name: Test action opening D0
+
+on:
+  push:
+    branches:
+      - fix/action-opening-d0-status-20260915
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Build and regression tests
+        run: |
+          npm run build
+          node --check assets/js/api.js
+          node --check assets/js/modules/index.js
+          node --check dist/server/index.js
+          node --test tests/publication-performance.test.mjs tests/gerot-reference.test.mjs
+      - name: Validate D0 and dashboard rules
+        run: |
+          grep -q 'ACTION_OPENING_D0_V1' assets/js/api.js
+          grep -q 'meetingExecutionDate: openingDate' assets/js/api.js
+          grep -q 'Data de abertura' assets/js/modules/index.js
+          grep -q 'disabled aria-label="Data de abertura em D0"' assets/js/modules/index.js
+          grep -q 'dueDate && dueDate < today ? "Pendente" : "Em andamento"' assets/js/modules/index.js
+          ! grep -q 'date > today ? "Em andamento" : "Pendente"' assets/js/modules/index.js
