@@ -2459,3 +2459,21 @@ body.dark-mode .delivery-grid .delivery-ytd { color: #8db9ff; }
   .delivery-row-name > span:last-child { max-width: 99px; }
   .delivery-grid .delivery-ytd { width: 90px; min-width: 90px; }
 }
+
+/* Dashboard action register, matching the operational spreadsheet. */
+.dashboard-actions-card { border-top: 5px solid #ed702c; }
+.dashboard-action-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:12px; padding:0 20px; align-items:end; }
+.dashboard-action-filters label { display:grid; gap:5px; font-size:.75rem; font-weight:650; color:var(--text-muted); }
+.dashboard-action-filters input,.dashboard-action-filters select { width:100%; min-width:0; min-height:40px; padding:8px; border:1px solid var(--line-strong); border-radius:6px; color:var(--text); background:var(--surface); }
+.dashboard-action-count { padding:0 20px; font-size:.8rem; color:var(--text-muted); }
+.dashboard-actions-card .table-scroll { overflow:auto; max-height:65vh; margin:0 20px 20px; }
+.dashboard-actions-table { width:100%; min-width:1250px; table-layout:fixed; border-collapse:collapse; font-size:.78rem; }
+.dashboard-actions-table th,.dashboard-actions-table td { border:1px solid #cdd1d5; padding:12px 8px; text-align:center; white-space:normal; overflow-wrap:anywhere; vertical-align:middle; }
+.dashboard-actions-table th { position:sticky; top:0; z-index:1; background:#dedede; color:#111827; text-transform:uppercase; font-size:.7rem; }
+.dashboard-actions-table .dashboard-action-text { line-height:1.55; white-space:pre-wrap; text-align:left; }
+.dashboard-actions-table .dashboard-status { font-weight:750; text-transform:uppercase; color:#fff; }
+.dashboard-actions-table .opened-today { background:#008844; }
+.dashboard-actions-table .pending { background:#c90812; }
+.dashboard-actions-table .in-progress { background:#2563a6; }
+.dashboard-actions-card [hidden] { display:none !important; }
+@media(max-width:640px) { .dashboard-action-filters { grid-template-columns:repeat(2,minmax(0,1fr)); padding:0 12px; } .dashboard-actions-card .table-scroll { margin:0 12px 12px; } }

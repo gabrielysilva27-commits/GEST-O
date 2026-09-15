@@ -288,21 +288,52 @@ function actionStatusBadge(value = "open") {
   return `<span class="badge ${badgeClass(value)}">${escapeHtml(labels[value] || formatValueLabel(value))}</span>`;
 }
 
+const dashboardFilters = {};
+const dashboardNormalize = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
+function dashboardMatches(row, filters) {
+  return (!filters.from || row.date >= filters.from) && (!filters.to || row.date <= filters.to) &&
+    ["meeting", "subject", "requester", "owner", "sector", "status"].every(key => !filters[key] || dashboardNormalize(row[key]) === dashboardNormalize(filters[key])) &&
+    (!filters.search || dashboardNormalize(row.search).includes(dashboardNormalize(filters.search)));
+}
+export function applyDashboardFilters(root, clear = false) {
+  const card = root.querySelector("[data-dashboard-actions]");
+  if (!card) return;
+  card.querySelectorAll("[data-dashboard-filter]").forEach(input => {
+    if (clear) input.value = "";
+    dashboardFilters[input.dataset.dashboardFilter] = input.value;
+  });
+  let visible = 0;
+  const rows = card.querySelectorAll("[data-dashboard-row]");
+  rows.forEach(row => { row.hidden = !dashboardMatches(row.dataset, dashboardFilters); if (!row.hidden) visible++; });
+  card.querySelector("[data-dashboard-count]").textContent = `${visible} de ${rows.length} ações`;
+  card.querySelector("[data-dashboard-empty]").hidden = visible > 0;
+}
 function dashboardView(data, context) {
-  const actionRows = (data.actionPlans || []).map((item) => {
-    const requester = item.requesterName || item.legacyRequesterName || "Não informado";
-    const owner = getUserLabel(context.lookups, item.ownerId, item.legacyOwnerName);
-    return `<tr>
-      <td class="action-date-cell" data-label="Data">${escapeHtml(formatDate(item.meetingExecutionDate || item.createdAt))}</td>
-      <td data-label="Reunião">${escapeHtml(item.meetingTitle || "Não vinculada")}</td>
-      <td data-label="Assunto">${escapeHtml(item.meetingSubject || item.title)}</td>
-      <td data-label="Solicitante">${escapeHtml(requester)}</td>
-      <td data-label="Responsável">${escapeHtml(owner)}</td>
-      <td class="action-plan-cell" data-label="Ação">${escapeHtml(item.objective || item.title)}</td>
-      <td class="action-date-cell" data-label="Prazo">${escapeHtml(formatDate(item.dueDate))}</td>
-      <td data-label="Status">${actionStatusBadge(item.status || "open")}</td>
-    </tr>`;
-  }).join("");
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  const people = [...(context.lookups?.responsibleUsers || []), ...(context.lookups?.users || [])];
+  const name = (id, fallback) => people.find(user => String(user.id) === String(id))?.username || fallback || "Não informado";
+  const records = (data.actionPlans || []).map(item => {
+    const date = String(item.meetingExecutionDate || item.createdAt || "").slice(0, 10);
+    const row = { date, meeting: item.meetingTitle || "Não vinculada", subject: item.meetingSubject || item.title || "Não informado",
+      requester: name(item.requesterId, item.requesterName || item.legacyRequesterName), owner: name(item.ownerId, item.legacyOwnerName),
+      action: item.objective || item.title || "", sector: item.sector || item.department || "Não informado",
+      status: date === today ? "Aberto hoje" : date > today ? "Em andamento" : "Pendente" };
+    return { ...row, search: Object.values(row).join(" ") };
+  });
+  const fields = [["meeting","Reunião"],["subject","Assunto"],["requester","Solicitante"],["owner","Responsável"],["sector","Setor"],["status","Status"]];
+  const select = ([key, label]) => {
+    const values = [...new Set(records.map(row => row[key]))].sort((a,b) => a.localeCompare(b,"pt-BR"));
+    if (dashboardFilters[key] && !values.includes(dashboardFilters[key])) values.push(dashboardFilters[key]);
+    return `<label>${label}<select data-dashboard-filter="${key}"><option value="">Todos</option>${values.map(value => `<option value="${escapeHtml(value)}" ${dashboardFilters[key] === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}</select></label>`;
+  };
+  const input = (key,label,type) => `<label>${label}<input type="${type}" data-dashboard-filter="${key}" value="${escapeHtml(dashboardFilters[key] || "")}" ${type === "search" ? 'placeholder="Buscar nas ações…"' : ""}></label>`;
+  const visible = records.filter(row => dashboardMatches(row, dashboardFilters)).length;
+  const actionRows = records.map(row => `<tr data-dashboard-row ${dashboardMatches(row,dashboardFilters) ? "" : "hidden"} ${["date","meeting","subject","requester","owner","sector","status","search"].map(key => `data-${key}="${escapeHtml(row[key])}"`).join(" ")}>
+    <td>${escapeHtml(formatDate(row.date))}</td><td>${escapeHtml(row.meeting)}</td><td>${escapeHtml(row.subject)}</td>
+    <td>${escapeHtml(row.requester)}</td><td>${escapeHtml(row.owner)}</td><td class="dashboard-action-text">${escapeHtml(row.action)}</td>
+    <td>${escapeHtml(row.sector)}</td><td class="dashboard-status ${row.status === "Aberto hoje" ? "opened-today" : row.status === "Pendente" ? "pending" : "in-progress"}">${escapeHtml(row.status)}</td>
+  </tr>`).join("");
   const meetingRows = (data.meetings || []).map((item) => [
     escapeHtml(item.title),
     escapeHtml(formatDate(item.scheduledAt)),
@@ -326,9 +357,15 @@ function dashboardView(data, context) {
   return `
     ${moduleHeader("Dashboard operacional", "Acompanhe todas as ações abertas e em andamento pela equipe.")}
     ${metricCards(dashboardCards)}
-    <section class="table-card action-portfolio-card">
-      <div class="table-card-header"><div><h3>Ações em andamento</h3><p>Consulta compartilhada apenas das ações abertas ou em andamento.</p></div></div>
-      ${actionRows ? `<div class="table-scroll"><table class="action-table"><colgroup><col class="action-date-column"><col class="action-meeting-column"><col class="action-subject-column"><col class="action-requester-column"><col class="action-owner-column"><col class="action-plan-column"><col class="action-date-column"><col class="action-status-column"></colgroup><thead><tr><th>Data</th><th>Reunião</th><th>Assunto</th><th>Solicitante</th><th>Responsável</th><th>Ações</th><th>Prazo</th><th>Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>` : '<div class="empty-state"><div><h2>Sem ações cadastradas</h2><p>As próximas ações abertas pela equipe aparecerão aqui.</p></div></div>'}
+    <section class="table-card dashboard-actions-card" data-dashboard-actions>
+      <div class="table-card-header"><div><h3>Ações em andamento</h3><p>Aberto hoje: data de hoje. Pendente: data anterior, ainda sem conclusão.</p></div></div>
+      <div class="dashboard-action-filters">${input("from","Data inicial","date")}${input("to","Data final","date")}${fields.map(select).join("")}${input("search","Buscar ação","search")}
+        <button class="button secondary" type="button" data-dashboard-clear>Limpar filtros</button>
+      </div>
+      <p class="dashboard-action-count" data-dashboard-count role="status" aria-live="polite">${visible} de ${records.length} ações</p>
+      <div class="table-scroll"><table class="dashboard-actions-table"><colgroup><col style="width:7%"><col style="width:13%"><col style="width:10%"><col style="width:8%"><col style="width:8%"><col style="width:36%"><col style="width:9%"><col style="width:9%"></colgroup>
+      <thead><tr><th scope="col">Data</th><th scope="col">Reunião</th><th scope="col">Assunto</th><th scope="col">Solicitante</th><th scope="col">Responsável</th><th scope="col">Ações</th><th scope="col">Setor</th><th scope="col">Status</th></tr></thead><tbody>${actionRows}</tbody></table></div>
+      <div class="empty-state" data-dashboard-empty ${visible ? "hidden" : ""}><p>${records.length ? "Nenhuma ação encontrada para os filtros selecionados." : "Sem ações abertas. As próximas ações da equipe aparecerão aqui."}</p></div>
     </section>
     ${tableCard("Reuniões em andamento", "Consulta compartilhada das reuniões agendadas ou em execução.", ["Reunião", "Data", "Responsável", "Status"], meetingRows)}
     ${tableCard("Usuários ativos agora", "Pessoas conectadas nos últimos 90 segundos.", ["Usuário", "Atividade atual", "Última atividade"], activeUsersRows)}

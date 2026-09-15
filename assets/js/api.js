@@ -1257,7 +1257,7 @@ function isDashboardAction(item) {
   if (["done", "completed", "closed", "cancelled", "canceled"].includes(status)) {
     return false;
   }
-  return ["in_progress", "open", "overdue"].includes(status) || isPastDue(item?.dueDate);
+  return ["pending", "in_progress", "open", "overdue"].includes(status) || isPastDue(item?.dueDate);
 }
 
 function buildDashboard(database, user) {
@@ -1349,7 +1349,7 @@ function buildDashboard(database, user) {
         })),
       unreadNotifications: notifications.filter((item) => !item.read).length
     },
-    actionPlans: [...openActions].sort((left, right) =>
+    actionPlans: openActions.map(item => ({ ...item, sector: item.sector || item.department || database.users.find(person => Number(person.id) === Number(item.ownerId))?.department || "Não informado" })).sort((left, right) =>
       String(right.meetingExecutionDate || right.createdAt).localeCompare(String(left.meetingExecutionDate || left.createdAt))
     ),
     meetings: [...activeMeetings].sort((left, right) =>
