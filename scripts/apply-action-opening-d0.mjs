@@ -1,3 +1,4 @@
+// Regra operacional: abertura travada em D0; status do Dashboard deriva de abertura e prazo.
 import fs from 'node:fs/promises';
 
 async function patch(path, transform) {
