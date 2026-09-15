@@ -1,0 +1,29 @@
+name: Inspect actions module performance
+on:
+  push:
+    branches:
+      - perf/actions-module-20260915
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Inspect actions rendering and loading paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== actionPlansView location ==='
+          grep -n "function actionPlansView" assets/js/modules/index.js || true
+          LINE=$(grep -n "function actionPlansView" assets/js/modules/index.js | head -1 | cut -d: -f1)
+          if [ -n "$LINE" ]; then
+            START=$((LINE-10)); END=$((LINE+300));
+            sed -n "${START},${END}p" assets/js/modules/index.js
+          fi
+          echo '=== action plan list API ==='
+          grep -n 'case "/action-plans"\|function listAction\|actionPlans' assets/js/api.js | head -120 || true
+          echo '=== app.js actionPlans references ==='
+          grep -n 'actionPlans' assets/js/app.js | head -140 || true
+          echo '=== file sizes ==='
+          wc -c assets/js/modules/index.js assets/js/app.js assets/js/api.js assets/js/shared-api.js
