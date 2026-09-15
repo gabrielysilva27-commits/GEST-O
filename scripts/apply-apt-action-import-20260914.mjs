@@ -40,3 +40,18 @@ source=source.replace(seqMarker,'Math.max(Number(data.sequence?.actionPlans || 0
 
 await fs.writeFile(path,source);
 console.log('Applied reviewed apt actions import patch');
+
+// Run after every historical batch is available, including persisted chunks.
+await fs.copyFile('worker/complete-imported-actions.js','dist/server/complete-imported-actions.js');
+source = 'import {completeImportedActions,completeImportedAction} from "./complete-imported-actions.js";\n' + source;
+function replaceRequired(before, after) {
+  if (!source.includes(before)) throw new Error('Missing imported completion marker: ' + before);
+  source = source.replace(before, after);
+}
+replaceRequired('await removeActions2025(state);', 'await removeActions2025(state); await completeImportedActions(state);');
+// Old browser saves must not reopen imported history after migration.
+replaceRequired('actionPlans: [...byId.values()]', 'actionPlans: [...byId.values()].map(action => completeImportedAction(action, state.importedActionsCompletedAt || new Date().toISOString()))');
+replaceRequired('      this.applySharedActionImport(body.data);', '      this.applySharedActionImport(body.data);\n      body.data.actionPlans = (body.data.actionPlans || []).map(action => completeImportedAction(action, this.state.importedActionsCompletedAt || new Date().toISOString()));');
+replaceRequired('      if (existing >= 0) live[existing] = item;', '      item = completeImportedAction(item, this.state.importedActionsCompletedAt || new Date().toISOString());\n      if (existing >= 0) live[existing] = item;');
+await fs.writeFile(path,source);
+console.log('Applied imported history completion migration');
